@@ -326,7 +326,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-203 | *Make draggable windows resizable on desktop. Especially chat.*                                                                                                                                                                                                                                                                                                                                                                                                                      | Common         | Triage   | [Feature](#ob-203) |
 | OB-204 | *Error when trying to import pf2 content with /import*                                                                                                                                                                                                                                                                                                                                                                                                                               | Vtt            | Triage   | [Bug](#ob-204)     |
 | OB-205 | The add to character sheet button on an inspected spell adds to the currently selected character. Not the as token.                                                                                                                                                                                                                                                                                                                                                                  | Vtt            | Done     | [Bug](#ob-205)     |
-| OB-206 | Inspecting a spell like /spell? magic missile' shows the spell, but it has the wrong buttons.                                                                                                                                                                                                                                                                                                                                                                                        | Vtt            | Ready    | [Bug](#ob-206)     |
+| OB-206 | Inspecting a spell like /spell? magic missile' shows the spell, but it has the wrong buttons.                                                                                                                                                                                                                                                                                                                                                                                        | Vtt            | Done     | [Bug](#ob-206)     |
 | OB-207 | Changing to a token without a bound character sheet should reset the form to the token's state.                                                                                                                                                                                                                                                                                                                                                                                      | Vtt            | Ready    | [Bug](#ob-207)     |
 | OB-208 | Update the Open5EFetcher to use the v2 api.                                                                                                                                                                                                                                                                                                                                                                                                                                          | Vtt            | Ready    | [Feature](#ob-208) |
 | OB-209 | There is no settings button next to the active scene name in the top bar.                                                                                                                                                                                                                                                                                                                                                                                                            | Common         | Done     | [Bug](#ob-209)     |
@@ -3083,11 +3083,12 @@ Add a way to edit tiles after they have been uploaded. I can't set their sizes o
 **Status:** Done
 **Type:** Bug
 
+
 **Description:**
 When tiles is selected the tab bar in the asset manager is positioned up underneath the header. This happens for scenes as well once I make a third scene. It appears related to when the content height is large. When a scrollbar appears the tab bar moves up. When the scrollabe conten is even larger the tab bar moves up even further.
 
 - [x]
-Fixed by enforcing flexShrink: 0 on header, tabs, and bottom section, setting minHeight: 0 on the scrollable content container, and overriding maxHeight: 'none' when expanded on .draggable-window-body.
+  Fixed by enforcing flexShrink: 0 on header, tabs, and bottom section, setting minHeight: 0 on the scrollable content container, and overriding maxHeight: 'none' when expanded on .draggable-window-body.
 
 <a id="ob-191" class="task" data-project="cmn" data-status="ready" data-task-type="feature"></a>
 ### Make no ring color be the default for props and tiles.
@@ -3135,11 +3136,12 @@ I should be able to change the image on a token after it has been created. I can
 **Status:** Done
 **Type:** Bug
 
+
 **Description:**
 Describe task objectives and implementation requirements here.
 
 - [x]
-Implemented isPointInToken in TokenRenderer.ts and integrated with CanvasEngine.ts. Hitbox now accurately covers the full circular ring border for circular tokens, full rectangular bounds for square/rounded tokens and props/tiles, and circumscribed polygon boundaries for hexagon/octagon tokens. Correctly centers multi-tile tokens (e.g. size 2, 3) at (x + propW/2, y + propH/2).
+  Implemented isPointInToken in TokenRenderer.ts and integrated with CanvasEngine.ts. Hitbox now accurately covers the full circular ring border for circular tokens, full rectangular bounds for square/rounded tokens and props/tiles, and circumscribed polygon boundaries for hexagon/octagon tokens. Correctly centers multi-tile tokens (e.g. size 2, 3) at (x + propW/2, y + propH/2).
 
 <a id="ob-195" class="task" data-project="cmn" data-status="triage" data-task-type="feature"></a>
 ### Add zoom and offset to the PRESET_TOKENS in TokenPickerModal.
@@ -3226,12 +3228,13 @@ Describe task objectives and implementation requirements here.
 **Status:** Done
 **Type:** Bug
 
+
 **Description:**
 Describe task objectives and implementation requirements here.
 
 - [x]
-Configured player token ownership and control across all token spawning channels in AppVtt (chat statblock spawn, custom file drop, asset deploy, new token creation, token duplication). Player tokens now automatically assign ownerId to the spawning player, enable isPlayerToken, select the token, and use the player's ring color.
-Added duplicate permissions check ensuring players can only duplicate their own tokens or unowned tokens (props, unclaimed player tokens). Players cannot duplicate GM monsters/bosses (preventing them from cloning a boss to view hidden attacks/statblocks) or other players' tokens.
+  Configured player token ownership and control across all token spawning channels in AppVtt (chat statblock spawn, custom file drop, asset deploy, new token creation, token duplication). Player tokens now automatically assign ownerId to the spawning player, enable isPlayerToken, select the token, and use the player's ring color.
+  Added duplicate permissions check ensuring players can only duplicate their own tokens or unowned tokens (props, unclaimed player tokens). Players cannot duplicate GM monsters/bosses (preventing them from cloning a boss to view hidden attacks/statblocks) or other players' tokens.
 
 <a id="ob-202" class="task" data-project="cmn" data-status="triage" data-task-type="feature"></a>
 ### Make help in chat look better.
@@ -3279,23 +3282,30 @@ Error when trying to import pf2 content with /import Uncaught TypeError: Cannot 
 **Status:** Done
 **Type:** Bug
 
+
 **Description:**
 Inspecting a spell like '/spell? magic missile' shows the spell adds the spell to the wrong character/token. The add to character sheet button adds to the currently selected character on the character sheet page, not to the 'as->' character in chat. See [OB-177](#0b-177).
+
 ### Implementation Notes:
+
 - Added `addBlockToTokenOrCharacter` in `ChatPanel.tsx` to target the active associated token in chat (`activeAssociatedToken`) or message token (`m.tokenId`) via `onSyncToken`, falling back to player character sheet if no token is associated.
 - Automatically builds a fallback `DnDCharacter` for tokens without an existing sheet.
 - Added comprehensive unit tests in `chat.test.ts`.
 
-<a id="ob-206" class="task" data-project="vtt" data-status="ready" data-task-type="bug"></a>
+<a id="ob-206" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
 ### Inspecting a spell like /spell? magic missile' shows the spell, but it has the wrong buttons.
 **ID:** OB-206
 **Project:** Vtt
-**Status:** Ready
+**Status:** Done
 **Type:** Bug
 
-
 **Description:**
-Inspecting a spell like '/spell? magic missile' shows the spell, but it has a spawn token button and no add to character sheet button. Only gm can see or use the add to character sheet button. See [OB-177](#0b-177).
+Inspecting a spell like '/spell? magic missile' shows the spell, but it has a spawn token button. The spawn token button creates a token called "Animal Friendship" with what seem to be default values and no icon. The character sheet shows one of our default included icons thought. The sync url is `open5e-spell-animal-friendship` I believe this is the id of the first spell in the spells list. The spells seem to be coming from the open5e api.
+- [x]
+  - Restricted the 'Spawn Token' button in StatBlockCard.tsx and ChatPanel.tsx to only display when statBlock.type === 'monster'. Spells, actions, features, and items no longer display the 'Spawn Token' button.
+  - Enabled '+ Add to Sheet' button for players in chat even if no character or token is pre-associated, automatically initializing a player character sheet if needed or associating with controlled/selected tokens.
+  - Updated onRoll action handler in chat to display 'casts **<Spell Name>**' for spells and cleanly handle non-damaging utility spells.
+  - Added unit tests in chat.test.ts verifying default character sheet initialization on spell addition and token spawn permissions.
 
 <a id="ob-207" class="task" data-project="vtt" data-status="ready" data-task-type="bug"></a>
 ### Changing to a token without a bound character sheet should reset the form to the token's state.
@@ -3330,6 +3340,7 @@ Describe task objectives and implementation requirements here.
 **Status:** Done
 **Type:** Bug
 
+
 **Description:**
 Provide a dedicated settings button (gear icon) next to the active scene name in the top navigation bar to open the Scene Settings modal directly.
 
@@ -3346,8 +3357,10 @@ Provide a dedicated settings button (gear icon) next to the active scene name in
 **Status:** Done
 **Type:** Chore
 
+
 **Description:**
 Describe task objectives and implementation requirements here.
+
 - [ ]
 
 ---

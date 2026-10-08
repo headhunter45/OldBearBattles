@@ -89,7 +89,7 @@ export const StatBlockCard: React.FC<StatBlockCardProps> = ({
   onRoll,
   onSpawnToken,
   canAddToCharacter = true,
-  canSpawnToken = true,
+  canSpawnToken = statBlock.type === 'monster',
   className = '',
   style = {},
 }) => {
@@ -511,8 +511,8 @@ export const StatBlockCard: React.FC<StatBlockCardProps> = ({
             </button>
           )}
 
-          {/* Spawn Token button */}
-          {onSpawnToken && canSpawnToken && (
+          {/* Spawn Token button - only for monster/creature statblocks */}
+          {onSpawnToken && canSpawnToken && statBlock.type === 'monster' && (
             <button
               type="button"
               className="btn btn-secondary"

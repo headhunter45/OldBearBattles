@@ -1785,7 +1785,25 @@ export function addBlockToTokenOrCharacter({
       targetName: targetToken.name,
       updatedCharacter: updatedChar,
     };
-  } else if (character && onUpdatePlayerChar) {
+  } else if (onUpdatePlayerChar) {
+    const baseChar: DnDCharacter = character || {
+      id: `char-${player.id}`,
+      name: player.name || 'Hero',
+      level: 1,
+      classes: 'Adventurer',
+      race: 'Human',
+      currentHp: 20,
+      maxHp: 20,
+      tempHp: 0,
+      speed: 30,
+      armorClass: 10,
+      passivePerception: 10,
+      initiativeBonus: 0,
+      stats: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+      spells: [],
+      actions: [],
+      items: [],
+    };
     let updatedChar: DnDCharacter;
     let confirmText = '';
 
@@ -1802,10 +1820,10 @@ export function addBlockToTokenOrCharacter({
         dndBeyondUrl: block.sourceUrl || '',
       };
       updatedChar = {
-        ...character,
-        spells: [...(character.spells || []), newSpell],
+        ...baseChar,
+        spells: [...(baseChar.spells || []), newSpell],
       };
-      confirmText = `✅ Added spell **${block.name}** to ${character.name}'s character sheet.`;
+      confirmText = `✅ Added spell **${block.name}** to ${baseChar.name}'s character sheet.`;
     } else if (block.type === 'item') {
       const newItem: DnDItem = {
         id: block.id || crypto.randomUUID(),
@@ -1815,10 +1833,10 @@ export function addBlockToTokenOrCharacter({
         quantity: 1,
       };
       updatedChar = {
-        ...character,
-        items: [...(character.items || []), newItem],
+        ...baseChar,
+        items: [...(baseChar.items || []), newItem],
       };
-      confirmText = `✅ Added item **${block.name}** to ${character.name}'s inventory.`;
+      confirmText = `✅ Added item **${block.name}** to ${baseChar.name}'s inventory.`;
     } else {
       const newAction: DnDAction = {
         name: block.name,
@@ -1829,10 +1847,10 @@ export function addBlockToTokenOrCharacter({
         description: block.description,
       };
       updatedChar = {
-        ...character,
-        actions: [...(character.actions || []), newAction],
+        ...baseChar,
+        actions: [...(baseChar.actions || []), newAction],
       };
-      confirmText = `✅ Added action **${block.name}** to ${character.name}'s actions.`;
+      confirmText = `✅ Added action **${block.name}** to ${baseChar.name}'s actions.`;
     }
 
     onUpdatePlayerChar(updatedChar);
@@ -1850,8 +1868,8 @@ export function addBlockToTokenOrCharacter({
 
     return {
       targetType: 'character',
-      targetId: character.id,
-      targetName: character.name,
+      targetId: baseChar.id,
+      targetName: baseChar.name,
       updatedCharacter: updatedChar,
     };
   }
@@ -2173,9 +2191,14 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                         (activeAssociatedToken
                           ? (tokens || []).find((t) => t.id === activeAssociatedToken.id) || activeAssociatedToken
                           : null) ||
-                        (m.tokenId ? (tokens || []).find((t) => t.id === m.tokenId) : null);
+                        (selectedToken
+                          ? (tokens || []).find((t) => t.id === selectedToken.id) || (player.role === 'gm' || selectedToken.ownerId === player.id ? selectedToken : null)
+                          : null) ||
+                        (m.tokenId ? (tokens || []).find((t) => t.id === m.tokenId) : null) ||
+                        (tokens && tokens.length === 1 ? tokens[0] : null);
                       const canAddToCharacter = Boolean(
                         (targetToken && onSyncToken) ||
+                        onUpdatePlayerChar ||
                         (character && onUpdatePlayerChar)
                       );
 
@@ -2184,6 +2207,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                           statBlock={m.statBlock}
                           compact
                           canAddToCharacter={canAddToCharacter}
+                          canSpawnToken={m.statBlock.type === 'monster'}
                           onAddToCharacter={
                             canAddToCharacter
                               ? (block) => {
@@ -2205,35 +2229,49 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                               : undefined
                           }
                           onRoll={(block) => {
-                            const expr = block.damageFormula || block.rollFormula || '1d20';
-                            const parsed = parseDiceExpression(expr);
-                            if (parsed) {
-                              const rollResult: DiceRollResult = {
-                                id: crypto.randomUUID(),
-                                userId: player.id,
-                                userName: player.name,
-                                userColor: player.color,
-                                diceType: parsed.diceType,
-                                count: parsed.count,
-                                modifier: parsed.modifier,
-                                rolls: parsed.rolls,
-                                total: parsed.total,
-                                timestamp: Date.now(),
-                              };
-                              onBroadcastRoll?.(rollResult);
-                              onSendMessage({
-                                id: crypto.randomUUID(),
-                                senderId: player.id,
-                                senderName: player.name,
-                                senderColor: player.color,
-                                text: `rolls **${block.name}** (${expr}) = ${parsed.total} [${parsed.rolls.join(', ')}]`,
-                                timestamp: Date.now(),
-                                roll: rollResult,
-                              });
+                            const expr = block.damageFormula || block.rollFormula;
+                            if (expr) {
+                              const parsed = parseDiceExpression(expr);
+                              if (parsed) {
+                                const rollResult: DiceRollResult = {
+                                  id: crypto.randomUUID(),
+                                  userId: player.id,
+                                  userName: player.name,
+                                  userColor: player.color,
+                                  diceType: parsed.diceType,
+                                  count: parsed.count,
+                                  modifier: parsed.modifier,
+                                  rolls: parsed.rolls,
+                                  total: parsed.total,
+                                  timestamp: Date.now(),
+                                };
+                                onBroadcastRoll?.(rollResult);
+                                const actionVerb = block.type === 'spell' ? 'casts' : block.type === 'attack' ? 'attacks with' : 'rolls';
+                                onSendMessage({
+                                  id: crypto.randomUUID(),
+                                  senderId: player.id,
+                                  senderName: player.name,
+                                  senderColor: player.color,
+                                  text: `${actionVerb} **${block.name}** (${expr}) = ${parsed.total} [${parsed.rolls.join(', ')}]`,
+                                  timestamp: Date.now(),
+                                  roll: rollResult,
+                                });
+                                return;
+                              }
                             }
+                            const actionVerb = block.type === 'spell' ? 'casts' : 'uses';
+                            const subtitleText = 'subtitle' in block && (block as any).subtitle ? ` (${(block as any).subtitle})` : '';
+                            onSendMessage({
+                              id: crypto.randomUUID(),
+                              senderId: player.id,
+                              senderName: player.name,
+                              senderColor: player.color,
+                              text: `${actionVerb} **${block.name}**${subtitleText}`,
+                              timestamp: Date.now(),
+                            });
                           }}
                           onSpawnToken={
-                            onSpawnMonsterToken
+                            onSpawnMonsterToken && m.statBlock.type === 'monster'
                               ? (block) => {
                                   onSpawnMonsterToken(block);
                                   onSendMessage({

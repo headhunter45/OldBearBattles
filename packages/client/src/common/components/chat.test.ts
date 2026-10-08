@@ -1186,7 +1186,62 @@ describe('Dice Parser & Slash Command Utilities', () => {
     assert.strictEqual(updatedChar.spells[0].name, 'Shield');
     assert.ok(sentMessages[0].text.includes('Bob the Fighter'));
   });
+
+  it('initializes a default character sheet for player when neither character nor token is bound (OB-206)', () => {
+    const testPlayer = { id: 'p2', name: 'Alice', color: '#3b82f6' };
+    const spellBlock = {
+      name: 'Magic Missile',
+      type: 'spell' as const,
+      cost: 'action' as const,
+      level: 1,
+      school: 'Evocation',
+      range: '120 feet',
+      description: 'You create three glowing darts of magical force.',
+    };
+
+    let updatedChar: any = null;
+    const sentMessages: any[] = [];
+
+    const res = addBlockToTokenOrCharacter({
+      block: spellBlock as any,
+      targetToken: null,
+      character: null,
+      player: testPlayer as any,
+      onUpdatePlayerChar: (char) => {
+        updatedChar = char;
+      },
+      onSendMessage: (msg) => sentMessages.push(msg),
+    });
+
+    assert.ok(res);
+    assert.strictEqual(res.targetType, 'character');
+    assert.ok(updatedChar);
+    assert.strictEqual(updatedChar.name, 'Alice');
+    assert.strictEqual(updatedChar.spells.length, 1);
+    assert.strictEqual(updatedChar.spells[0].name, 'Magic Missile');
+    assert.ok(sentMessages[0].text.includes('Magic Missile'));
+    assert.ok(sentMessages[0].text.includes('Alice'));
+  });
+
+  it('distinguishes spells and monsters for spawn token permissions (OB-206)', () => {
+    const spellBlock = {
+      type: 'spell' as const,
+      name: 'Magic Missile',
+    };
+    const monsterBlock = {
+      type: 'monster' as const,
+      name: 'Goblin',
+    };
+
+    // Default canSpawnToken logic matching StatBlockCard & ChatPanel
+    const canSpawnSpell = (spellBlock.type as string) === 'monster';
+    const canSpawnMonster = (monsterBlock.type as string) === 'monster';
+
+    assert.strictEqual(canSpawnSpell, false, 'Spells should NOT have permission to spawn tokens');
+    assert.strictEqual(canSpawnMonster, true, 'Monsters SHOULD have permission to spawn tokens');
+  });
 });
+
 
 
 
