@@ -23,10 +23,6 @@ Old Bear Battles is a lightweight, mobile-friendly virtual tabletop (VTT) for ho
 - IndexedDB browser storage.
 - PostgreSQL and Docker Compose deployment support.
 
-## Image Generation Prompt
-
-Create a polished editorial game-interface illustration for Old Bear Battles, a lightweight fantasy virtual tabletop. Show a warm, rugged bear-themed battles emblem integrated with a tactical tabletop map: parchment map tiles, subtle square grid, colorful circular player tokens, a small dice set, and a lantern-lit wooden table. Use a bold palette of oxblood red, ochre, forest green, charcoal, and parchment cream; strong readable silhouettes; restrained texture; no gradients; no UI text; no watermark; wide landscape composition suitable for a project thumbnail.
-
 ## Links
 
 - Source: https://github.com/headhunter45/OldBearBattles

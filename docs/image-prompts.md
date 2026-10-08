@@ -22,6 +22,10 @@ Crisp minimalist crest logo icon featuring a stylized bear head enclosed within 
 
 Pixel art 32x32 icon of a brown grizzly bear face with glowing purple eyes and a blue headband, dark background, sharp clean pixels, retro RPG video game style, high contrast, crisp pixel art
 
+### 4. Map Logo
+
+Create a polished editorial game-interface illustration for Old Bear Battles, a lightweight fantasy virtual tabletop. Show a warm, rugged bear-themed battles emblem integrated with a tactical tabletop map: parchment map tiles, subtle square grid, colorful circular player tokens, a small dice set, and a lantern-lit wooden table. Use a bold palette of oxblood red, ochre, forest green, charcoal, and parchment cream; strong readable silhouettes; restrained texture; no gradients; no UI text; no watermark; wide landscape composition suitable for a project thumbnail.
+
 ## Output & Placement Instructions
 
 Once you generate and choose your preferred image:
