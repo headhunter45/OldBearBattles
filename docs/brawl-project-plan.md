@@ -1,4 +1,5 @@
 # Old Bear Brawl (Brawl) — System-Agnostic Tabletop Wargame VTT
+
 ## Product Architecture, Strategy & Master Specification
 
 ---
@@ -6,16 +7,20 @@
 ## 1. Architectural Strategy & Deployment Model
 
 ### Unified Application with Deployment Game Modes
-Instead of maintaining a disconnected, permanently diverging fork, **Old Bear Rodeo will operate as a single unified codebase supporting selectable Game Modes** via environment configuration:
+
+Instead of maintaining a disconnected, permanently diverging fork, **Old Bear Battles will operate as a single unified codebase supporting selectable Game Modes** via environment configuration:
+
 - `GAME_MODE=vtt`: Traditional TTRPG mode (D&D 5e, Pathfinder 2e, character sheets, spellbooks).
 - `GAME_MODE=brawl`: Tabletop wargaming mode (Warhammer 40k, Kill Team, BattleTech, armies, units, chess clocks, VP boards).
 - `GAME_MODES=vtt,brawl`: Multi-mode enabled (allows choosing mode per room/session).
 
 #### Hosted vs. Self-Hosted Infrastructure
+
 - **Official Hosted Instances**: Dedicated URLs serving single-mode playground environments (e.g., `vtt.oldbear.app` and `brawl.oldbear.app`) for clean, uncluttered user experiences.
 - **Self-Hosters**: Deploying their own Docker container can set `GAME_MODE` to whichever mode they want, or enable both.
 
 #### Implementation Order: Shared VTT Foundation First
+
 To maximize velocity and avoid throwaway work, **all shared features will be implemented directly in the core codebase for VTT first** (tracked in `Tasks.md` as Tasks 128–135). Once these foundations (modular submaps, indicator toolbars, token tethering, pie-wedge clocks, timers, custom status lifecycles, advanced dice engine, and `.binder` import/export) are operational, the Brawl-specific wargame layer (`Army` ➔ `Unit` ➔ `Model`, coherency graphs, chess clocks, and phase steppers) will be cleanly layered on top.
 
 ---
@@ -49,6 +54,7 @@ flowchart TD
 ```
 
 ### 3.1 Submap Capabilities
+
 - **Hybrid Entities**: Submaps act as a hybrid between maps, props, and bounded zones.
 - **Canvas Coexistence**: Positioned in the same canvas coordinate space with independent background color, name label, border styling, dimensions, and grid settings.
 - **Applications**:
@@ -63,7 +69,9 @@ flowchart TD
 ## 4. Persistent Indicators, Auras, Spray Overlays & Tethering
 
 ### 4.1 Indicator Bottom Properties Bar
+
 When an indicator (circle, rectangle, cone/arc, arrow, spray) is selected, a context bar opens at the bottom (matching the token/prop editor style):
+
 - **Custom Name / Label**: Name indicators individually (e.g. `"Captain 6\" Aura"`, `"Threat Range"`, `"Heavy Bolter Facing"`).
 - **Multi-Aura Support**: A single token can host multiple active indicators simultaneously (e.g. two distinct aura radii and a directional facing cone, each with unique labels and colors).
 - **Dimensions & Spread**: Quick inputs for radius, width, and arc spread angle (`60°`, `90°`, `120°`, `180°`).
@@ -74,17 +82,20 @@ When an indicator (circle, rectangle, cone/arc, arrow, spray) is selected, a con
 - **3D Volume Option**: Toggle between `Cylinder` (default, with height input) and `Sphere`.
 
 ### 4.2 Spray Indicator Tool
+
 - Custom image overlay deployed via click-center and drag-radius (with live distance preview).
 - Useful for custom objective markers, spell effects, hazard zones, or terrain decals.
 - Fully selectable, movable, rotatable, and resizable after placement when `📌 Persist` is enabled.
 
 ### 4.3 Token-to-Token & Token-to-Prop Tethering
+
 - Dynamic connecting lines drawn between two tokens or a token and a prop.
 - **Styles**: `Straight` or `Wiggly` (sine wave).
 - **Parameters**: Line color, stroke width, and sine wave frequency/amplitude.
 - Automatically tracks both endpoints as entities move (useful for unit coherency links, psychic links, tow cables, or spell tethers).
 
 ### 4.4 Objective & POI Markers
+
 - Treated as persistent markers or props with attached circle indicators.
 - **Control Zone Calculation**:
   - Automatically or on-demand checks if a player controls a token overlapping or completely within the marker.
@@ -148,10 +159,12 @@ classDiagram
 ```
 
 ### 5.1 Auto-Naming & Disambiguation
+
 - **Model Auto-Naming**: If an explicit model name is not entered, it defaults to `<Unit Name> <Number>` starting from 1 (e.g., `Terminators 1`, `Terminators 2`).
 - **Duplicate Unit Disambiguation**: When multiple units share the same name, units are automatically numbered/lettered to avoid confusion: `Terminators A 1`, `Terminators B 1`.
 
 ### 5.2 Unit Coherency Engine
+
 - Configurable distance rule (e.g. 2″ horizontal, 5″ vertical).
 - Graph connectivity check:
   - Units of 2–5 models: Every model must be within distance of at least 1 other model in the unit.
@@ -165,14 +178,15 @@ classDiagram
 Custom dice rolls are tied directly to action buttons on models, units, and tokens, as well as executable via `/roll`:
 
 ### 6.1 Expression Syntax
+
 - **Standard Flat Roll**: `/roll 40d6+3`  
-  *Rolls 40 dice, displays raw values, adds 3 to the total.*
+  _Rolls 40 dice, displays raw values, adds 3 to the total._
 - **Grouped Modified Roll**: `/roll 40(d6+3)`  
-  *Rolls 40 individual d6s, applies +3 to every single die, displays all 40 values, and calculates grand total (`sum(raw rolls) + 3*40`).*
+  *Rolls 40 individual d6s, applies +3 to every single die, displays all 40 values, and calculates grand total (`sum(raw rolls) + 3*40`).\*
 - **Threshold Success / Failure Counting**: `/roll 10(d6+2 >= 5)` or `/roll 10(d6+2)/5`  
-  *Evaluates the boolean condition per die and reports total successes and failures.*
+  _Evaluates the boolean condition per die and reports total successes and failures._
 - **Botch / Glitch Support (Shadowrun / Vampire)**:  
-  *Flags 1s as botches/glitches and outputs net successes, total successes, and glitch warnings.*
+  _Flags 1s as botches/glitches and outputs net successes, total successes, and glitch warnings._
 
 ---
 
@@ -197,6 +211,7 @@ Token statuses support system-agnostic condition tracking with automatic counter
 ```
 
 ### Storage Hierarchy
+
 1. **Global / Account Defaults**: Stored in `localStorage` for now.
 2. **Per-Scene Overrides**: Stored with the scene data, overriding or supplementing defaults.
 3. **Turn Transitions**: Advances counters or removes statuses automatically on `beginning_of_turn` or `end_of_turn`.
@@ -229,11 +244,14 @@ Token statuses support system-agnostic condition tracking with automatic counter
 ## 10. Army Ingestion, Roster Imports & The `.binder` Specification
 
 ### 10.1 Legal & Copyright Protection
+
 - The application contains **zero proprietary or copyrighted text/art** from game publishers.
 - All imported data is User-Generated Content (UGC) or fetched from public community APIs when recognized.
 
 ### 10.2 Universal `.binder` (`application/json`) Interchange Format
+
 A common JSON interchange schema for sharing assets across tools:
+
 ```json
 {
   "version": "1.0",
@@ -253,6 +271,7 @@ A common JSON interchange schema for sharing assets across tools:
 ```
 
 ### 10.3 Roster Ingestion Pipeline
+
 - Supports popular 40k roster exports (e.g. **NewRecruit JSON** and **BattleScribe `.rosz`**).
 - Imports with or without token art / 3D models.
 - Allows players to select a default base graphic / 3D model for their entire army or customize individual models.
@@ -266,7 +285,7 @@ A common JSON interchange schema for sharing assets across tools:
 gantt
     title Unified OldBear VTT & Brawl Implementation Roadmap
     dateFormat  YYYY-MM-DD
-    
+
     section Phase 1: Client Restructure & VTT Shared Foundation
     Task 136: Restructure common/vtt/brawl:v136, 2026-10-01, 2d
     Task 128: Modular Map Tiles Deck     :v128, after v136, 3d

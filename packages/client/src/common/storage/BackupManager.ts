@@ -2,7 +2,7 @@ import { getDB, StoredAsset } from './db.js';
 import { GameSession } from '@oldbear/shared';
 
 export interface BackupPayload {
-  app: 'OldBearRodeo';
+  app: 'OldBearBattles';
   version: 1;
   exportedAt: number;
   session?: GameSession | null;
@@ -10,7 +10,9 @@ export interface BackupPayload {
   localStorage: Record<string, string>;
 }
 
-export async function exportAllData(session?: GameSession | null): Promise<Blob> {
+export async function exportAllData(
+  session?: GameSession | null,
+): Promise<Blob> {
   const db = await getDB();
   const assets = await db.getAll('assets');
 
@@ -26,7 +28,7 @@ export async function exportAllData(session?: GameSession | null): Promise<Blob>
   }
 
   const payload: BackupPayload = {
-    app: 'OldBearRodeo',
+    app: 'OldBearBattles',
     version: 1,
     exportedAt: Date.now(),
     session: session || null,
@@ -40,7 +42,7 @@ export async function exportAllData(session?: GameSession | null): Promise<Blob>
 
 export function downloadBackupFile(blob: Blob, customName?: string) {
   const dateStr = new Date().toISOString().slice(0, 10);
-  const fileName = customName || `oldbear-rodeo-backup-${dateStr}.json`;
+  const fileName = customName || `oldbear-battles-backup-${dateStr}.json`;
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -51,13 +53,17 @@ export function downloadBackupFile(blob: Blob, customName?: string) {
   URL.revokeObjectURL(url);
 }
 
-export async function importAllData(
-  jsonString: string
-): Promise<{ assetCount: number; charCount: number; session?: GameSession | null }> {
+export async function importAllData(jsonString: string): Promise<{
+  assetCount: number;
+  charCount: number;
+  session?: GameSession | null;
+}> {
   const data = JSON.parse(jsonString) as BackupPayload;
 
-  if (data.app !== 'OldBearRodeo' || !Array.isArray(data.assets)) {
-    throw new Error('Invalid backup file: Not a recognized OldBearRodeo backup.');
+  if (data.app !== 'OldBearBattles' || !Array.isArray(data.assets)) {
+    throw new Error(
+      'Invalid backup file: Not a recognized Old Bear Battles backup.',
+    );
   }
 
   // Restore IndexedDB assets

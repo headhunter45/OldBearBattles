@@ -40,7 +40,7 @@ interface OldBearDB extends DBSchema {
   };
 }
 
-const DB_NAME = 'OldBearRodeoDB';
+const DB_NAME = 'OldBearBattlesDB';
 const DB_VERSION = 1;
 
 let dbPromise: Promise<IDBPDatabase<OldBearDB>> | null = null;
@@ -70,17 +70,27 @@ export function computeContentHash(content: string): string {
     h1 = Math.imul(h1 ^ ch, 2654435761);
     h2 = Math.imul(h2 ^ ch, 1597334677);
   }
-  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  h1 =
+    Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^
+    Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 =
+    Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^
+    Math.imul(h1 ^ (h1 >>> 13), 3266489909);
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16);
 }
 
-export async function findDuplicateAsset(fileSize: number, hash: string): Promise<StoredAsset | null> {
+export async function findDuplicateAsset(
+  fileSize: number,
+  hash: string,
+): Promise<StoredAsset | null> {
   const db = await getDB();
   const all = await db.getAll('assets');
   return (
-    all.find((a) => (a.fileSize === fileSize && a.fileHash === hash) || (a.fileHash && a.fileHash === hash)) ||
-    null
+    all.find(
+      (a) =>
+        (a.fileSize === fileSize && a.fileHash === hash) ||
+        (a.fileHash && a.fileHash === hash),
+    ) || null
   );
 }
 
@@ -93,7 +103,9 @@ export const ASSET_UPDATED_EVENT = 'oldbear:asset-updated';
 
 export function notifyAssetUpdated(asset?: StoredAsset) {
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent(ASSET_UPDATED_EVENT, { detail: { asset } }));
+    window.dispatchEvent(
+      new CustomEvent(ASSET_UPDATED_EVENT, { detail: { asset } }),
+    );
   }
 }
 
@@ -106,7 +118,10 @@ export async function saveAsset(asset: StoredAsset): Promise<void> {
   notifyAssetUpdated(asset);
 }
 
-export async function updateAsset(id: string, updates: Partial<StoredAsset>): Promise<void> {
+export async function updateAsset(
+  id: string,
+  updates: Partial<StoredAsset>,
+): Promise<void> {
   const db = await getDB();
   const existing = await db.get('assets', id);
   if (existing) {
@@ -116,7 +131,9 @@ export async function updateAsset(id: string, updates: Partial<StoredAsset>): Pr
   }
 }
 
-export async function getAssetsByType(type: 'map' | 'token' | 'prop' | 'audio'): Promise<StoredAsset[]> {
+export async function getAssetsByType(
+  type: 'map' | 'token' | 'prop' | 'audio',
+): Promise<StoredAsset[]> {
   const db = await getDB();
   return db.getAllFromIndex('assets', 'by-type', type);
 }
@@ -147,7 +164,10 @@ export async function saveSetting(key: string, value: any): Promise<void> {
   await db.put('settings', { key, value });
 }
 
-export async function getSetting<T>(key: string, defaultValue?: T): Promise<T | undefined> {
+export async function getSetting<T>(
+  key: string,
+  defaultValue?: T,
+): Promise<T | undefined> {
   const db = await getDB();
   const res = await db.get('settings', key);
   return res ? res.value : defaultValue;

@@ -72,10 +72,14 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   isGm,
 }) => {
   const [name, setName] = useState(
-    localPlayer?.name || localStorage.getItem('oldbear_player_name') || (isGm ? 'GM' : 'Player')
+    localPlayer?.name ||
+      localStorage.getItem('oldbear_player_name') ||
+      (isGm ? 'GM' : 'Player'),
   );
   const [color, setColor] = useState(
-    localPlayer?.color || localStorage.getItem('oldbear_player_color') || '#6366f1'
+    localPlayer?.color ||
+      localStorage.getItem('oldbear_player_color') ||
+      '#6366f1',
   );
   const [copied, setCopied] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -170,15 +174,33 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '1.25rem' }}>🐻</span>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-                Old Bear Rodeo
+              <span
+                style={{
+                  fontWeight: 800,
+                  fontSize: '1rem',
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1.1,
+                }}
+              >
+                Old Bear Battles
               </span>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.03em' }}>
+              <span
+                style={{
+                  fontSize: '0.65rem',
+                  color: 'var(--text-muted)',
+                  fontWeight: 600,
+                  letterSpacing: '0.03em',
+                }}
+              >
                 {FULL_VERSION_STRING}
               </span>
             </div>
           </div>
-          <button className="btn-icon" onClick={handleClose} style={{ width: '32px', height: '32px' }}>
+          <button
+            className="btn-icon"
+            onClick={handleClose}
+            style={{ width: '32px', height: '32px' }}
+          >
             <X size={18} />
           </button>
         </div>
@@ -202,12 +224,22 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 width: '10px',
                 height: '10px',
                 borderRadius: '50%',
-                backgroundColor: voiceState?.isSpeaking ? 'var(--accent-emerald)' : 'var(--text-muted)',
-                boxShadow: voiceState?.isSpeaking ? '0 0 8px var(--accent-emerald)' : 'none',
+                backgroundColor: voiceState?.isSpeaking
+                  ? 'var(--accent-emerald)'
+                  : 'var(--text-muted)',
+                boxShadow: voiceState?.isSpeaking
+                  ? '0 0 8px var(--accent-emerald)'
+                  : 'none',
               }}
             />
             <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>
-              {voiceState?.isForceMuted ? 'Muted by GM' : voiceState?.isMuted ? 'Mic Muted' : isSendingAudio ? 'Transmitting...' : 'Voice Active'}
+              {voiceState?.isForceMuted
+                ? 'Muted by GM'
+                : voiceState?.isMuted
+                  ? 'Mic Muted'
+                  : isSendingAudio
+                    ? 'Transmitting...'
+                    : 'Voice Active'}
             </span>
           </div>
 
@@ -217,12 +249,21 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
               style={{
                 width: '32px',
                 height: '32px',
-                color: voiceState?.isMuted || voiceState?.isForceMuted ? 'var(--accent-rose)' : isSendingAudio ? 'var(--accent-emerald)' : undefined,
+                color:
+                  voiceState?.isMuted || voiceState?.isForceMuted
+                    ? 'var(--accent-rose)'
+                    : isSendingAudio
+                      ? 'var(--accent-emerald)'
+                      : undefined,
               }}
               onClick={onToggleMute}
               title="Toggle Microphone"
             >
-              {voiceState?.isMuted || voiceState?.isForceMuted ? <MicOff size={16} /> : <Mic size={16} />}
+              {voiceState?.isMuted || voiceState?.isForceMuted ? (
+                <MicOff size={16} />
+              ) : (
+                <Mic size={16} />
+              )}
             </button>
 
             <button
@@ -230,7 +271,9 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
               style={{
                 width: '32px',
                 height: '32px',
-                color: voiceState?.isDeafened ? 'var(--accent-rose)' : undefined,
+                color: voiceState?.isDeafened
+                  ? 'var(--accent-rose)'
+                  : undefined,
               }}
               onClick={onToggleDeafen}
               title="Toggle Deafen"
@@ -253,7 +296,14 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
         </div>
 
         {/* Main Tool Actions (reorganized per Task #108) */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginBottom: '1.25rem' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.45rem',
+            marginBottom: '1.25rem',
+          }}
+        >
           {/* 2. Chat */}
           {onToggleChat && (
             <button
@@ -262,7 +312,9 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 justifyContent: 'flex-start',
                 padding: '0.65rem',
                 position: 'relative',
-                backgroundColor: isChatOpen ? 'rgba(99, 102, 241, 0.2)' : undefined,
+                backgroundColor: isChatOpen
+                  ? 'rgba(99, 102, 241, 0.2)'
+                  : undefined,
                 borderColor: isChatOpen ? 'var(--accent-primary)' : undefined,
               }}
               onClick={() => {
@@ -364,13 +416,18 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
               onOpenVoiceSettings?.();
             }}
           >
-            <Radio size={18} color="var(--accent-primary)" /> Voice & Audio Settings
+            <Radio size={18} color="var(--accent-primary)" /> Voice & Audio
+            Settings
           </button>
 
           {/* Dice Roller Tool */}
           <button
             className="btn btn-secondary"
-            style={{ justifyContent: 'flex-start', padding: '0.65rem', opacity: 0.9 }}
+            style={{
+              justifyContent: 'flex-start',
+              padding: '0.65rem',
+              opacity: 0.9,
+            }}
             onClick={() => {
               onClose();
               onOpenDice();
@@ -391,7 +448,13 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
             marginBottom: '1rem',
           }}
         >
-          <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+          <label
+            style={{
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              color: 'var(--text-secondary)',
+            }}
+          >
             CUSTOMIZE YOUR NICKNAME
           </label>
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
@@ -409,14 +472,22 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 fontSize: '0.85rem',
               }}
             />
-            <button type="submit" className="btn btn-primary" style={{ padding: '0.4rem 0.75rem' }}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              style={{ padding: '0.4rem 0.75rem' }}
+            >
               Save
             </button>
           </div>
 
           <div style={{ marginTop: '0.75rem' }}>
-            <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Pointer & Token Color</label>
-            <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.3rem' }}>
+            <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+              Pointer & Token Color
+            </label>
+            <div
+              style={{ display: 'flex', gap: '0.4rem', marginTop: '0.3rem' }}
+            >
               {PLAYER_COLORS.map((c) => (
                 <div
                   key={c}
@@ -441,17 +512,40 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
         {/* Online Players in Drawer */}
         {(() => {
-          const onlinePlayers = (players || []).filter((p) => p.connected !== false);
+          const onlinePlayers = (players || []).filter(
+            (p) => p.connected !== false,
+          );
           if (onlinePlayers.length === 0) return null;
           return (
-            <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem', padding: '0.6rem', background: 'var(--bg-surface-elevated)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem', letterSpacing: '0.05em' }}>
+            <div
+              style={{
+                marginTop: '0.75rem',
+                marginBottom: '0.75rem',
+                padding: '0.6rem',
+                background: 'var(--bg-surface-elevated)',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-subtle)',
+              }}
+            >
+              <label
+                style={{
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  color: 'var(--text-secondary)',
+                  display: 'block',
+                  marginBottom: '0.4rem',
+                  letterSpacing: '0.05em',
+                }}
+              >
                 ONLINE PLAYERS ({onlinePlayers.length})
               </label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+              <div
+                style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}
+              >
                 {onlinePlayers.map((p) => {
                   const isSelf = p.id === localPlayer?.id;
-                  const effectivePlayer = isSelf && localPlayer ? localPlayer : p;
+                  const effectivePlayer =
+                    isSelf && localPlayer ? localPlayer : p;
                   return (
                     <div
                       key={effectivePlayer.id}
@@ -474,9 +568,18 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                           backgroundColor: effectivePlayer.color,
                         }}
                       />
-                      <span style={{ color: 'white', fontWeight: 600 }}>{effectivePlayer.name}</span>
+                      <span style={{ color: 'white', fontWeight: 600 }}>
+                        {effectivePlayer.name}
+                      </span>
                       {effectivePlayer.role === 'gm' && (
-                        <span style={{ fontSize: '0.65rem', color: 'var(--accent-gold)' }}>GM</span>
+                        <span
+                          style={{
+                            fontSize: '0.65rem',
+                            color: 'var(--accent-gold)',
+                          }}
+                        >
+                          GM
+                        </span>
                       )}
                     </div>
                   );
@@ -487,8 +590,21 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
         })()}
 
         {/* Footer: Share invite & Community Links */}
-        <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <button className="btn btn-primary" style={{ width: '100%' }} onClick={copyInvite}>
+        <div
+          style={{
+            marginTop: 'auto',
+            paddingTop: '1rem',
+            borderTop: '1px solid var(--border-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem',
+          }}
+        >
+          <button
+            className="btn btn-primary"
+            style={{ width: '100%' }}
+            onClick={copyInvite}
+          >
             {copied ? <Check size={16} /> : <Share2 size={16} />}
             {copied ? 'Invite Link Copied!' : 'Copy Session Invite Link'}
           </button>
@@ -516,7 +632,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
             </a>
 
             <a
-              href="https://github.com/headhunter45/OldBearRodeo"
+              href="https://github.com/headhunter45/OldBearBattles"
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-secondary"
@@ -532,8 +648,18 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
               }}
               title="GitHub Repository"
             >
-              <svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor" style={{ display: 'inline-block', verticalAlign: 'middle' }}>
-                <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+              <svg
+                width={14}
+                height={14}
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                style={{ display: 'inline-block', verticalAlign: 'middle' }}
+              >
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                />
               </svg>
               <span>GitHub</span>
             </a>

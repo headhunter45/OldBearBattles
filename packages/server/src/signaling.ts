@@ -42,7 +42,11 @@ export function setupWebSocket(wss: WebSocketServer) {
   });
 }
 
-function broadcastToRoom(roomId: string, message: ServerToClientMessage, excludeWs?: ClientSocket) {
+function broadcastToRoom(
+  roomId: string,
+  message: ServerToClientMessage,
+  excludeWs?: ClientSocket,
+) {
   const clients = rooms.get(roomId);
   if (!clients) return;
 
@@ -54,13 +58,20 @@ function broadcastToRoom(roomId: string, message: ServerToClientMessage, exclude
   }
 }
 
-function sendToPeer(roomId: string, targetPeerId: string, message: ServerToClientMessage) {
+function sendToPeer(
+  roomId: string,
+  targetPeerId: string,
+  message: ServerToClientMessage,
+) {
   const clients = rooms.get(roomId);
   if (!clients) return;
 
   const payload = JSON.stringify(message);
   for (const client of clients) {
-    if (client.playerId === targetPeerId && client.readyState === WebSocket.OPEN) {
+    if (
+      client.playerId === targetPeerId &&
+      client.readyState === WebSocket.OPEN
+    ) {
       client.send(payload);
       break;
     }
@@ -69,7 +80,7 @@ function sendToPeer(roomId: string, targetPeerId: string, message: ServerToClien
 
 export async function sendDiscordWebhook(
   webhookUrl: string,
-  payload: { username?: string; content: string }
+  payload: { username?: string; content: string },
 ): Promise<boolean> {
   try {
     if (!webhookUrl || typeof fetch !== 'function') return false;
@@ -77,7 +88,9 @@ export async function sendDiscordWebhook(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        username: payload.username ? `${payload.username} (Old Bear)` : 'Old Bear Rodeo',
+        username: payload.username
+          ? `${payload.username} (Old Bear)`
+          : 'Old Bear Battles',
         content: payload.content.slice(0, 2000),
       }),
     });
@@ -91,7 +104,13 @@ export async function sendDiscordWebhook(
 function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
   switch (msg.type) {
     case 'join': {
-      const { roomId, playerName, playerColor, gmKey, playerId: requestedPlayerId } = msg;
+      const {
+        roomId,
+        playerName,
+        playerColor,
+        gmKey,
+        playerId: requestedPlayerId,
+      } = msg;
       let session = getSession(roomId);
       let sessionGmKey = getSessionGmKey(roomId);
 
@@ -104,12 +123,15 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
       }
 
       const playerId =
-        requestedPlayerId && typeof requestedPlayerId === 'string' && requestedPlayerId.trim() !== ''
+        requestedPlayerId &&
+        typeof requestedPlayerId === 'string' &&
+        requestedPlayerId.trim() !== ''
           ? requestedPlayerId.trim()
           : crypto.randomUUID();
 
       // Only room creator or clients with matching secret gmKey are GM
-      const isGm = isNewRoom || Boolean(gmKey && sessionGmKey && gmKey === sessionGmKey);
+      const isGm =
+        isNewRoom || Boolean(gmKey && sessionGmKey && gmKey === sessionGmKey);
 
       if (isGm && !session.gmId) {
         session.gmId = playerId;
@@ -140,7 +162,11 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
       if (session.players[playerId]) {
         player = session.players[playerId];
         player.connected = true;
-        if (playerName && playerName !== 'Adventurer' && playerName !== 'Game Master') {
+        if (
+          playerName &&
+          playerName !== 'Adventurer' &&
+          playerName !== 'Game Master'
+        ) {
           player.name = playerName;
         }
         if (playerColor) {
@@ -153,11 +179,13 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
         player = {
           id: playerId,
           name:
-            playerName && playerName !== 'Adventurer' && playerName !== 'Game Master'
+            playerName &&
+            playerName !== 'Adventurer' &&
+            playerName !== 'Game Master'
               ? playerName
               : isGm
-              ? 'GM'
-              : generateRandomName(),
+                ? 'GM'
+                : generateRandomName(),
           role: isGm ? 'gm' : 'player',
           color: playerColor || '#3b82f6',
           connected: true,
@@ -173,7 +201,7 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
         player,
         session,
         isGm,
-        gmKey: isGm ? (sessionGmKey || undefined) : undefined,
+        gmKey: isGm ? sessionGmKey || undefined : undefined,
       };
       ws.send(JSON.stringify(ackMsg));
 
@@ -185,7 +213,7 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
           peerId: playerId,
           player,
         },
-        ws
+        ws,
       );
       break;
     }
@@ -237,7 +265,7 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
           y: msg.y,
           mapId: msg.mapId,
         },
-        ws
+        ws,
       );
       break;
     }
@@ -255,7 +283,7 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
           id: msg.id,
           updates: msg.updates,
         },
-        ws
+        ws,
       );
       break;
     }
@@ -297,7 +325,7 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
           x: msg.x,
           y: msg.y,
         },
-        ws
+        ws,
       );
       break;
     }
@@ -330,14 +358,11 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
           updateSession(ws.roomId, { maps: session.maps });
         }
       }
-      broadcastToRoom(
-        ws.roomId,
-        {
-          type: 'map-updated',
-          id: msg.id,
-          updates: msg.updates,
-        }
-      );
+      broadcastToRoom(ws.roomId, {
+        type: 'map-updated',
+        id: msg.id,
+        updates: msg.updates,
+      });
       break;
     }
 
@@ -411,7 +436,9 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
         session.markers.push(msg.marker);
         // keep maximum 100 markers, but don't drop persistent markers if possible
         if (session.markers.length > 100) {
-          const firstNonPersistIdx = session.markers.findIndex((m) => !m.persist);
+          const firstNonPersistIdx = session.markers.findIndex(
+            (m) => !m.persist,
+          );
           if (firstNonPersistIdx !== -1) {
             session.markers.splice(firstNonPersistIdx, 1);
           } else {
@@ -419,7 +446,11 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
           }
         }
       }
-      broadcastToRoom(ws.roomId, { type: 'marker-added', marker: msg.marker }, ws);
+      broadcastToRoom(
+        ws.roomId,
+        { type: 'marker-added', marker: msg.marker },
+        ws,
+      );
       break;
     }
 
@@ -442,7 +473,11 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
           Object.assign(marker, msg.updates);
         }
       }
-      broadcastToRoom(ws.roomId, { type: 'marker-updated', id: msg.id, updates: msg.updates });
+      broadcastToRoom(ws.roomId, {
+        type: 'marker-updated',
+        id: msg.id,
+        updates: msg.updates,
+      });
       break;
     }
 
@@ -455,8 +490,15 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
 
         if (session.discordWebhookUrl) {
           const r = msg.roll;
-          const modStr = r.modifier ? (r.modifier >= 0 ? `+${r.modifier}` : `${r.modifier}`) : '';
-          const advStr = r.advantageMode && r.advantageMode !== 'normal' ? ` (${r.advantageMode})` : '';
+          const modStr = r.modifier
+            ? r.modifier >= 0
+              ? `+${r.modifier}`
+              : `${r.modifier}`
+            : '';
+          const advStr =
+            r.advantageMode && r.advantageMode !== 'normal'
+              ? ` (${r.advantageMode})`
+              : '';
           const content = `🎲 **${r.userName}** rolled **${r.count}${r.diceType}${modStr}${advStr}**: **${r.total}** [${r.rolls.join(', ')}]`;
           sendDiscordWebhook(session.discordWebhookUrl, {
             username: `${r.userName} (Dice)`,
@@ -521,7 +563,7 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
           type: 'initiative-updated',
           initiative: msg.initiative,
         },
-        ws
+        ws,
       );
       break;
     }
@@ -539,7 +581,7 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
           playerId: ws.playerId,
           updates: msg.updates,
         },
-        ws
+        ws,
       );
       break;
     }

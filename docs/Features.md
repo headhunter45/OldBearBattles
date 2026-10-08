@@ -1,10 +1,11 @@
-# 🐻 Old Bear Rodeo - Features Documentation
+# 🐻 Old Bear Battles - Features Documentation
 
-Welcome to the comprehensive feature guide for **Old Bear Rodeo**, a modern, lightweight, mobile-friendly, zero-install Virtual Tabletop (VTT) and tactical battlemap platform.
+Welcome to the comprehensive feature guide for **Old Bear Battles**, a modern, lightweight, mobile-friendly, zero-install Virtual Tabletop (VTT) and tactical battlemap platform.
 
 ---
 
 ## Table of Contents
+
 1. [Canvas Engine & Tactical Battlemap](#1-canvas-engine--tactical-battlemap)
 2. [Fog of War & Vision](#2-fog-of-war--vision)
 3. [Drawing Tools, Spell Templates & Markers](#3-drawing-tools-spell-templates--markers)
@@ -29,9 +30,9 @@ Welcome to the comprehensive feature guide for **Old Bear Rodeo**, a modern, lig
 
 - **High-Performance 2D Canvas**: Smooth 60 FPS HTML5 Canvas engine optimized for desktop and touch-screen devices without heavy engine overhead.
 - **Smart Touch & Trackpad Gestures**:
-  - *Standard two-finger trackpad swipe*: Smooth battlemap panning via `this.viewport.pan(-deltaX, -deltaY)`.
-  - *Trackpad pinch-to-zoom (`Ctrl`/`Cmd` + scroll)*: Smooth exponential zoom anchored directly at the mouse cursor.
-  - *Tuning Constants*: Top-level sensitivity constants in `CanvasEngine.ts`:
+  - _Standard two-finger trackpad swipe_: Smooth battlemap panning via `this.viewport.pan(-deltaX, -deltaY)`.
+  - _Trackpad pinch-to-zoom (`Ctrl`/`Cmd` + scroll)_: Smooth exponential zoom anchored directly at the mouse cursor.
+  - _Tuning Constants_: Top-level sensitivity constants in `CanvasEngine.ts`:
     - `TRACKPAD_PAN_SENSITIVITY = 1.0`
     - `TRACKPAD_ZOOM_SENSITIVITY = 0.01`
     - `MOUSE_WHEEL_ZOOM_SENSITIVITY = 0.0015`
@@ -64,21 +65,23 @@ Welcome to the comprehensive feature guide for **Old Bear Rodeo**, a modern, lig
 
 Accessible via the Drawing Tools sub-menu in the left HUD or number keys (`1` - `6`):
 
-| Key | Tool | Icon | Description |
-|:---:|:---|:---:|:---|
-| **1** | **Laser Pointer** | `Sparkles` | Ephemeral glowing trail that follows cursor movement and smoothly fades out. |
-| **2** | **Arrow Marker** | `ArrowUpRight` | Vector pointer with real-time distance badge in feet (`${lengthFt} ft`). |
-| **3** | **Target / Crosshair** | `Crosshair` | Draggable target ping with concentric reticle and distance badge; clicking/tapping defaults to minimum 18px size. |
-| **4** | **Circle Radius** | `Circle` | Circular spell template with live radius badge in feet (`${radiusFt} ft radius`). |
-| **5** | **Rectangle Zone** | `Square` | Rectangular area with live width × height dimensions (`${wFt} ft × ${hFt} ft`). |
-| **6** | **Cone / Arc Template** | `Triangle` | Directional spell cone (Burning Hands, Cone of Cold) with dual cone/triangle visualization. |
+|  Key  | Tool                    |      Icon      | Description                                                                                                       |
+| :---: | :---------------------- | :------------: | :---------------------------------------------------------------------------------------------------------------- |
+| **1** | **Laser Pointer**       |   `Sparkles`   | Ephemeral glowing trail that follows cursor movement and smoothly fades out.                                      |
+| **2** | **Arrow Marker**        | `ArrowUpRight` | Vector pointer with real-time distance badge in feet (`${lengthFt} ft`).                                          |
+| **3** | **Target / Crosshair**  |  `Crosshair`   | Draggable target ping with concentric reticle and distance badge; clicking/tapping defaults to minimum 18px size. |
+| **4** | **Circle Radius**       |    `Circle`    | Circular spell template with live radius badge in feet (`${radiusFt} ft radius`).                                 |
+| **5** | **Rectangle Zone**      |    `Square`    | Rectangular area with live width × height dimensions (`${wFt} ft × ${hFt} ft`).                                   |
+| **6** | **Cone / Arc Template** |   `Triangle`   | Directional spell cone (Burning Hands, Cone of Cold) with dual cone/triangle visualization.                       |
 
 ### Dual Cone / Triangle Visualization (Task #118)
+
 - **Circular Arc**: Rendered in the player's primary highlight color with semi-transparent fill and dashed outline.
 - **Flat-Ended Triangle Difference**: The outer corners where a flat-ended triangle cone covers but a circular arc does not are rendered in a distinct, contrasting accent color (`getContrastingAccentColor`).
 - **Interactive Spread Handles**: Drag handle dots on the cone's edge to freely adjust the spread angle, plus quick toolbar presets (`53°`, `60°`, `90°`, `120°`, `180°`).
 
 ### Persistence System (`📌 Persist` vs. `⚡ Quick Ping`)
+
 - **Quick Ping Mode (`⚡`)**: Drawings and pings automatically fade away after a short duration (2–6 seconds).
 - **Persistent Mode (`📌`)**: Drawings remain on the map as durable spell templates, zones, or tactical markers.
 - **Shift Inversion**: Holding `Shift` while drawing temporarily inverts the active persistence mode.
@@ -90,6 +93,7 @@ Accessible via the Drawing Tools sub-menu in the left HUD or number keys (`1` - 
 ## 4. Tokens & Props Management
 
 ### Token Management
+
 - **Custom Shapes & Framing**: Clip tokens to circle, square, rounded square, hexagon, or octagon with custom ring color, border width, and integrated pan/zoom cropping controls.
 - **Stacking Prevention**: Newly added tokens automatically detect existing tokens and offset slightly to avoid stacking.
 - **Overlapping Token Cycle**: Clicking stacked tokens repeatedly cycles selection through each token beneath the cursor.
@@ -100,6 +104,7 @@ Accessible via the Drawing Tools sub-menu in the left HUD or number keys (`1` - 
 - **Combat Stats**: Inline tracking for Current HP, Max HP, Temporary HP, Armor Class (AC), Speed, and standard 5e Condition Badges (Blinded, Charmed, Concentrating, etc.).
 
 ### Props System (Tasks #107, #113, #114, #115)
+
 - **Props as Environmental Objects**: Treat props as furniture, doors, walls, trees, or unkillable NPCs.
 - **Fractional Tile Dimensions**: Props support precise decimal tile dimensions (e.g., `1.5 × 3.24` tiles) configurable in the Asset Manager and Settings.
 - **Compass Rotation**: Rotate props and tokens using an interactive compass dial or numeric degree input from both asset settings and the bottom toolbar.
@@ -145,9 +150,9 @@ Accessible via the Drawing Tools sub-menu in the left HUD or number keys (`1` - 
 - **Native `.monster` Parser (Task #73)**: Import exported monster JSON files from TetraCube.
 - **Full Statblock Extraction**: Parses creature name, size, type, alignment, AC, HP, speeds, ability scores, saving throws, damage vulnerabilities/resistances/immunities, senses, languages, CR, traits, actions, and reactions.
 - **Dual-Drop Workflow**:
-  - *Drop onto Battlemap*: Saves to library and immediately spawns a ready-to-fight token at the cursor.
-  - *Drop into Asset Manager*: Saves to library for pre-session encounter planning.
-- **Automatic Multi-Token Numbering**: Spawns multiple copies of the same creature with auto-incrementing numbers (e.g., *Goblin 1*, *Goblin 2*, *Goblin 3*).
+  - _Drop onto Battlemap_: Saves to library and immediately spawns a ready-to-fight token at the cursor.
+  - _Drop into Asset Manager_: Saves to library for pre-session encounter planning.
+- **Automatic Multi-Token Numbering**: Spawns multiple copies of the same creature with auto-incrementing numbers (e.g., _Goblin 1_, _Goblin 2_, _Goblin 3_).
 
 ---
 
@@ -192,8 +197,8 @@ Accessible via the Drawing Tools sub-menu in the left HUD or number keys (`1` - 
 
 - **Peer-to-Peer Voice Mesh**: Low-latency encrypted audio streaming between connected peers.
 - **Transmission Modes**:
-  - *Open Mic* with adjustable microphone gain.
-  - *Push-to-Talk (PTT)* with customizable hotkey and floating mobile on-screen PTT button.
+  - _Open Mic_ with adjustable microphone gain.
+  - _Push-to-Talk (PTT)_ with customizable hotkey and floating mobile on-screen PTT button.
 - **Default Muted on Join**: Microphones start muted by default to ensure privacy and eliminate unexpected hot-mics.
 - **Animated Audio Indicators (Task #22)**: Microphone and headphone icons in the TopBar animate dynamically to indicate outgoing voice activity and incoming audio reception.
 - **GM Controls**: GM force-mute allows room managers to mute players if needed.
@@ -211,7 +216,7 @@ Accessible via the Drawing Tools sub-menu in the left HUD or number keys (`1` - 
 
 ## 13. Discord Webhook Sync (Task #105)
 
-- **One-Way Channel Mirroring**: Real-time outbound sync from Old Bear Rodeo into any Discord text channel using standard Discord Webhooks.
+- **One-Way Channel Mirroring**: Real-time outbound sync from Old Bear Battles into any Discord text channel using standard Discord Webhooks.
 - **Synchronized Events**:
   - Public player chat messages.
   - Dice rolls with roll expressions, modifiers, and totals.
@@ -250,40 +255,40 @@ Accessible via the Drawing Tools sub-menu in the left HUD or number keys (`1` - 
 
 - **Glassmorphism HUD**: Translucent dark aesthetic with subtle borders, dynamic shadows, and high contrast typography (`Inter`).
 - **Reorganized 8-Item Main Menu (Task #108)**:
-  1. *Sound status*
-  2. *Chat*
-  3. *Characters* (Sheets & Spells)
-  4. *Initiative Tracker*
-  5. *Add Token* (Character, Monster, Prop, or Custom)
-  6. *Soundboard*
-  7. *Asset Manager* (Includes Scene Manager)
-  8. *Voice & Audio settings*
+  1. _Sound status_
+  2. _Chat_
+  3. _Characters_ (Sheets & Spells)
+  4. _Initiative Tracker_
+  5. _Add Token_ (Character, Monster, Prop, or Custom)
+  6. _Soundboard_
+  7. _Asset Manager_ (Includes Scene Manager)
+  8. _Voice & Audio settings_
 - **TopBar Layout (Task #116, #124)**: Baseline-aligned top bar featuring room controls, player avatars, audio indicators, and dynamic single-source-of-truth version badge with short git commit hash (e.g. `v0.1.0-alpha5 (c292e59)`).
 - **Draggable & Minimizable Windows (Task #120, #121)**:
-  - *Dice Roller* (`#120`): Freely draggable anywhere on screen, minimizable to a compact header chip, with persistent coordinates stored in `localStorage`.
-  - *Character Sheet* (`#121`): Freely draggable floating window with collapse/minimize chevron, enabling players to reference stats and spells without obscuring the combat map.
-  - *Initiative Tracker & Chat*: Fully movable and minimizable.
+  - _Dice Roller_ (`#120`): Freely draggable anywhere on screen, minimizable to a compact header chip, with persistent coordinates stored in `localStorage`.
+  - _Character Sheet_ (`#121`): Freely draggable floating window with collapse/minimize chevron, enabling players to reference stats and spells without obscuring the combat map.
+  - _Initiative Tracker & Chat_: Fully movable and minimizable.
 - **Unobstructed Asset Dragging (Task #123)**: Dragging tokens, props, and monsters from the Asset Manager directly onto the board leaves the scene completely unobstructed (no modal backdrop or full-screen blur), so GMs can accurately place assets onto specific map tiles and grid coordinates.
 - **Random Name Generator**: Fantasy name generator assigns incoming players thematic names with distinct GM labeling.
 - **Keyboard Shortcuts**:
 
-| Key | Action |
-|:---:|:---|
-| `S` | Select Tool (Arrow) |
-| `B` | Box Select Tool |
-| `G` | Grab / Pan Tool |
-| `M` | Measuring Tape Tool |
-| `1` | Laser Pointer |
-| `2` | Arrow Marker |
-| `3` | Target / Crosshair Ping |
-| `4` | Circle Radius Area |
-| `5` | Rectangle Zone |
-| `6` | Cone / Arc Template |
-| `F` | Fog Hide (GM only) |
-| `R` | Fog Reveal (GM only) |
-| `D` / `Ctrl+D` / `Cmd+D` | Duplicate Selected Token |
-| `Delete` / `Backspace` | Delete Selected Token or Shape |
-| `Escape` | Deselect Active Token / Shape |
+|           Key            | Action                         |
+| :----------------------: | :----------------------------- |
+|           `S`            | Select Tool (Arrow)            |
+|           `B`            | Box Select Tool                |
+|           `G`            | Grab / Pan Tool                |
+|           `M`            | Measuring Tape Tool            |
+|           `1`            | Laser Pointer                  |
+|           `2`            | Arrow Marker                   |
+|           `3`            | Target / Crosshair Ping        |
+|           `4`            | Circle Radius Area             |
+|           `5`            | Rectangle Zone                 |
+|           `6`            | Cone / Arc Template            |
+|           `F`            | Fog Hide (GM only)             |
+|           `R`            | Fog Reveal (GM only)           |
+| `D` / `Ctrl+D` / `Cmd+D` | Duplicate Selected Token       |
+|  `Delete` / `Backspace`  | Delete Selected Token or Shape |
+|         `Escape`         | Deselect Active Token / Shape  |
 
 ---
 

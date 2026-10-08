@@ -5,7 +5,7 @@ import { BackupPayload } from './BackupManager.js';
 describe('Backup Manager Payload Structure', () => {
   it('validates backup payload specification', () => {
     const mockPayload: BackupPayload = {
-      app: 'OldBearRodeo',
+      app: 'OldBearBattles',
       version: 1,
       exportedAt: Date.now(),
       session: null,
@@ -26,11 +26,13 @@ describe('Backup Manager Payload Structure', () => {
         },
       ],
       localStorage: {
-        oldbear_saved_characters: JSON.stringify([{ id: 'demo', name: 'Valeros' }]),
+        oldbear_saved_characters: JSON.stringify([
+          { id: 'demo', name: 'Valeros' },
+        ]),
       },
     };
 
-    assert.strictEqual(mockPayload.app, 'OldBearRodeo');
+    assert.strictEqual(mockPayload.app, 'OldBearBattles');
     assert.strictEqual(mockPayload.assets.length, 2);
     assert.strictEqual(mockPayload.assets[0].type, 'map');
     assert.strictEqual(mockPayload.assets[1].type, 'audio');
@@ -39,7 +41,7 @@ describe('Backup Manager Payload Structure', () => {
 
   it('tracks props like tokens with custom dimensions and prop metadata (Task #107)', () => {
     const mockPayload: BackupPayload = {
-      app: 'OldBearRodeo',
+      app: 'OldBearBattles',
       version: 1,
       exportedAt: Date.now(),
       session: null,

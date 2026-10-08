@@ -200,7 +200,7 @@ When multiple image files are dragged into the window simultaneously, present a 
 **Depends On:** None  
 **Description:**
 
-Add one-way sync from OldBearRodeo to a Discord text channel via a Discord webhook URL:
+Add one-way sync from Old Bear Battles to a Discord text channel via a Discord webhook URL:
 
 - `/discord webhook <webhook url>` to configure webhook URL.
 - `/discord webhook none` to clear/disable webhook.
