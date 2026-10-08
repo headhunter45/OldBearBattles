@@ -314,7 +314,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-191 | Make no ring color be the default for props and tiles.                                                                                                                                                                                                                                                                                                                                                                                                                               | Common         | Ready    | [Feature](#ob-191) |
 | OB-192 | *Custom statuses can't be created.'*                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Common         | Triage   | [Bug](#ob-192)     |
 | OB-193 | *Add a way to change token images to existing images.*                                                                                                                                                                                                                                                                                                                                                                                                                               | Common         | Triage   | [Feature](#ob-193) |
-| OB-194 | The hitbox for tapping a token should be anywhere within it's ring border.                                                                                                                                                                                                                                                                                                                                                                                                           | Common         | Ready    | [Bug](#ob-194)     |
+| OB-194 | The hitbox for tapping a token should be anywhere within it's ring or rectangle border.                                                                                                                                                                                                                                                                                                                                                                                              | Common         | Done     | [Bug](#ob-194)     |
 | OB-195 | *Add zoom and offset to the PRESET_TOKENS in TokenPickerModal.*                                                                                                                                                                                                                                                                                                                                                                                                                      | Common         | Triage   | [Feature](#ob-195) |
 | OB-196 | Move chat back to the left sidebar. Put it below the measuring tape icon.                                                                                                                                                                                                                                                                                                                                                                                                            | Common         | Ready    | [Feature](#ob-196) |
 | OB-197 | Brawl mode does not have a top bar so I cannot switch back. See [OB-154](#ob-154).                                                                                                                                                                                                                                                                                                                                                                                                   | Common         | Ready    | [Bug](#ob-197)     |
@@ -3128,18 +3128,18 @@ I should be able to change the image on a token after it has been created. I can
 
 - [ ]
 
-<a id="ob-194" class="task" data-project="cmn" data-status="ready" data-task-type="bug"></a>
-### The hitbox for tapping a token should be anywhere within it's ring border.
+<a id="ob-194" class="task" data-project="cmn" data-status="done" data-task-type="bug"></a>
+### The hitbox for tapping a token should be anywhere within it's ring or rectangle border.
 **ID:** OB-194
 **Project:** Common
-**Status:** Ready
+**Status:** Done
 **Type:** Bug
-
 
 **Description:**
 Describe task objectives and implementation requirements here.
 
-- [ ]
+- [x]
+Implemented isPointInToken in TokenRenderer.ts and integrated with CanvasEngine.ts. Hitbox now accurately covers the full circular ring border for circular tokens, full rectangular bounds for square/rounded tokens and props/tiles, and circumscribed polygon boundaries for hexagon/octagon tokens. Correctly centers multi-tile tokens (e.g. size 2, 3) at (x + propW/2, y + propH/2).
 
 <a id="ob-195" class="task" data-project="cmn" data-status="triage" data-task-type="feature"></a>
 ### Add zoom and offset to the PRESET_TOKENS in TokenPickerModal.

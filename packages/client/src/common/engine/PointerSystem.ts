@@ -1,4 +1,5 @@
 import { ScreenMarker, Token } from '@oldbear/shared';
+export { isPointInToken } from './TokenRenderer.js';
 
 export function renderMarkers(
   ctx: CanvasRenderingContext2D,

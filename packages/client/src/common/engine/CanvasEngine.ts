@@ -8,7 +8,7 @@ import {
 } from '@oldbear/shared';
 import { Viewport, Point } from './Viewport.js';
 import { renderGrid, snapToGrid, getTokenPivot, getTokenAABB } from './GridRenderer.js';
-import { renderToken, getCachedImage } from './TokenRenderer.js';
+import { renderToken, getCachedImage, isPointInToken } from './TokenRenderer.js';
 import { FogRenderer } from './FogRenderer.js';
 import {
   renderMarkers,
@@ -701,8 +701,10 @@ export class CanvasEngine {
         const matching = this.findMatchingTokens(worldPos, currentMap);
         if (matching.length > 0) {
           const tok = matching[0];
-          const radius = (tok.size * currentMap.gridSize) / 2;
-          startPoint = { x: tok.x + radius, y: tok.y + radius };
+          const isProp = Boolean(tok.isProp);
+          const w = (isProp && tok.propWidth !== undefined ? tok.propWidth : tok.size) * currentMap.gridSize;
+          const h = (isProp && tok.propHeight !== undefined ? tok.propHeight : tok.size) * currentMap.gridSize;
+          startPoint = { x: tok.x + w / 2, y: tok.y + h / 2 };
         } else if (this.snapEnabled && !e.shiftKey) {
           const offX = currentMap.gridOffsetX || 0;
           const offY = currentMap.gridOffsetY || 0;
@@ -750,29 +752,8 @@ export class CanvasEngine {
     const matchingTokens: Token[] = [];
     for (let i = tokens.length - 1; i >= 0; i--) {
       const tok = tokens[i];
-      const { pivotOffsetX, pivotOffsetY, pivotX, pivotY, propW, propH } = getTokenPivot(tok, currentMap.gridSize);
-
-      // Transform worldPos to token's local coordinate system taking rotation into account
-      const dx = worldPos.x - pivotX;
-      const dy = worldPos.y - pivotY;
-      const rotRad = ((tok.rotation || 0) * Math.PI) / 180;
-      const localX = dx * Math.cos(-rotRad) - dy * Math.sin(-rotRad);
-      const localY = dx * Math.sin(-rotRad) + dy * Math.cos(-rotRad);
-
-      if (tok.isProp) {
-        if (
-          localX >= -pivotOffsetX &&
-          localX <= -pivotOffsetX + propW &&
-          localY >= -pivotOffsetY &&
-          localY <= -pivotOffsetY + propH
-        ) {
-          matchingTokens.push(tok);
-        }
-      } else {
-        const radius = (tok.size * currentMap.gridSize) / 2;
-        if (Math.hypot(dx, dy) <= radius) {
-          matchingTokens.push(tok);
-        }
+      if (isPointInToken(worldPos, tok, currentMap.gridSize)) {
+        matchingTokens.push(tok);
       }
     }
     return matchingTokens;
@@ -1154,8 +1135,10 @@ export class CanvasEngine {
         const matching = this.findMatchingTokens(worldPos, currentMap);
         if (matching.length > 0) {
           const tok = matching[0];
-          const radius = (tok.size * currentMap.gridSize) / 2;
-          endPoint = { x: tok.x + radius, y: tok.y + radius };
+          const isProp = Boolean(tok.isProp);
+          const w = (isProp && tok.propWidth !== undefined ? tok.propWidth : tok.size) * currentMap.gridSize;
+          const h = (isProp && tok.propHeight !== undefined ? tok.propHeight : tok.size) * currentMap.gridSize;
+          endPoint = { x: tok.x + w / 2, y: tok.y + h / 2 };
         } else if (this.snapEnabled && !e.shiftKey) {
           const offX = currentMap.gridOffsetX || 0;
           const offY = currentMap.gridOffsetY || 0;

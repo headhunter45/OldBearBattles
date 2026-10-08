@@ -380,3 +380,74 @@ function renderConditionBadges(ctx: CanvasRenderingContext2D, conditions: string
     ctx.restore();
   });
 }
+
+/**
+ * Determines whether a given world coordinate falls inside a token's visual hitbox (OB-194).
+ *
+ * Requirements:
+ * - Circular tokens: anywhere within its circular ring border (radius = size * gridSize / 2).
+ * - Square / rounded tokens: anywhere within its rectangular border (|localX| <= radius && |localY| <= radius).
+ * - Polygonal tokens (hexagon, octagon): anywhere within its circumscribed polygon border.
+ * - Props and modular tiles: anywhere within its full rectangular bounds taking pivot and rotation into account.
+ * - Multi-tile tokens (e.g. size 2, 3, etc.) are properly centered at (x + propW / 2, y + propH / 2).
+ */
+export function isPointInToken(
+  worldPos: { x: number; y: number },
+  tok: Token,
+  gridSize: number
+): boolean {
+  const isProp = Boolean(tok.isProp);
+  const { pivotOffsetX, pivotOffsetY, pivotX, pivotY, propW, propH } = getTokenPivot(tok, gridSize);
+
+  // Props and modular dungeon tiles
+  if (isProp) {
+    const dx = worldPos.x - pivotX;
+    const dy = worldPos.y - pivotY;
+    const rotRad = ((tok.rotation || 0) * Math.PI) / 180;
+    const localX = dx * Math.cos(-rotRad) - dy * Math.sin(-rotRad);
+    const localY = dx * Math.sin(-rotRad) + dy * Math.cos(-rotRad);
+
+    return (
+      localX >= -pivotOffsetX &&
+      localX <= -pivotOffsetX + propW &&
+      localY >= -pivotOffsetY &&
+      localY <= -pivotOffsetY + propH
+    );
+  }
+
+  // Non-prop tokens are centered at (cx, cy) and rotated around (cx, cy)
+  const cx = tok.x + propW / 2;
+  const cy = tok.y + propH / 2;
+  const dx = worldPos.x - cx;
+  const dy = worldPos.y - cy;
+  const rotRad = ((tok.rotation || 0) * Math.PI) / 180;
+  const localX = dx * Math.cos(-rotRad) - dy * Math.sin(-rotRad);
+  const localY = dx * Math.sin(-rotRad) + dy * Math.cos(-rotRad);
+
+  const radius = ((tok.size ?? 1) * gridSize) / 2;
+  const shape = tok.clipShape || (tok.clipCircle === false ? 'square' : 'circle');
+
+  switch (shape) {
+    case 'square':
+    case 'rounded':
+      return Math.abs(localX) <= radius && Math.abs(localY) <= radius;
+    case 'hexagon': {
+      const apothem = (radius * Math.sqrt(3)) / 2;
+      return (
+        Math.abs(localY) <= apothem &&
+        Math.abs(localX * (Math.sqrt(3) / 2) + localY * 0.5) <= apothem &&
+        Math.abs(localX * (Math.sqrt(3) / 2) - localY * 0.5) <= apothem
+      );
+    }
+    case 'octagon': {
+      const apothem = radius * Math.cos(Math.PI / 8);
+      const d1 = Math.abs(localX * Math.SQRT1_2 + localY * Math.SQRT1_2);
+      const d2 = Math.abs(localX * Math.SQRT1_2 - localY * Math.SQRT1_2);
+      return Math.abs(localX) <= apothem && Math.abs(localY) <= apothem && d1 <= apothem && d2 <= apothem;
+    }
+    case 'circle':
+    default:
+      return Math.hypot(localX, localY) <= radius;
+  }
+}
+
