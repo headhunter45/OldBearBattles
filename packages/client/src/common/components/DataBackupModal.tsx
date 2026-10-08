@@ -750,6 +750,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
           backgroundColor: 'var(--bg-surface)',
           cursor: isWindowDragging ? 'grabbing' : 'grab',
           userSelect: 'none',
+          flexShrink: 0,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -802,6 +803,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
           flex: 1,
           overflow: 'hidden',
           minHeight: 0,
+          maxHeight: isMinimized ? '0px' : 'none',
         }}
       >
         {/* Tabs */}
@@ -812,6 +814,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
             backgroundColor: 'var(--bg-surface-elevated)',
             padding: '0 1rem',
             overflowX: 'auto',
+            flexShrink: 0,
           }}
         >
           <button
@@ -1004,6 +1007,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              flexShrink: 0,
             }}
           >
             <span>{duplicateWarning}</span>
@@ -1017,7 +1021,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
         )}
 
         {/* Content Body: Asset Previews with Multiselect */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem' }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '1.25rem' }}>
           {/* Asset Action Controls */}
           {activeTab !== 'scenes' && (
             <div
@@ -1789,6 +1793,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
             display: 'flex',
             flexDirection: 'column',
             gap: '0.85rem',
+            flexShrink: 0,
           }}
         >
           {resultMessage && (

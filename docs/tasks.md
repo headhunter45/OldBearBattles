@@ -310,7 +310,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-187 | Submap & Deployment Zone Customization UI (Position, Dimensions, Colors, Background Images)                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Ready    | [Feature](#ob-187) |
 | OB-188 | Relative Dragging for Tokens, Modular Tiles, and Props                                                                                                                                                                                                                                                                                                                                                                                                                               | Old Bear VTT   | Ready    | [Feature](#ob-188) |
 | OB-189 | *Add a way to edit tiles after they have been uploaded.*                                                                                                                                                                                                                                                                                                                                                                                                                             | Common         | Triage   | [Feature](#ob-189) |
-| OB-190 | When tiles is selected the tab bar in the asset manager is positioned up underneath the header.                                                                                                                                                                                                                                                                                                                                                                                      | Common         | Ready    | [Bug](#ob-190)     |
+| OB-190 | When tiles is selected the tab bar in the asset manager is positioned up underneath the header.                                                                                                                                                                                                                                                                                                                                                                                      | Common         | Done     | [Bug](#ob-190)     |
 | OB-191 | Make no ring color be the default for props and tiles.                                                                                                                                                                                                                                                                                                                                                                                                                               | Common         | Ready    | [Feature](#ob-191) |
 | OB-192 | *Custom statuses can't be created.'*                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Common         | Triage   | [Bug](#ob-192)     |
 | OB-193 | *Add a way to change token images to existing images.*                                                                                                                                                                                                                                                                                                                                                                                                                               | Common         | Triage   | [Feature](#ob-193) |
@@ -3076,18 +3076,18 @@ Add a way to edit tiles after they have been uploaded. I can't set their sizes o
 
 - [ ]
 
-<a id="ob-190" class="task" data-project="cmn" data-status="ready" data-task-type="bug"></a>
+<a id="ob-190" class="task" data-project="cmn" data-status="done" data-task-type="bug"></a>
 ### When tiles is selected the tab bar in the asset manager is positioned up underneath the header.
 **ID:** OB-190
 **Project:** Common
-**Status:** Ready
+**Status:** Done
 **Type:** Bug
-
 
 **Description:**
 When tiles is selected the tab bar in the asset manager is positioned up underneath the header. This happens for scenes as well once I make a third scene. It appears related to when the content height is large. When a scrollbar appears the tab bar moves up. When the scrollabe conten is even larger the tab bar moves up even further.
 
-- [ ]
+- [x]
+Fixed by enforcing flexShrink: 0 on header, tabs, and bottom section, setting minHeight: 0 on the scrollable content container, and overriding maxHeight: 'none' when expanded on .draggable-window-body.
 
 <a id="ob-191" class="task" data-project="cmn" data-status="ready" data-task-type="feature"></a>
 ### Make no ring color be the default for props and tiles.
