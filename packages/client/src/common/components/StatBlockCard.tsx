@@ -27,6 +27,7 @@ export interface StatBlockCardProps {
   onSpawnToken?: (statBlock: EntityStatBlock) => void;
   canAddToCharacter?: boolean;
   canSpawnToken?: boolean;
+  canRoll?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -90,6 +91,7 @@ export const StatBlockCard: React.FC<StatBlockCardProps> = ({
   onSpawnToken,
   canAddToCharacter = true,
   canSpawnToken = statBlock.type === 'monster',
+  canRoll = statBlock.type !== 'monster',
   className = '',
   style = {},
 }) => {
@@ -485,8 +487,8 @@ export const StatBlockCard: React.FC<StatBlockCardProps> = ({
             </button>
           )}
 
-          {/* Roll / Cast button */}
-          {(onRoll || statBlock.rollFormula || statBlock.damageFormula) && (
+          {/* Roll / Cast button - only for spells, attacks, actions, and features, never for whole monsters */}
+          {canRoll && statBlock.type !== 'monster' && (onRoll || statBlock.rollFormula || statBlock.damageFormula) && (
             <button
               type="button"
               className="btn btn-secondary"

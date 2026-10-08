@@ -3306,6 +3306,7 @@ Inspecting a spell like '/spell? magic missile' shows the spell, but it has a sp
   - Enabled '+ Add to Sheet' button for players in chat even if no character or token is pre-associated, automatically initializing a player character sheet if needed or associating with controlled/selected tokens.
   - Updated onRoll action handler in chat to display 'casts **<Spell Name>**' for spells and cleanly handle non-damaging utility spells.
   - Added unit tests in chat.test.ts verifying default character sheet initialization on spell addition and token spawn permissions.
+- Removed the useless 'Roll' button from monster stat blocks in StatBlockCard.tsx and ChatPanel.tsx (restricting roll/cast exclusively to spells, attacks, actions, and features).
 
 <a id="ob-207" class="task" data-project="vtt" data-status="ready" data-task-type="bug"></a>
 ### Changing to a token without a bound character sheet should reset the form to the token's state.

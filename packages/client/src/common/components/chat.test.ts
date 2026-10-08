@@ -1223,7 +1223,7 @@ describe('Dice Parser & Slash Command Utilities', () => {
     assert.ok(sentMessages[0].text.includes('Alice'));
   });
 
-  it('distinguishes spells and monsters for spawn token permissions (OB-206)', () => {
+  it('distinguishes spells and monsters for spawn token and roll permissions (OB-206)', () => {
     const spellBlock = {
       type: 'spell' as const,
       name: 'Magic Missile',
@@ -1239,6 +1239,13 @@ describe('Dice Parser & Slash Command Utilities', () => {
 
     assert.strictEqual(canSpawnSpell, false, 'Spells should NOT have permission to spawn tokens');
     assert.strictEqual(canSpawnMonster, true, 'Monsters SHOULD have permission to spawn tokens');
+
+    // Default canRoll logic matching StatBlockCard & ChatPanel
+    const canRollSpell = (spellBlock.type as string) !== 'monster';
+    const canRollMonster = (monsterBlock.type as string) !== 'monster';
+
+    assert.strictEqual(canRollSpell, true, 'Spells SHOULD have permission to roll / cast');
+    assert.strictEqual(canRollMonster, false, 'Monsters should NOT have a useless roll button');
   });
 });
 

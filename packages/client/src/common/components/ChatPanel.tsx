@@ -2208,6 +2208,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                           compact
                           canAddToCharacter={canAddToCharacter}
                           canSpawnToken={m.statBlock.type === 'monster'}
+                          canRoll={m.statBlock.type !== 'monster'}
                           onAddToCharacter={
                             canAddToCharacter
                               ? (block) => {
@@ -2228,48 +2229,52 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                                 }
                               : undefined
                           }
-                          onRoll={(block) => {
-                            const expr = block.damageFormula || block.rollFormula;
-                            if (expr) {
-                              const parsed = parseDiceExpression(expr);
-                              if (parsed) {
-                                const rollResult: DiceRollResult = {
-                                  id: crypto.randomUUID(),
-                                  userId: player.id,
-                                  userName: player.name,
-                                  userColor: player.color,
-                                  diceType: parsed.diceType,
-                                  count: parsed.count,
-                                  modifier: parsed.modifier,
-                                  rolls: parsed.rolls,
-                                  total: parsed.total,
-                                  timestamp: Date.now(),
-                                };
-                                onBroadcastRoll?.(rollResult);
-                                const actionVerb = block.type === 'spell' ? 'casts' : block.type === 'attack' ? 'attacks with' : 'rolls';
-                                onSendMessage({
-                                  id: crypto.randomUUID(),
-                                  senderId: player.id,
-                                  senderName: player.name,
-                                  senderColor: player.color,
-                                  text: `${actionVerb} **${block.name}** (${expr}) = ${parsed.total} [${parsed.rolls.join(', ')}]`,
-                                  timestamp: Date.now(),
-                                  roll: rollResult,
-                                });
-                                return;
-                              }
-                            }
-                            const actionVerb = block.type === 'spell' ? 'casts' : 'uses';
-                            const subtitleText = 'subtitle' in block && (block as any).subtitle ? ` (${(block as any).subtitle})` : '';
-                            onSendMessage({
-                              id: crypto.randomUUID(),
-                              senderId: player.id,
-                              senderName: player.name,
-                              senderColor: player.color,
-                              text: `${actionVerb} **${block.name}**${subtitleText}`,
-                              timestamp: Date.now(),
-                            });
-                          }}
+                          onRoll={
+                            m.statBlock.type !== 'monster'
+                              ? (block) => {
+                                  const expr = block.damageFormula || block.rollFormula;
+                                  if (expr) {
+                                    const parsed = parseDiceExpression(expr);
+                                    if (parsed) {
+                                      const rollResult: DiceRollResult = {
+                                        id: crypto.randomUUID(),
+                                        userId: player.id,
+                                        userName: player.name,
+                                        userColor: player.color,
+                                        diceType: parsed.diceType,
+                                        count: parsed.count,
+                                        modifier: parsed.modifier,
+                                        rolls: parsed.rolls,
+                                        total: parsed.total,
+                                        timestamp: Date.now(),
+                                      };
+                                      onBroadcastRoll?.(rollResult);
+                                      const actionVerb = block.type === 'spell' ? 'casts' : block.type === 'attack' ? 'attacks with' : 'rolls';
+                                      onSendMessage({
+                                        id: crypto.randomUUID(),
+                                        senderId: player.id,
+                                        senderName: player.name,
+                                        senderColor: player.color,
+                                        text: `${actionVerb} **${block.name}** (${expr}) = ${parsed.total} [${parsed.rolls.join(', ')}]`,
+                                        timestamp: Date.now(),
+                                        roll: rollResult,
+                                      });
+                                      return;
+                                    }
+                                  }
+                                  const actionVerb = block.type === 'spell' ? 'casts' : 'uses';
+                                  const subtitleText = 'subtitle' in block && (block as any).subtitle ? ` (${(block as any).subtitle})` : '';
+                                  onSendMessage({
+                                    id: crypto.randomUUID(),
+                                    senderId: player.id,
+                                    senderName: player.name,
+                                    senderColor: player.color,
+                                    text: `${actionVerb} **${block.name}**${subtitleText}`,
+                                    timestamp: Date.now(),
+                                  });
+                                }
+                              : undefined
+                          }
                           onSpawnToken={
                             onSpawnMonsterToken && m.statBlock.type === 'monster'
                               ? (block) => {
