@@ -1303,6 +1303,7 @@ export const AppVtt: React.FC = () => {
       tempHp: 0,
       speed: 30,
       ownerId: isGm ? undefined : localPlayer.id,
+      isPlayerToken: !isGm,
       conditions: [],
       isProp: false,
       layer: 'token',
@@ -1317,6 +1318,10 @@ export const AppVtt: React.FC = () => {
     });
     setSelectedToken(newToken);
     engineRef.current?.selectToken(newToken.id);
+    networkRef.current?.send({
+      type: 'token-add',
+      token: newToken,
+    });
 
   };
 
@@ -1524,6 +1529,8 @@ export const AppVtt: React.FC = () => {
       name: newName,
       x: pos.x,
       y: pos.y,
+      ownerId: isGm ? token.ownerId : (localPlayer.id || token.ownerId),
+      isPlayerToken: isGm ? token.isPlayerToken : (!token.isProp ? true : token.isPlayerToken),
     };
 
     // Duplicate any persistent indicators attached to this token (OB-129)
@@ -1587,6 +1594,8 @@ export const AppVtt: React.FC = () => {
         name: newName,
         x: pos.x,
         y: pos.y,
+        ownerId: isGm ? tok.ownerId : (localPlayer.id || tok.ownerId),
+        isPlayerToken: isGm ? tok.isPlayerToken : (!tok.isProp ? true : tok.isPlayerToken),
       };
 
       updatedTokens[duplicated.id] = duplicated;
@@ -2187,6 +2196,7 @@ export const AppVtt: React.FC = () => {
               spawnY += 45;
             }
 
+            const isLocalPlayerNonGm = !isGm && Boolean(localPlayer);
             const newToken: Token = {
               id: `token-${crypto.randomUUID()}`,
               name: statBlock.name,
@@ -2196,7 +2206,7 @@ export const AppVtt: React.FC = () => {
               imageUrl: statBlock.imageUrl,
               mapId: session.activeMapId,
               rotation: 0,
-              ringColor: '#10b981',
+              ringColor: isLocalPlayerNonGm && localPlayer?.color ? localPlayer.color : '#10b981',
               fillColor: '#1e293b',
               clipCircle: true,
               clipShape: 'circle',
@@ -2204,7 +2214,8 @@ export const AppVtt: React.FC = () => {
               maxHp: hpParsed,
               tempHp: 0,
               speed: 30,
-              ownerId: '',
+              ownerId: isGm ? undefined : localPlayer?.id,
+              isPlayerToken: isLocalPlayerNonGm,
               locked: false,
               conditions: [],
               isProp: false,
@@ -2219,6 +2230,8 @@ export const AppVtt: React.FC = () => {
                 tokens: { ...prev.tokens, [newToken.id]: newToken },
               };
             });
+            setSelectedToken(newToken);
+            engineRef.current?.selectToken(newToken.id);
             networkRef.current?.send({ type: 'token-add', token: newToken });
             showToast(`Spawned "${statBlock.name}" token on the battlemap!`);
           }}
@@ -2622,7 +2635,15 @@ export const AppVtt: React.FC = () => {
             const currentMapId = currentMap?.id || session?.activeMapId || '';
             const gridSize = currentMap?.gridSize || 50;
             const pos = findUnoccupiedPosition(currentMapId, newToken.x || 400, newToken.y || 400, gridSize);
-            const tokenWithPos = { ...newToken, x: pos.x, y: pos.y };
+            const isPropOrTile = Boolean(newToken.isProp || newToken.layer === 'map' || newToken.layer === 'prop');
+            const tokenWithPos: Token = {
+              ...newToken,
+              x: pos.x,
+              y: pos.y,
+              ownerId: !isGm && !isPropOrTile && !newToken.ownerId ? localPlayer?.id : newToken.ownerId,
+              isPlayerToken: !isGm && !isPropOrTile ? true : newToken.isPlayerToken,
+              ringColor: !isGm && !isPropOrTile && localPlayer?.color && (!newToken.ringColor || newToken.ringColor === '#ef4444' || newToken.ringColor === '#3b82f6') ? localPlayer.color : newToken.ringColor,
+            };
             setSession((prev) => {
               if (!prev) return prev;
               return {
@@ -2631,6 +2652,7 @@ export const AppVtt: React.FC = () => {
               };
             });
             networkRef.current?.send({ type: 'token-add', token: tokenWithPos });
+            setSelectedToken(tokenWithPos);
             engineRef.current?.selectToken(tokenWithPos.id);
           }}
           onAddMap={handleAddMap}
@@ -2670,13 +2692,19 @@ export const AppVtt: React.FC = () => {
             const { asset } = parseTetraCubeMonster(text);
             const { saveAsset } = await import('../common/storage/db.js');
             await saveAsset(asset);
-            const newToken = createMonsterToken(
+            const createdToken = createMonsterToken(
               asset,
               currentMap?.id || session?.activeMapId || '',
               worldPos.x,
               worldPos.y,
               existingList
             );
+            const newToken: Token = {
+              ...createdToken,
+              ownerId: isGm ? undefined : localPlayer?.id,
+              isPlayerToken: !isGm,
+              ringColor: !isGm && localPlayer?.color ? localPlayer.color : createdToken.ringColor,
+            };
             setSession((prev) => {
               if (!prev) return prev;
               return {
@@ -2685,6 +2713,7 @@ export const AppVtt: React.FC = () => {
               };
             });
             networkRef.current?.send({ type: 'token-add', token: newToken });
+            setSelectedToken(newToken);
             engineRef.current?.selectToken(newToken.id);
             existingList.push(newToken);
             showToast(`Spawned "${newToken.name}" on battlemap & saved to Asset Manager!`);
@@ -2693,12 +2722,18 @@ export const AppVtt: React.FC = () => {
           if (isPathbuilderExport(text)) {
             const char = parsePathbuilderExport(text);
             saveCharacterToStorage(char, isGm);
-            const newToken = createPathbuilderToken(
+            const createdToken = createPathbuilderToken(
               char,
               currentMap?.id || session?.activeMapId || '',
               worldPos.x,
               worldPos.y
             );
+            const newToken: Token = {
+              ...createdToken,
+              ownerId: isGm ? undefined : localPlayer?.id,
+              isPlayerToken: !isGm,
+              ringColor: !isGm && localPlayer?.color ? localPlayer.color : createdToken.ringColor,
+            };
             setSession((prev) => {
               if (!prev) return prev;
               return {
@@ -2707,6 +2742,7 @@ export const AppVtt: React.FC = () => {
               };
             });
             networkRef.current?.send({ type: 'token-add', token: newToken });
+            setSelectedToken(newToken);
             engineRef.current?.selectToken(newToken.id);
             existingList.push(newToken);
             showToast(`Spawned "${newToken.name}" (PF2e) on battlemap & saved character!`);
@@ -2715,12 +2751,18 @@ export const AppVtt: React.FC = () => {
           if (isDnDBeyondExport(text)) {
             const char = parseDnDBeyondCharacter(text);
             saveCharacterToStorage(char, isGm);
-            const newToken = createDnDBeyondToken(
+            const createdToken = createDnDBeyondToken(
               char,
               currentMap?.id || session?.activeMapId || '',
               worldPos.x,
               worldPos.y
             );
+            const newToken: Token = {
+              ...createdToken,
+              ownerId: isGm ? undefined : localPlayer?.id,
+              isPlayerToken: !isGm,
+              ringColor: !isGm && localPlayer?.color ? localPlayer.color : createdToken.ringColor,
+            };
             setSession((prev) => {
               if (!prev) return prev;
               return {
@@ -2729,6 +2771,7 @@ export const AppVtt: React.FC = () => {
               };
             });
             networkRef.current?.send({ type: 'token-add', token: newToken });
+            setSelectedToken(newToken);
             engineRef.current?.selectToken(newToken.id);
             existingList.push(newToken);
             showToast(`Spawned "${newToken.name}" (D&D Beyond) on battlemap & saved character!`);
@@ -2737,12 +2780,18 @@ export const AppVtt: React.FC = () => {
           try {
             const parsed = JSON.parse(text);
             if (isMonsterCard(parsed)) {
-              const newToken = createTokenFromMonsterCard(
+              const createdToken = createTokenFromMonsterCard(
                 parsed,
                 currentMap?.id || session?.activeMapId || '',
                 worldPos.x,
                 worldPos.y
               );
+              const newToken: Token = {
+                ...createdToken,
+                ownerId: isGm ? undefined : localPlayer?.id,
+                isPlayerToken: !isGm,
+                ringColor: !isGm && localPlayer?.color ? localPlayer.color : createdToken.ringColor,
+              };
               setSession((prev) => {
                 if (!prev) return prev;
                 return {
@@ -2751,6 +2800,7 @@ export const AppVtt: React.FC = () => {
                 };
               });
               networkRef.current?.send({ type: 'token-add', token: newToken });
+              setSelectedToken(newToken);
               engineRef.current?.selectToken(newToken.id);
               existingList.push(newToken);
               showToast(`Spawned "${newToken.name}" card on battlemap!`);
@@ -2761,15 +2811,23 @@ export const AppVtt: React.FC = () => {
         }}
         onAddMap={handleAddMap}
         onAddToken={(newToken) => {
+          const isPropOrTile = Boolean(newToken.isProp || newToken.layer === 'map' || newToken.layer === 'prop');
+          const tokenToAdd: Token = {
+            ...newToken,
+            ownerId: !isGm && !isPropOrTile && !newToken.ownerId ? localPlayer?.id : newToken.ownerId,
+            isPlayerToken: !isGm && !isPropOrTile ? true : newToken.isPlayerToken,
+            ringColor: !isGm && !isPropOrTile && localPlayer?.color ? localPlayer.color : newToken.ringColor,
+          };
           setSession((prev) => {
             if (!prev) return prev;
             return {
               ...prev,
-              tokens: { ...prev.tokens, [newToken.id]: newToken },
+              tokens: { ...prev.tokens, [tokenToAdd.id]: tokenToAdd },
             };
           });
-          networkRef.current?.send({ type: 'token-add', token: newToken });
-          engineRef.current?.selectToken(newToken.id);
+          networkRef.current?.send({ type: 'token-add', token: tokenToAdd });
+          setSelectedToken(tokenToAdd);
+          engineRef.current?.selectToken(tokenToAdd.id);
         }}
       />
 

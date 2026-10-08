@@ -321,7 +321,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-198 | Reveal fog should be 'shift-f' instead of 'r' for the shortcut key.                                                                                                                                                                                                                                                                                                                                                                                                                  | Vtt            | Ready    | [Feature](#ob-198) |
 | OB-199 | *Make fog be a single layer.*                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Vtt            | Triage   | [Feature](#ob-199) |
 | OB-200 | I want to be able to add attacks to a token without syncing it with a character.                                                                                                                                                                                                                                                                                                                                                                                                     | Vtt            | Ready    | [Feature](#ob-200) |
-| OB-201 | When a player spawns a token it should automatically be controlled by them. See [OB-143](#ob-143).                                                                                                                                                                                                                                                                                                                                                                                   | Vtt            | Ready    | [Bug](#ob-201)     |
+| OB-201 | When a player spawns a token it should automatically be controlled by them. See [OB-143](#ob-143).                                                                                                                                                                                                                                                                                                                                                                                   | Vtt            | Done     | [Bug](#ob-201)     |
 | OB-202 | *Make help in chat look better.*                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Common         | Triage   | [Feature](#ob-202) |
 | OB-203 | *Make draggable windows resizable on desktop. Especially chat.*                                                                                                                                                                                                                                                                                                                                                                                                                      | Common         | Triage   | [Feature](#ob-203) |
 | OB-204 | *Error when trying to import pf2 content with /import*                                                                                                                                                                                                                                                                                                                                                                                                                               | Vtt            | Triage   | [Bug](#ob-204)     |
@@ -3219,18 +3219,18 @@ Describe task objectives and implementation requirements here.
 
 - [ ]
 
-<a id="ob-201" class="task" data-project="vtt" data-status="ready" data-task-type="bug"></a>
+<a id="ob-201" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
 ### When a player spawns a token it should automatically be controlled by them. See [OB-143](#ob-143).
 **ID:** OB-201
 **Project:** Vtt
-**Status:** Ready
+**Status:** Done
 **Type:** Bug
-
 
 **Description:**
 Describe task objectives and implementation requirements here.
 
-- [ ]
+- [x]
+Configured player token ownership and control across all token spawning channels in AppVtt (chat statblock spawn, custom file drop, asset deploy, new token creation, token duplication). Player tokens now automatically assign ownerId to the spawning player, enable isPlayerToken, select the token, and use the player's ring color.
 
 <a id="ob-202" class="task" data-project="cmn" data-status="triage" data-task-type="feature"></a>
 ### Make help in chat look better.
