@@ -5,9 +5,9 @@ description: >-
   whenever the user asks to work on, implement, execute, or do a specific set
   or batch of task IDs (e.g. "Do tasks OT-001, OT-002", "Work on these tasks
   one at a time"). Validates task statuses, executes implementation
-  sequentially, updates documentation, marks tasks done, records follow-up tasks,
-  includes all tasks.md changes in git commits, and always provides verification
-  instructions (with a docs/ report for larger task batches).
+  sequentially, updates documentation, transitions tasks to testing, records
+  follow-up tasks, includes tasks.md changes in git commits, logs verification
+  instructions in docs/task-verification.md, and checks project-description timestamps.
 ---
 
 # Execute Tasks Workflow Skill
@@ -28,12 +28,13 @@ Before starting execution on any given task ID, inspect its status using `./scri
   - `planning`: Scoping incomplete; requirements still unknown.
   - `triage`: Requirements known, but prioritization or technical approach unconfirmed.
   - `research`: Technical investigation required before planning.
-  - `done` / `fixed`: Task is already completed.
+  - `testing`: Feature is already implemented and currently awaiting human verification.
+  - `done` / `fixed`: Task is already completed and verified.
   - `cancelled`: Task was discarded or rejected.
   - `blocked`: Task is waiting on external dependencies or decisions.
 
 > [!WARNING]
-> **Status Check Rule**: If any requested task is in an invalid status (such as `planning`, `triage`, `research`, `done`, `cancelled`, or `blocked`), you **must stop, report the task ID and its current status to the user, explain why it is not ready for implementation, and ask for explicit confirmation** before proceeding with that task.
+> **Status Check Rule**: If any requested task is in an invalid status (such as `planning`, `triage`, `research`, `testing`, `done`, `cancelled`, or `blocked`), you **must stop, report the task ID and its current status to the user, explain why it is not ready for implementation, and ask for explicit confirmation** before proceeding with that task.
 
 ---
 
@@ -47,13 +48,13 @@ graph TD
     B --> C[Implement Code & Fixes]
     C --> D[Run Build & Verification Tests]
     D --> E[Update Relevant Documentation]
-    E --> F[Check Off Requirements & Mark Done]
-    F --> G[Add Discovered Follow-Up Tasks as Planning]
-    G --> H[Stage tasks.md & Create Git Commit per Task]
-    H --> I[Prepare Verification Instructions]
+    E --> F[Check Off Requirements & Transition to Testing]
+    F --> G[Add Verification Steps to docs/task-verification.md]
+    G --> H[Check 20-Commit Rule on docs/project-description.md]
+    H --> I[Stage tasks.md & Create Git Commit per Task]
     I --> J{More Tasks in Batch?}
     J -- Yes --> A
-    J -- No --> K[Output Verification Summary / Report]
+    J -- No --> K[Output Verification Summary to User]
 ```
 
 ### Step A: Mark In Progress
@@ -80,15 +81,17 @@ Check if the changes affect:
 - `docs/` specifications or architecture guides
 Update the corresponding documentation files accordingly.
 
-### Step E: Mark Task Done
-Check off completed checklist items and transition status to `done`:
+### Step E: Transition Task to Testing (Not Done)
+Check off completed checklist items and transition status to `testing`:
 ```bash
-./scripts/update-task <ID> --status done --check-all
+./scripts/update-task <ID> --status testing --check-all
 ```
-If specific items remain uncompleted or need notes:
+If specific items need implementation notes:
 ```bash
-./scripts/update-task <ID> --status done --append-description "### Implementation Notes:\n- Completed core logic.\n- Follow-up logged in OB-XXX."
+./scripts/update-task <ID> --status testing --append-description "### Implementation Notes:\n- Completed core logic."
 ```
+> [!IMPORTANT]
+> **Testing vs Done**: The agent sets the status to `testing`. The user will manually test the feature and create their own commit transitioning the status to `done` once verified.
 
 ### Step F: Record Newly Discovered Tasks
 If during the work any new bugs, edge cases, refactor opportunities, or follow-ups are discovered, log them immediately in `planning` status:
@@ -96,21 +99,32 @@ If during the work any new bugs, edge cases, refactor opportunities, or follow-u
 ./scripts/add-task "Follow-up: <Descriptive Title>" --project=<proj> --type=<type> --status=planning -d "Discovered during work on <ID>:\n- [ ] Detail"
 ```
 
-### Step G: Include tasks.md & Create Git Commit
-When creating the commit for the task:
-1. **Always include `docs/tasks.md`**: Check `git status`. If `docs/tasks.md` has any modifications (whether user edits, staged changes, or updates made by task scripts), always include `docs/tasks.md` in the staged changes.
-2. Stage modified files and commit:
+### Step G: Update `docs/task-verification.md`
+Add clear, step-by-step verification instructions for the completed task into [docs/task-verification.md](file:///Users/tom/Projects/OldBearBattles/docs/task-verification.md) under the appropriate section:
+- Include task ID, title, where to find it in the UI, exact steps to execute, and pass/fail criteria.
+- *(Note: Once a human tester verifies a feature and marks it `done`, the verification steps are migrated from `docs/task-verification.md` into `docs/human-tests.md` as permanent regression tests).*
+
+### Step H: Check 20-Commit Rule on Project Description
+Check the number of commits since `docs/project-description.md` was last modified:
 ```bash
-git add docs/tasks.md <other-modified-files>
+LAST_COMMIT=$(git log -n 1 --pretty=format:"%H" -- docs/project-description.md)
+git rev-list --count ${LAST_COMMIT}..HEAD
+```
+If the count is $\ge 20$ (or if major features/technologies were added):
+1. Update `docs/project-description.md` with current UTC timestamp (`- Last Verified UTC: YYYY-MM-DDTHH:MM:SSZ`) and any major feature changes.
+2. Update `docs/project-description.json` with `"lastVerifiedUtc": "YYYY-MM-DDTHH:MM:SSZ"`.
+3. Include these files in the commit (resetting the 20-commit counter).
+
+### Step I: Include tasks.md & Create Git Commit
+When creating the commit for the task:
+1. **Always include `docs/tasks.md` and `docs/task-verification.md`**: Check `git status`. Ensure all changes to `docs/tasks.md` (including user edits or pre-staged edits) and `docs/task-verification.md` are staged:
+```bash
+git add docs/tasks.md docs/task-verification.md <other-modified-files>
 git commit -m "<type>(<project>): <concise summary of task ID>"
 ```
 *(At least one commit must be made per completed task before moving to the next task).*
 
-### Step H: Verification Instructions & Batch Reports
+### Step J: Verification Instructions in Response
 Always provide clear verification instructions so the user can easily test the work:
 1. **Single Task / Small Batch**: Include clear, actionable step-by-step verification instructions directly in your response to the user.
-2. **Batch / Many Tasks**: If executing a batch of multiple tasks, create a dedicated verification report in `docs/` (e.g. `docs/verification-report.md`) detailing:
-   - Summary of completed tasks and commits
-   - Step-by-step verification instructions for each task
-   - Any edge cases or configurations to observe
-   Provide a clickable link to the generated report in your final response.
+2. **Batch / Many Tasks**: If executing a batch of multiple tasks, create a dedicated verification report in `docs/` (e.g. `docs/verification-report.md`) detailing the changes, commits, and verification steps for each task, and link to it in your final response.
