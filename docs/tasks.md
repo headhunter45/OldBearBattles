@@ -3231,6 +3231,7 @@ Describe task objectives and implementation requirements here.
 
 - [x]
 Configured player token ownership and control across all token spawning channels in AppVtt (chat statblock spawn, custom file drop, asset deploy, new token creation, token duplication). Player tokens now automatically assign ownerId to the spawning player, enable isPlayerToken, select the token, and use the player's ring color.
+Added duplicate permissions check ensuring players can only duplicate their own tokens or unowned tokens (props, unclaimed player tokens). Players cannot duplicate GM monsters/bosses (preventing them from cloning a boss to view hidden attacks/statblocks) or other players' tokens.
 
 <a id="ob-202" class="task" data-project="cmn" data-status="triage" data-task-type="feature"></a>
 ### Make help in chat look better.

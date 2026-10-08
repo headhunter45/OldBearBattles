@@ -78,6 +78,7 @@ import {
   isPathbuilderExport,
   parsePathbuilderExport,
 } from './utils/pathbuilderParser.js';
+import { canPlayerDuplicateToken } from './utils/tokenPermissions.js';
 
 export const AppVtt: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -1511,6 +1512,10 @@ export const AppVtt: React.FC = () => {
 
   const handleDuplicateToken = (token: Token) => {
     if (!session || !localPlayer) return;
+    if (!canPlayerDuplicateToken(token, localPlayer, isGm)) {
+      showToast('You can only duplicate your own tokens or unowned tokens.');
+      return;
+    }
     const currentMapId = token.mapId;
     const gridSize = currentMap?.gridSize || 50;
     const aabb = getTokenAABB(token, gridSize);
@@ -1562,15 +1567,20 @@ export const AppVtt: React.FC = () => {
 
   const handleDuplicateTokens = (tokensToDup: Token[]) => {
     if (!session || !localPlayer || tokensToDup.length === 0) return;
-    const currentMapId = tokensToDup[0].mapId;
+    const allowed = tokensToDup.filter((t) => canPlayerDuplicateToken(t, localPlayer, isGm));
+    if (allowed.length === 0) {
+      showToast('You can only duplicate your own tokens or unowned tokens.');
+      return;
+    }
+    const currentMapId = allowed[0].mapId;
     const gridSize = currentMap?.gridSize || 50;
 
     const duplicatedTokens: Token[] = [];
     const updatedTokens = { ...session.tokens };
     const allDupMarkers: ScreenMarker[] = [];
 
-    for (let i = 0; i < tokensToDup.length; i++) {
-      const tok = tokensToDup[i];
+    for (let i = 0; i < allowed.length; i++) {
+      const tok = allowed[i];
       const aabb = getTokenAABB(tok, gridSize);
       const stepX = aabb.width || gridSize;
       const stepY = aabb.height || gridSize;
@@ -2012,11 +2022,7 @@ export const AppVtt: React.FC = () => {
           tokensToDup = [session.tokens[engineRef.current.selectedTokenId]];
         }
 
-        const canControl = (tok: Token) => {
-          if (isGm) return true;
-          return tok.ownerId === localPlayer?.id || Boolean(localPlayer?.assignedTokenIds?.includes(tok.id));
-        };
-        const controllable = tokensToDup.filter(canControl);
+        const controllable = tokensToDup.filter((t) => canPlayerDuplicateToken(t, localPlayer, isGm));
 
         if (controllable.length > 1) {
           e.preventDefault();
@@ -2373,7 +2379,7 @@ export const AppVtt: React.FC = () => {
           selectedTokens={selectedTokens}
           onUpdateToken={handleUpdateToken}
           onDeleteToken={handleDeleteToken}
-          onDuplicateToken={handleDuplicateToken}
+          onDuplicateToken={canPlayerDuplicateToken(selectedToken, localPlayer, isGm) ? handleDuplicateToken : undefined}
           onDuplicateTokens={handleDuplicateTokens}
           onTransferToken={handleTransferToken}
           onSetInitiative={handleSetTokenInitiative}

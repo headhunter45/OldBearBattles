@@ -155,3 +155,191 @@ describe('Player Token Spawning & Automatic Control (OB-201, OB-143)', () => {
     assert.strictEqual(finalProp.ringColor, '#94a3b8');
   });
 });
+
+import { canPlayerDuplicateToken } from './utils/tokenPermissions.js';
+
+describe('Token Duplication Permissions (OB-201 Update)', () => {
+  const alice: Player = {
+    id: 'player-alice',
+    name: 'Alice',
+    role: 'player',
+    color: '#ec4899',
+    connected: true,
+    assignedTokenIds: ['tok-alice-secondary'],
+  };
+
+  const bob: Player = {
+    id: 'player-bob',
+    name: 'Bob',
+    role: 'player',
+    color: '#3b82f6',
+    connected: true,
+    assignedTokenIds: [],
+  };
+
+  const gm: Player = {
+    id: 'player-gm',
+    name: 'Dungeon Master',
+    role: 'gm',
+    color: '#10b981',
+    connected: true,
+    assignedTokenIds: [],
+  };
+
+  const aliceToken: Token = {
+    id: 'tok-alice',
+    mapId: 'map-1',
+    name: 'Alice Character',
+    x: 100,
+    y: 100,
+    size: 1,
+    rotation: 0,
+    ringColor: '#ec4899',
+    fillColor: '#1e3a8a',
+    clipCircle: true,
+    currentHp: 20,
+    maxHp: 20,
+    tempHp: 0,
+    speed: 30,
+    ownerId: 'player-alice',
+    isPlayerToken: true,
+    conditions: [],
+    isProp: false,
+    layer: 'token',
+  };
+
+  const bobToken: Token = {
+    id: 'tok-bob',
+    mapId: 'map-1',
+    name: 'Bob Character',
+    x: 150,
+    y: 150,
+    size: 1,
+    rotation: 0,
+    ringColor: '#3b82f6',
+    fillColor: '#1e3a8a',
+    clipCircle: true,
+    currentHp: 25,
+    maxHp: 25,
+    tempHp: 0,
+    speed: 30,
+    ownerId: 'player-bob',
+    isPlayerToken: true,
+    conditions: [],
+    isProp: false,
+    layer: 'token',
+  };
+
+  const bossToken: Token = {
+    id: 'tok-boss',
+    mapId: 'map-1',
+    name: 'Ancient Red Dragon',
+    x: 500,
+    y: 500,
+    size: 4,
+    rotation: 0,
+    ringColor: '#ef4444',
+    fillColor: '#1e293b',
+    clipCircle: true,
+    currentHp: 500,
+    maxHp: 500,
+    tempHp: 0,
+    speed: 40,
+    ownerId: undefined, // GM-only
+    isPlayerToken: false,
+    conditions: [],
+    isProp: false,
+    layer: 'token',
+    character: {
+      id: 'char-dragon',
+      name: 'Ancient Red Dragon',
+      level: 20,
+      classes: 'Monster',
+      race: 'Dragon',
+      currentHp: 500,
+      maxHp: 500,
+      tempHp: 0,
+      speed: 40,
+      armorClass: 22,
+      stats: { str: 30, dex: 10, con: 29, int: 18, wis: 15, cha: 23 },
+      actions: [
+        { name: 'Fire Breath', type: 'ranged', damageDice: '26d6', activationType: 'action' },
+        { name: 'Bite', type: 'melee', damageDice: '2d10+10', activationType: 'action' },
+      ],
+    },
+  };
+
+  const unclaimedPlayerToken: Token = {
+    id: 'tok-unclaimed',
+    mapId: 'map-1',
+    name: 'Unclaimed Fighter',
+    x: 200,
+    y: 200,
+    size: 1,
+    rotation: 0,
+    ringColor: '#64748b',
+    fillColor: '#1e293b',
+    clipCircle: true,
+    currentHp: 20,
+    maxHp: 20,
+    tempHp: 0,
+    speed: 30,
+    ownerId: 'unassigned',
+    isPlayerToken: true,
+    conditions: [],
+    isProp: false,
+    layer: 'token',
+  };
+
+  const propToken: Token = {
+    id: 'prop-barrel',
+    mapId: 'map-1',
+    name: 'Wooden Barrel',
+    x: 300,
+    y: 300,
+    size: 1,
+    rotation: 0,
+    ringColor: '#94a3b8',
+    fillColor: '#1e293b',
+    clipCircle: false,
+    currentHp: 10,
+    maxHp: 10,
+    tempHp: 0,
+    speed: 0,
+    ownerId: undefined,
+    conditions: [],
+    isProp: true,
+    layer: 'prop',
+  };
+
+  it('allows player to duplicate their own token and assigned token', () => {
+    assert.strictEqual(canPlayerDuplicateToken(aliceToken, alice, false), true);
+
+    const assignedToken: Token = { ...aliceToken, id: 'tok-alice-secondary', ownerId: undefined };
+    assert.strictEqual(canPlayerDuplicateToken(assignedToken, alice, false), true);
+  });
+
+  it('PREVENTS player from duplicating a boss or GM monster (preventing seeing attacks)', () => {
+    // Alice trying to duplicate the boss
+    assert.strictEqual(canPlayerDuplicateToken(bossToken, alice, false), false, 'Player cannot duplicate boss');
+    // Bob trying to duplicate the boss
+    assert.strictEqual(canPlayerDuplicateToken(bossToken, bob, false), false, 'Player cannot duplicate boss');
+  });
+
+  it('PREVENTS player from duplicating another player token', () => {
+    assert.strictEqual(canPlayerDuplicateToken(bobToken, alice, false), false, 'Alice cannot duplicate Bob token');
+    assert.strictEqual(canPlayerDuplicateToken(aliceToken, bob, false), false, 'Bob cannot duplicate Alice token');
+  });
+
+  it('allows player to duplicate unowned tokens (unclaimed player tokens and props)', () => {
+    assert.strictEqual(canPlayerDuplicateToken(unclaimedPlayerToken, alice, false), true, 'Can duplicate unclaimed player token');
+    assert.strictEqual(canPlayerDuplicateToken(propToken, alice, false), true, 'Can duplicate unowned prop');
+  });
+
+  it('allows GM to duplicate any token including bosses and players', () => {
+    assert.strictEqual(canPlayerDuplicateToken(bossToken, gm, true), true, 'GM can duplicate boss');
+    assert.strictEqual(canPlayerDuplicateToken(aliceToken, gm, true), true, 'GM can duplicate player token');
+    assert.strictEqual(canPlayerDuplicateToken(propToken, gm, true), true, 'GM can duplicate prop');
+  });
+});
+
