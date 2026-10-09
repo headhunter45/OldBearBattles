@@ -31,6 +31,7 @@ This document provides step-by-step instructions for manually verifying all feat
 | **[OB-184](#ob-184---helptip-component--placement-guide-docshelptip-locationsmd)** | HelpTip Component & Placement Guide (`docs/helptip-locations.md`) | UI / UX Guide | Testing |
 | **[OB-185](#ob-185---backlog-research--implementation-guide-docsbacklog-implementation-guidemd)** | Backlog Research & Implementation Guide (`docs/backlog-implementation-guide.md`) | Architecture / Guide | Testing |
 | **[OB-187](#ob-187---submap--deployment-zone-customization-ui)** | Submap & Deployment Zone Customization UI | VTT & Brawl / Scenes | Testing |
+| **[OB-188](#ob-188---relative-dragging-for-tokens-modular-tiles-and-props)** | Relative Dragging for Tokens, Modular Tiles, and Props | VTT & Brawl / Canvas | Testing |
 
 ---
 
@@ -633,4 +634,40 @@ This document provides step-by-step instructions for manually verifying all feat
 #### Expected Result (Pass Criteria):
 - Submap property editor provides expandable drawers with controls for position, dimensions (px & cells), border/badge colors, background fill/tint, custom battlemap images, and grid settings.
 - All properties update smoothly and persist across scene saves and template duplications.
+
+---
+
+### OB-188 - Relative Dragging for Tokens, Modular Tiles, and Props
+
+- **Reference in tasks.md:** [tasks.md: OB-188](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-188)
+- **Primary Source Code:** [CanvasEngine.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/engine/CanvasEngine.ts), [CanvasEngine.test.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/engine/CanvasEngine.test.ts)
+- **Where to find it:** Main Battlemap Canvas (dragging any token, modular room tile, or prop).
+
+#### Step-by-Step Instructions:
+
+1. **Standard 1x1 Token Off-Center Drag:**
+   - Select and click on an edge or off-center portion of a standard 1x1 token (e.g. upper-left corner).
+   - Begin dragging the cursor slowly across the canvas.
+   - Verify the token does **not** abruptly jump or snap its center directly under the cursor; it moves smoothly relative to the exact point grabbed.
+   - When grid snapping is active, verify the token snaps cleanly to grid cells as you drag across cell boundaries.
+
+2. **Large Multi-Tile Prop / Modular Room Drag:**
+   - Deploy or select a large modular tile or prop (e.g. an 8x8 chamber or 4x2 corridor from the Tile/Prop picker).
+   - Click and hold near the bottom-right corner of the large tile.
+   - Move the mouse cursor.
+   - Verify the large room tile stays relative to the cursor grab point and does **not** violently jump hundreds of pixels to center itself under your mouse.
+
+3. **Multi-Token Group Drag Relative Offsets:**
+   - Use the box select tool (`B` hotkey) or shift-click to select multiple tokens spread across the battlefield.
+   - Grab one of the selected tokens and drag it across the map.
+   - Verify that all tokens in the group move together, preserving their exact relative spatial distances and offsets from each other.
+
+4. **Magnetic Edge-to-Edge Snapping:**
+   - Drag a modular tile close to another existing tile.
+   - Verify magnetic edge snapping engages cleanly when edges come within snapping distance.
+
+#### Expected Result (Pass Criteria):
+- Dragging tokens, modular tiles, and props is relative to the initial cursor grab point without sudden pivot or center jumps.
+- Multi-token group dragging maintains exact relative positions for all selected entities.
+
 

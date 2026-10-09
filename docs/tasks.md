@@ -308,7 +308,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-185 | Backlog Research & Implementation Guide (docs/backlog-implementation-guide.md)                                                                                                                                                                                                                                                                                                                                                                                                       | Old Bear VTT   | Testing  | [Feature](#ob-185) |
 | OB-186 | Unable to create new maps or duplicate existing ones.                                                                                                                                                                                                                                                                                                                                                                                                                                | Shared         | Done     | [Bug](#ob-186)     |
 | OB-187 | Submap & Deployment Zone Customization UI (Position, Dimensions, Colors, Background Images)                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Testing  | [Feature](#ob-187) |
-| OB-188 | Relative Dragging for Tokens, Modular Tiles, and Props                                                                                                                                                                                                                                                                                                                                                                                                                               | Old Bear VTT   | Ready    | [Feature](#ob-188) |
+| OB-188 | Relative Dragging for Tokens, Modular Tiles, and Props                                                                                                                                                                                                                                                                                                                                                                                                                               | Old Bear VTT   | Testing  | [Feature](#ob-188) |
 | OB-189 | Add a way to edit tiles after they have been uploaded.                                                                                                                                                                                                                                                                                                                                                                                                                               | Common         | Ready    | [Feature](#ob-189) |
 | OB-190 | When tiles is selected the tab bar in the asset manager is positioned up underneath the header.                                                                                                                                                                                                                                                                                                                                                                                      | Common         | Done     | [Bug](#ob-190)     |
 | OB-191 | Make no ring color be the default for props and tiles.                                                                                                                                                                                                                                                                                                                                                                                                                               | Common         | Ready    | [Feature](#ob-191) |
@@ -339,7 +339,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-216 | Add to character on an item card does nothing. It should add the attack/ability to the character sheet,                                                                                                                                                                                                                                                                                                                                                                              | Old Bear VTT   | Ready    | [Bug](#ob-216)     |
 | OB-217 | Allow /attack? to query compendium weapons and attacks from Open5e and PF2e                                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Ready    | [Feature](#ob-217) |
 | OB-218 | Chat textbox does not lose focus when we click something else. I clicked a token and the box still had the cursor in it. I wasn't able to use hotkeys until I had selected some text elsewhere.                                                                                                                                                                                                                                                                                      | Common         | Ready    | [Bug](#ob-218)     |
-| OB-219 | Don't favor 3nd on the character sheet.                                                                                                                                                                                                                                                                                                                                                                                                                                              | Common         | Ready    | [Feature](#ob-219) |
+| OB-219 | Don't favor dnd on the character sheet.                                                                                                                                                                                                                                                                                                                                                                                                                                              | Common         | Ready    | [Feature](#ob-219) |
 | OB-220 | Pinch zoom doesn't work right on token portraits.                                                                                                                                                                                                                                                                                                                                                                                                                                    | Common         | Ready    | [Bug](#ob-220)     |
 | OB-221 | Make the ` or ~ key toggle the chat display like c togles the character sheet.                                                                                                                                                                                                                                                                                                                                                                                                       | Common         | Ready    | [Feature](#ob-221) |
 | OB-222 | The brawl map is very zoomed in and blury.                                                                                                                                                                                                                                                                                                                                                                                                                                           | Old Bear Brawl | Ready    | [Bug](#ob-222)     |
@@ -3053,24 +3053,23 @@ Provide user interface controls to edit, position, resize, style, and set backgr
 - [x] **Background Image Support**: Asset picker or image URL input to set custom floor plans/battlemaps for submaps (imageUrl).
 - [x] **Testing**: Automated unit tests for updating submap properties and preserving them across scene saves and template duplications.
 
-<a id="ob-188" class="task" data-project="vtt" data-status="ready" data-task-type="feature"></a>
+<a id="ob-188" class="task" data-project="vtt" data-status="testing" data-task-type="feature"></a>
 ### Relative Dragging for Tokens, Modular Tiles, and Props
 **ID:** OB-188
 **Project:** Old Bear VTT
-**Status:** Ready
+**Status:** Testing
 **Type:** Feature
-
 
 **Description:**
 Make dragging tokens, modular tiles, and props relative to the initial cursor grab point instead of jumping the token origin or pivot to the cursor position on drag start.
 
 ### Requirements:
 
-- [ ] On token drag start in `CanvasEngine`, record the cursor grab offset relative to the token origin or initial pointer position.
-- [ ] During drag move, compute the token's raw position relatively using the initial grab offset (`worldPos - grabOffset`).
-- [ ] Ensure grid snapping and magnetic edge-to-edge snapping maintain clean alignment to the grid without abruptly jumping the token center or pivot directly under the cursor.
-- [ ] Preserve multi-token group drag relative offsets for all selected tokens.
-- [ ] Verify dragging feels natural for both standard 1x1 tokens and large multi-tile props (e.g. 8x8 rooms, 4x1 corridors).
+- [x] On token drag start in `CanvasEngine`, record the cursor grab offset relative to the token origin or initial pointer position.
+- [x] During drag move, compute the token's raw position relatively using the initial grab offset (`worldPos - grabOffset`).
+- [x] Ensure grid snapping and magnetic edge-to-edge snapping maintain clean alignment to the grid without abruptly jumping the token center or pivot directly under the cursor.
+- [x] Preserve multi-token group drag relative offsets for all selected tokens.
+- [x] Verify dragging feels natural for both standard 1x1 tokens and large multi-tile props (e.g. 8x8 rooms, 4x1 corridors).
 
 <a id="ob-189" class="task" data-project="cmn" data-status="ready" data-task-type="feature"></a>
 ### Add a way to edit tiles after they have been uploaded.
@@ -3483,12 +3482,11 @@ Describe task objectives and implementation requirements here.
 - [ ]
 
 <a id="ob-219" class="task" data-project="cmn" data-status="ready" data-task-type="feature"></a>
-### Don't favor 3nd on the character sheet.
+### Don't favor dnd on the character sheet.
 **ID:** OB-219
 **Project:** Common
 **Status:** Ready
 **Type:** Feature
-
 
 **Description:**
 We should not favor a specific ruleset. Currently the character sheet starts with dndbeyod selected. I think we should have a third option that is just our local character that everything imports to.

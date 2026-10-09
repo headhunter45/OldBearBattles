@@ -87,6 +87,7 @@ export class CanvasEngine {
   draggingToken: Token | null = null;
   dragStartPos: Point | null = null;
   dragCurrentPos: Point | null = null;
+  dragGrabOffset: Point | null = null;
   activeRuler: RulerMeasurement | null = null;
   measuringTape: RulerMeasurement | null = null;
 
@@ -817,6 +818,7 @@ export class CanvasEngine {
       if (isControllable && !clickedToken.locked) {
         this.draggingToken = clickedToken;
         this.dragStartPos = { x: clickedToken.x, y: clickedToken.y };
+        this.dragGrabOffset = { x: worldPos.x - clickedToken.x, y: worldPos.y - clickedToken.y };
         this.dragCurrentPos = worldPos;
         this.dragGroupInitialPositions.clear();
         for (const id of this.selectedTokenIds) {
@@ -1045,9 +1047,11 @@ export class CanvasEngine {
       const isProp = Boolean(this.draggingToken.isProp);
       const { pivotOffsetX, pivotOffsetY, propW, propH } = getTokenPivot(this.draggingToken, currentMap.gridSize);
 
-      // Offset token pivot center to follow cursor
-      let newX = worldPos.x - pivotOffsetX;
-      let newY = worldPos.y - pivotOffsetY;
+      // Relative dragging: compute raw token position relative to initial cursor grab offset (OB-188)
+      const grabOffsetX = this.dragGrabOffset?.x ?? pivotOffsetX;
+      const grabOffsetY = this.dragGrabOffset?.y ?? pivotOffsetY;
+      let newX = worldPos.x - grabOffsetX;
+      let newY = worldPos.y - grabOffsetY;
 
       if (this.snapEnabled) {
         const snapped = snapToGrid(
@@ -1202,6 +1206,7 @@ export class CanvasEngine {
       }
       this.draggingToken = null;
       this.dragStartPos = null;
+      this.dragGrabOffset = null;
       this.dragGroupInitialPositions.clear();
       this.activeRuler = null;
     }
@@ -1628,4 +1633,36 @@ function distToSegment(p: Point, v: Point, w: Point): number {
   let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
   t = Math.max(0, Math.min(1, t));
   return Math.hypot(p.x - (v.x + t * (w.x - v.x)), p.y - (v.y + t * (w.y - v.y)));
+}
+
+/**
+ * Computes raw or grid-snapped position for tokens/props during drag,
+ * relative to the initial cursor grab point (OB-188).
+ */
+export function computeRelativeDragPosition(
+  worldPos: Point,
+  grabOffset: Point,
+  snapEnabled: boolean,
+  gridSize: number,
+  tokenSize: number,
+  gridOffsetX = 0,
+  gridOffsetY = 0,
+  gridType: 'square' | 'hex' | 'none' = 'square'
+): Point {
+  const rawX = worldPos.x - grabOffset.x;
+  const rawY = worldPos.y - grabOffset.y;
+
+  if (!snapEnabled) {
+    return { x: rawX, y: rawY };
+  }
+
+  return snapToGrid(
+    rawX,
+    rawY,
+    gridSize,
+    tokenSize,
+    gridOffsetX,
+    gridOffsetY,
+    gridType
+  );
 }

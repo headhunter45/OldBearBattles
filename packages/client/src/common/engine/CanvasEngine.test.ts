@@ -5,6 +5,7 @@ import {
   TRACKPAD_PAN_SENSITIVITY,
   TRACKPAD_ZOOM_SENSITIVITY,
   MOUSE_WHEEL_ZOOM_SENSITIVITY,
+  computeRelativeDragPosition,
 } from './CanvasEngine.js';
 
 describe('CanvasEngine', () => {
@@ -95,5 +96,101 @@ describe('CanvasEngine', () => {
     }
 
     assert.strictEqual(currentTool, 'select');
+  });
+
+  describe('Relative Dragging for Tokens, Modular Tiles, and Props (OB-188)', () => {
+    it('drags token relatively without jumping origin or center to cursor', () => {
+      // 1x1 token at (100, 100). User grabs at (115, 125)
+      const token = { x: 100, y: 100, size: 1 };
+      const grabPos = { x: 115, y: 125 };
+      const grabOffset = { x: grabPos.x - token.x, y: grabPos.y - token.y };
+
+      // Cursor moves to (165, 175) with snap disabled
+      const newPos = computeRelativeDragPosition(
+        { x: 165, y: 175 },
+        grabOffset,
+        false,
+        50,
+        1
+      );
+
+      assert.strictEqual(newPos.x, 150);
+      assert.strictEqual(newPos.y, 150);
+    });
+
+    it('snaps relatively to grid without jumping center to cursor', () => {
+      const token = { x: 100, y: 100, size: 1 };
+      const grabOffset = { x: 10, y: 10 };
+
+      // Cursor moves 30px right: (140, 110)
+      // Raw position: (140 - 10, 110 - 10) = (130, 100)
+      // Snapped to 50px grid: (150, 100)
+      const snapped = computeRelativeDragPosition(
+        { x: 140, y: 110 },
+        grabOffset,
+        true,
+        50,
+        1
+      );
+
+      assert.strictEqual(snapped.x, 150);
+      assert.strictEqual(snapped.y, 100);
+    });
+
+    it('drags large 8x8 modular room tile relatively without corner-to-center jumping', () => {
+      // 8x8 tile (400px x 400px) at (500, 500)
+      const roomTile = { x: 500, y: 500, size: 8, isProp: true, propWidth: 8, propHeight: 8 };
+      // User grabs near bottom-right corner at (850, 850)
+      const grabPos = { x: 850, y: 850 };
+      const grabOffset = { x: grabPos.x - roomTile.x, y: grabPos.y - roomTile.y }; // { x: 350, y: 350 }
+
+      // Drag cursor moves by (50, 100) -> worldPos = (900, 950)
+      const newPos = computeRelativeDragPosition(
+        { x: 900, y: 950 },
+        grabOffset,
+        false,
+        50,
+        8
+      );
+
+      assert.strictEqual(newPos.x, 550);
+      assert.strictEqual(newPos.y, 600);
+    });
+
+    it('preserves multi-token group drag relative offsets for all selected tokens', () => {
+      const tokenA = { id: 'a', x: 100, y: 100 };
+      const tokenB = { id: 'b', x: 250, y: 100 };
+      const tokenC = { id: 'c', x: 100, y: 300 };
+
+      // Grab tokenA at (120, 120), grabOffset = (20, 20)
+      const grabOffsetA = { x: 20, y: 20 };
+      const dragStartPos = { x: tokenA.x, y: tokenA.y };
+
+      // Move cursor to (220, 220)
+      const newPosA = computeRelativeDragPosition(
+        { x: 220, y: 220 },
+        grabOffsetA,
+        false,
+        50,
+        1
+      );
+
+      const deltaX = newPosA.x - dragStartPos.x; // 200 - 100 = 100
+      const deltaY = newPosA.y - dragStartPos.y; // 200 - 100 = 100
+
+      const movedB = { x: tokenB.x + deltaX, y: tokenB.y + deltaY };
+      const movedC = { x: tokenC.x + deltaX, y: tokenC.y + deltaY };
+
+      assert.strictEqual(newPosA.x, 200);
+      assert.strictEqual(newPosA.y, 200);
+      assert.strictEqual(movedB.x, 350);
+      assert.strictEqual(movedB.y, 200);
+      assert.strictEqual(movedC.x, 200);
+      assert.strictEqual(movedC.y, 400);
+
+      // Relative distances between tokens are exactly preserved
+      assert.strictEqual(movedB.x - newPosA.x, tokenB.x - tokenA.x);
+      assert.strictEqual(movedC.y - newPosA.y, tokenC.y - tokenA.y);
+    });
   });
 });
