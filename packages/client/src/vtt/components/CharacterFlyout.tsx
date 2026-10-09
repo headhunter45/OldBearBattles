@@ -18,6 +18,10 @@ import {
   RefreshCw,
   Shield,
   Sparkles,
+  Swords,
+  Plus,
+  Trash2,
+  Edit2,
   Upload,
   User,
   Zap
@@ -122,6 +126,60 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
   // Manual fallback HP
   const [localHp, setLocalHp] = useState(targetToken?.currentHp ?? 25);
   const [localMaxHp, setLocalMaxHp] = useState(targetToken?.maxHp ?? 25);
+
+  // Standalone Token Actions (OB-200)
+  const [isAddingTokenAction, setIsAddingTokenAction] = useState(false);
+  const [tokenActionForm, setTokenActionForm] = useState<DnDAction>({
+    name: '',
+    type: 'melee',
+    toHitModifier: 0,
+    damageDice: '',
+    range: '',
+    reach: '',
+    description: '',
+    diceMacro: '',
+  });
+
+  const handleSaveTokenAction = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!targetToken || !onSyncToken || !tokenActionForm.name.trim()) return;
+    const toHit =
+      tokenActionForm.toHitModifier !== undefined &&
+      tokenActionForm.toHitModifier !== null &&
+      String(tokenActionForm.toHitModifier).trim() !== '' &&
+      !isNaN(Number(tokenActionForm.toHitModifier))
+        ? Number(tokenActionForm.toHitModifier)
+        : undefined;
+    const newAction: DnDAction = {
+      name: tokenActionForm.name.trim(),
+      type: tokenActionForm.type || 'melee',
+      toHitModifier: toHit,
+      damageDice: tokenActionForm.damageDice?.trim() || undefined,
+      range: tokenActionForm.range?.trim() || undefined,
+      reach: tokenActionForm.reach?.trim() || undefined,
+      description: tokenActionForm.description?.trim() || undefined,
+      diceMacro: tokenActionForm.diceMacro?.trim() || undefined,
+    };
+    const updatedActions = [...(targetToken.actions || []), newAction];
+    onSyncToken(targetToken.id, { actions: updatedActions });
+    setIsAddingTokenAction(false);
+    setTokenActionForm({
+      name: '',
+      type: 'melee',
+      toHitModifier: 0,
+      damageDice: '',
+      range: '',
+      reach: '',
+      description: '',
+      diceMacro: '',
+    });
+  };
+
+  const handleDeleteTokenAction = (idx: number) => {
+    if (!targetToken || !onSyncToken) return;
+    const updatedActions = (targetToken.actions || []).filter((_, i) => i !== idx);
+    onSyncToken(targetToken.id, { actions: updatedActions });
+  };
 
   const refreshSavedCharacters = () => {
     setSavedCharacters(getSavedCharacters(isGm));
@@ -2096,6 +2154,346 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
                   />
                 </div>
               </div>
+
+              {/* Standalone Token Attacks (OB-200) */}
+              {targetToken && (
+                <div style={{ marginTop: '1.25rem' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '0.6rem',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        color: 'var(--text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                      }}
+                    >
+                      <Swords size={15} color="var(--accent-primary)" />
+                      <span>Token Attacks ({(targetToken.actions || []).length})</span>
+                    </div>
+                    {!isAddingTokenAction && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        style={{
+                          fontSize: '0.72rem',
+                          padding: '0.25rem 0.6rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                        }}
+                        onClick={() => setIsAddingTokenAction(true)}
+                      >
+                        <Plus size={13} /> Add Attack
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Add Attack Inline Form */}
+                  {isAddingTokenAction && (
+                    <div
+                      style={{
+                        backgroundColor: 'var(--bg-surface-elevated)',
+                        borderRadius: 'var(--radius-sm)',
+                        padding: '0.85rem',
+                        border: '1px solid var(--border-subtle)',
+                        marginBottom: '0.75rem',
+                      }}
+                    >
+                      <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                        New Token Attack
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                        <div style={{ gridColumn: 'span 2' }}>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                            Name *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Longsword, Bite, Shortbow"
+                            value={tokenActionForm.name}
+                            onChange={(e) => setTokenActionForm((prev) => ({ ...prev, name: e.target.value }))}
+                            style={{
+                              width: '100%',
+                              padding: '0.4rem',
+                              borderRadius: 'var(--radius-sm)',
+                              background: 'var(--bg-surface)',
+                              border: '1px solid var(--border-subtle)',
+                              color: 'white',
+                              fontSize: '0.8rem',
+                              marginTop: '0.15rem',
+                            }}
+                            autoFocus
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                            Type
+                          </label>
+                          <select
+                            value={tokenActionForm.type || 'melee'}
+                            onChange={(e) => setTokenActionForm((prev) => ({ ...prev, type: e.target.value }))}
+                            style={{
+                              width: '100%',
+                              padding: '0.4rem',
+                              borderRadius: 'var(--radius-sm)',
+                              background: 'var(--bg-surface)',
+                              border: '1px solid var(--border-subtle)',
+                              color: 'white',
+                              fontSize: '0.8rem',
+                              marginTop: '0.15rem',
+                            }}
+                          >
+                            <option value="melee">Melee</option>
+                            <option value="ranged">Ranged</option>
+                            <option value="spell">Spell</option>
+                            <option value="action">Action</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                            To-Hit Bonus
+                          </label>
+                          <input
+                            type="number"
+                            placeholder="e.g. 5 for +5"
+                            value={tokenActionForm.toHitModifier ?? ''}
+                            onChange={(e) =>
+                              setTokenActionForm((prev) => ({
+                                ...prev,
+                                toHitModifier: e.target.value === '' ? undefined : Number(e.target.value),
+                              }))
+                            }
+                            style={{
+                              width: '100%',
+                              padding: '0.4rem',
+                              borderRadius: 'var(--radius-sm)',
+                              background: 'var(--bg-surface)',
+                              border: '1px solid var(--border-subtle)',
+                              color: 'white',
+                              fontSize: '0.8rem',
+                              marginTop: '0.15rem',
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                            Damage Formula
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 1d8+3, 2d6"
+                            value={tokenActionForm.damageDice || ''}
+                            onChange={(e) => setTokenActionForm((prev) => ({ ...prev, damageDice: e.target.value }))}
+                            style={{
+                              width: '100%',
+                              padding: '0.4rem',
+                              borderRadius: 'var(--radius-sm)',
+                              background: 'var(--bg-surface)',
+                              border: '1px solid var(--border-subtle)',
+                              color: 'white',
+                              fontSize: '0.8rem',
+                              marginTop: '0.15rem',
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                            Range / Reach
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 5 ft, 30/120 ft"
+                            value={tokenActionForm.range || tokenActionForm.reach || ''}
+                            onChange={(e) =>
+                              setTokenActionForm((prev) => ({
+                                ...prev,
+                                range: e.target.value,
+                                reach: e.target.value,
+                              }))
+                            }
+                            style={{
+                              width: '100%',
+                              padding: '0.4rem',
+                              borderRadius: 'var(--radius-sm)',
+                              background: 'var(--bg-surface)',
+                              border: '1px solid var(--border-subtle)',
+                              color: 'white',
+                              fontSize: '0.8rem',
+                              marginTop: '0.15rem',
+                            }}
+                          />
+                        </div>
+                        <div style={{ gridColumn: 'span 2' }}>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                            Notes (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Slashing, versatile"
+                            value={tokenActionForm.description || ''}
+                            onChange={(e) =>
+                              setTokenActionForm((prev) => ({ ...prev, description: e.target.value }))
+                            }
+                            style={{
+                              width: '100%',
+                              padding: '0.4rem',
+                              borderRadius: 'var(--radius-sm)',
+                              background: 'var(--bg-surface)',
+                              border: '1px solid var(--border-subtle)',
+                              color: 'white',
+                              fontSize: '0.8rem',
+                              marginTop: '0.15rem',
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.4rem' }}>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          style={{ fontSize: '0.72rem', padding: '0.3rem 0.6rem' }}
+                          onClick={() => setIsAddingTokenAction(false)}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          style={{ fontSize: '0.72rem', padding: '0.3rem 0.6rem' }}
+                          onClick={handleSaveTokenAction}
+                          disabled={!tokenActionForm.name.trim()}
+                        >
+                          Save Attack
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* List of Token Actions */}
+                  {(!targetToken.actions || targetToken.actions.length === 0) && !isAddingTokenAction ? (
+                    <div
+                      style={{
+                        fontSize: '0.75rem',
+                        color: 'var(--text-muted)',
+                        fontStyle: 'italic',
+                        padding: '0.4rem 0',
+                      }}
+                    >
+                      No attacks added to {targetToken.name}. Click "+ Add Attack" to add attacks directly without syncing with a character sheet.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      {(targetToken.actions || []).map((action, idx) => (
+                        <div
+                          key={`${action.name}-${idx}`}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            backgroundColor: 'var(--bg-surface-elevated)',
+                            padding: '0.5rem 0.75rem',
+                            borderRadius: 'var(--radius-sm)',
+                            border: '1px solid var(--border-subtle)',
+                          }}
+                        >
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                              <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{action.name}</span>
+                              {action.type && (
+                                <span
+                                  style={{
+                                    fontSize: '0.65rem',
+                                    padding: '1px 5px',
+                                    borderRadius: '4px',
+                                    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                                    color: '#60a5fa',
+                                    border: '1px solid rgba(59, 130, 246, 0.3)',
+                                    textTransform: 'capitalize',
+                                  }}
+                                >
+                                  {action.type}
+                                </span>
+                              )}
+                              {action.toHitModifier !== undefined && (
+                                <span
+                                  style={{
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    color: 'var(--accent-primary)',
+                                  }}
+                                >
+                                  {action.toHitModifier >= 0 ? `+${action.toHitModifier}` : action.toHitModifier} to hit
+                                </span>
+                              )}
+                              {action.damageDice && (
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                                  {action.damageDice} dmg
+                                </span>
+                              )}
+                              {(action.range || action.reach) && (
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                  ({action.range || action.reach})
+                                </span>
+                              )}
+                            </div>
+                            {action.description && (
+                              <div
+                                style={{
+                                  fontSize: '0.7rem',
+                                  color: 'var(--text-muted)',
+                                  marginTop: '0.15rem',
+                                }}
+                              >
+                                {action.description}
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginLeft: '0.5rem' }}>
+                            {onRollAction && (
+                              <button
+                                className="btn btn-secondary"
+                                style={{
+                                  padding: '0.2rem 0.5rem',
+                                  fontSize: '0.72rem',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem',
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onRollAction(action);
+                                }}
+                                title={`Roll ${action.name}`}
+                              >
+                                <Dices size={13} color="var(--accent-indigo)" />
+                                <span>Roll</span>
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              className="btn-icon"
+                              style={{ width: '24px', height: '24px', padding: 0, color: '#f43f5e' }}
+                              onClick={() => handleDeleteTokenAction(idx)}
+                              title="Delete Attack"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

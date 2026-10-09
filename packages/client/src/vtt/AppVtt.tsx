@@ -2386,6 +2386,7 @@ export const AppVtt: React.FC = () => {
           onTransferToken={handleTransferToken}
           onSetInitiative={handleSetTokenInitiative}
           onAddAura={handleAddAura}
+          onRollAction={handleRollAction}
           onOpenFullEditor={() => {
             setTokenToEdit(selectedToken);
             setShowTokenEditor(true);

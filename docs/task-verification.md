@@ -11,6 +11,7 @@ This document provides step-by-step instructions for manually verifying all feat
 
 | Task ID | Feature Title | Domain | Status |
 | :--- | :--- | :--- | :--- |
+| **[OB-200](#ob-200---standalone-token-attacks-without-character-sync)** | Standalone Token Attacks Without Character Sync | VTT / Tokens | Testing |
 | **[OB-198](#ob-198---reveal-fog-shortcut-key-shift-f)** | Reveal Fog Shortcut Key (`Shift+F`) | VTT / Fog of War | Testing |
 | **[OB-211](#ob-211---remove-excess-display-from-info-commands)** | Remove Excess Display from Info Commands | Common / Chat | Testing |
 | **[OB-207](#ob-207---unbound-token-resets-character-sheet-form-state)** | Unbound Token Resets Character Sheet Form State | VTT / Character Sheet | Testing |
@@ -32,6 +33,65 @@ This document provides step-by-step instructions for manually verifying all feat
 ---
 
 ## VTT & Chat
+
+### OB-200 - Standalone Token Attacks Without Character Sync
+
+- **Reference in tasks.md:** [tasks.md: OB-200](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-200)
+- **Primary Source Code:** [TokenEditorModal.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/TokenEditorModal.tsx), [TokenControls.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/TokenControls.tsx), [CharacterFlyout.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/vtt/components/CharacterFlyout.tsx), [ChatPanel.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/ChatPanel.tsx), [types.ts](file:///Users/tom/Projects/OldBearBattles/packages/shared/src/types.ts)
+- **Where to find it:** Full Token Settings (`Settings` gear), Floating Token HUD (`Swords` button), Character Flyout (unbound token view), and Chat Panel (`/attack`, `/attack?`, and statblock action cards).
+
+#### Step-by-Step Instructions:
+
+1. **Add Attacks via Full Token Editor:**
+   - Select any token on the battlemap that does **not** have a synced character sheet (or spawn a fresh token).
+   - In the floating token HUD at the bottom, click the **Settings** gear icon (`Full Token Settings`).
+   - Scroll down to the **Attacks & Actions** section.
+   - Click **+ Add Attack**.
+   - Fill in:
+     - Attack Name: `Longsword`
+     - Type: `Melee Attack`
+     - To-Hit Modifier: `5`
+     - Damage Formula: `1d8+3`
+     - Reach / Range: `5 ft`
+     - Notes: `Versatile (1d10+3)`
+   - Click **Save Attack**. Verify the attack appears in the list with `Longsword`, `+5 to hit`, and `1d8+3 dmg`.
+   - Click **Save Changes** in the modal.
+
+2. **Quick Attacks & Rolling from Floating Token HUD:**
+   - With the token selected, look at the floating token HUD.
+   - Notice the **Swords** icon with badge `1`.
+   - Click the **Swords** icon: verify the quick attacks popup opens above the HUD showing `Longsword (+5 to hit • 1d8+3)`.
+   - Click **Roll**: verify the attack roll and damage roll execute, broadcasting to chat and triggering roll announcement banners.
+
+3. **View & Add Attacks in Character Flyout for Unsynced Token:**
+   - Select the unsynced token and open the Character Sheet flyout (via left sidebar or top bar Character button).
+   - Notice the character sheet is not bound to a D&D Beyond / Pathbuilder sheet.
+   - Verify the **Token Attacks** section is displayed showing the `Longsword` attack with a **Roll** button.
+   - Click **+ Add Attack** in the flyout.
+   - Add a second attack: Name `Dagger`, To-Hit `5`, Damage `1d4+3`, Range `20/60 ft`.
+   - Click **Save Attack**: verify `Dagger` is immediately saved directly to the token.
+   - Click **Roll** on `Dagger`: verify the attack rolls into chat.
+   - Verify the token still has no character bound (no artificial D&D Beyond sheet was forged).
+
+4. **Roll Attacks via Chat Commands Without Character Sync:**
+   - In chat, run `/token Goblin Scout` (or the name of your unsynced token).
+   - Run `/attack?`: verify the available attacks (`Longsword`, `Dagger`) are listed.
+   - Run `/attack Longsword`: verify the attack rolls directly using the token's standalone attack stats.
+
+5. **Add Attack Directly from Chat Statblock Card:**
+   - In chat, inspect an attack or monster (e.g. `/attack? Shortbow` or `/monster? Goblin`).
+   - On an action or attack card, click **Add to Token Actions** / **Add to Token**.
+   - Verify the attack is added directly to the token without syncing a character sheet.
+
+#### Expected Result (Pass Criteria):
+
+- Attacks can be added, edited, and deleted directly on tokens in `TokenEditorModal`.
+- Floating token HUD provides a quick `Swords` popup to view and roll token attacks.
+- `CharacterFlyout` allows viewing, rolling, and adding attacks for unsynced tokens without requiring character sync.
+- Chat commands `/attack` and `/attack?` recognize and roll standalone token attacks.
+- Tokens retain their standalone attacks without creating or forging unnecessary `DnDCharacter` sheets.
+
+---
 
 ### OB-198 - Reveal Fog Shortcut Key (`Shift+F`)
 

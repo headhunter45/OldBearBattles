@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { Token, Player, GameMap } from '@oldbear/shared';
-import { Heart, Shield, Plus, Minus, Settings, Trash2, ArrowRightLeft, Copy, UserCheck, Swords, RotateCw, Lock, Unlock, Sparkles } from 'lucide-react';
+import { Token, Player, GameMap, DnDAction } from '@oldbear/shared';
+import { Heart, Shield, Plus, Minus, Settings, Trash2, ArrowRightLeft, Copy, UserCheck, Swords, RotateCw, Lock, Unlock, Sparkles, Dices } from 'lucide-react';
 
 interface TokenControlsProps {
   token: Token;
@@ -13,6 +13,7 @@ interface TokenControlsProps {
   onSetInitiative?: (token: Token, score: number) => void;
   onOpenFullEditor: () => void;
   onAddAura?: (token: Token) => void;
+  onRollAction?: (action: DnDAction) => void;
   canControl: boolean;
   isGm: boolean;
   maps: GameMap[];
@@ -133,12 +134,19 @@ export const TokenControls: React.FC<TokenControlsProps> = ({
   onSetInitiative,
   onOpenFullEditor,
   onAddAura,
+  onRollAction,
   canControl,
   isGm,
   maps,
   players = [],
 }) => {
   if (!canControl && !isGm) return null;
+
+  const [showAttacksMenu, setShowAttacksMenu] = useState(false);
+  const availableAttacks: DnDAction[] =
+    token.actions && token.actions.length > 0
+      ? token.actions
+      : token.character?.actions || [];
 
   const handleHpDelta = (delta: number) => {
     const newHp = Math.max(0, Math.min(token.maxHp, token.currentHp + delta));
@@ -155,19 +163,161 @@ export const TokenControls: React.FC<TokenControlsProps> = ({
 
   return (
     <div
-      className="floating-hud glass-panel animate-fade-in"
       style={{
+        position: 'absolute',
         bottom: '1.5rem',
         left: '50%',
         transform: 'translateX(-50%)',
-        padding: '0.6rem 1rem',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.65rem',
-        maxWidth: '85vw',
-        overflowX: 'auto',
+        zIndex: 30,
+        pointerEvents: 'auto',
       }}
     >
+      {/* Quick Token Attacks Menu Popup (OB-200) */}
+      {showAttacksMenu && !token.isProp && (
+        <div
+          className="glass-panel-elevated animate-fade-in"
+          style={{
+            position: 'absolute',
+            bottom: 'calc(100% + 10px)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            minWidth: '280px',
+            maxWidth: '360px',
+            maxHeight: '280px',
+            overflowY: 'auto',
+            padding: '0.75rem',
+            borderRadius: 'var(--radius-md)',
+            boxShadow: '0 12px 30px rgba(0,0,0,0.6)',
+            border: '1px solid var(--border-subtle)',
+            zIndex: 60,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '0.5rem',
+              borderBottom: '1px solid var(--border-subtle)',
+              paddingBottom: '0.4rem',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                color: 'var(--text-primary)',
+              }}
+            >
+              <Swords size={14} color="#818cf8" />
+              <span>{token.name} Attacks ({availableAttacks.length})</span>
+            </div>
+            <button
+              className="btn-icon"
+              style={{ width: '20px', height: '20px', padding: 0 }}
+              onClick={() => setShowAttacksMenu(false)}
+            >
+              ✕
+            </button>
+          </div>
+
+          {availableAttacks.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                No attacks configured for this token.
+              </div>
+              <button
+                className="btn btn-secondary"
+                style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
+                onClick={() => {
+                  setShowAttacksMenu(false);
+                  onOpenFullEditor();
+                }}
+              >
+                <Plus size={13} /> Add Attacks in Settings
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              {availableAttacks.map((action, idx) => (
+                <div
+                  key={`${action.name}-${idx}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    backgroundColor: 'var(--bg-surface)',
+                    padding: '0.4rem 0.6rem',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-subtle)',
+                  }}
+                >
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-primary)' }}>
+                      {action.name}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                      {action.toHitModifier !== undefined && (
+                        <span style={{ color: 'var(--accent-primary)', fontWeight: 600, marginRight: '4px' }}>
+                          {action.toHitModifier >= 0 ? `+${action.toHitModifier}` : action.toHitModifier} to hit
+                        </span>
+                      )}
+                      {action.damageDice && <span>• {action.damageDice}</span>}
+                    </div>
+                  </div>
+                  {onRollAction && (
+                    <button
+                      className="btn btn-primary"
+                      style={{
+                        padding: '0.2rem 0.5rem',
+                        fontSize: '0.72rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                        flexShrink: 0,
+                      }}
+                      onClick={() => {
+                        onRollAction(action);
+                      }}
+                      title={`Roll ${action.name}`}
+                    >
+                      <Dices size={12} /> Roll
+                    </button>
+                  )}
+                </div>
+              ))}
+              <div style={{ marginTop: '0.4rem', textAlign: 'center' }}>
+                <button
+                  className="btn btn-secondary"
+                  style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', width: '100%' }}
+                  onClick={() => {
+                    setShowAttacksMenu(false);
+                    onOpenFullEditor();
+                  }}
+                >
+                  <Settings size={12} /> Manage Attacks in Settings
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div
+        className="glass-panel animate-fade-in"
+        style={{
+          padding: '0.6rem 1rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.65rem',
+          maxWidth: '85vw',
+          overflowX: 'auto',
+        }}
+      >
       {/* Token Identity: Square, Non-Squished Avatar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
         {token.imageUrl ? (
@@ -469,6 +619,47 @@ export const TokenControls: React.FC<TokenControlsProps> = ({
         >
           {token.locked ? <Lock size={16} /> : <Unlock size={16} />}
         </button>
+        {!token.isProp && (
+          <button
+            className="btn-icon"
+            onClick={() => setShowAttacksMenu((v) => !v)}
+            title={
+              availableAttacks.length > 0
+                ? `Token Attacks (${availableAttacks.length})`
+                : "Token Attacks (Click to view or add)"
+            }
+            style={{
+              position: 'relative',
+              color: showAttacksMenu || availableAttacks.length > 0 ? '#818cf8' : 'var(--text-secondary)',
+              backgroundColor: showAttacksMenu ? 'rgba(99, 102, 241, 0.25)' : 'transparent',
+            }}
+          >
+            <Swords size={16} />
+            {availableAttacks.length > 0 && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '-3px',
+                  right: '-3px',
+                  backgroundColor: '#6366f1',
+                  color: 'white',
+                  fontSize: '0.58rem',
+                  fontWeight: 700,
+                  borderRadius: '999px',
+                  minWidth: '13px',
+                  height: '13px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0 2px',
+                  lineHeight: 1,
+                }}
+              >
+                {availableAttacks.length}
+              </span>
+            )}
+          </button>
+        )}
         <button className="btn-icon" onClick={onOpenFullEditor} title="Full Token Settings">
           <Settings size={16} />
         </button>
@@ -490,5 +681,6 @@ export const TokenControls: React.FC<TokenControlsProps> = ({
         )}
       </div>
     </div>
-  );
+  </div>
+);
 };

@@ -141,6 +141,25 @@ export function processSlashCommand(
       return associatedToken.character;
     }
     if (associatedToken) {
+      if (associatedToken.actions && associatedToken.actions.length > 0) {
+        return {
+          id: associatedToken.id,
+          name: associatedToken.name,
+          level: 1,
+          classes: 'Token',
+          race: '',
+          currentHp: associatedToken.currentHp,
+          maxHp: associatedToken.maxHp,
+          tempHp: associatedToken.tempHp || 0,
+          speed: associatedToken.speed || 30,
+          armorClass: 10,
+          passivePerception: 10,
+          initiativeBonus: associatedToken.initiativeBonus ?? 0,
+          stats: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+          spells: [],
+          actions: associatedToken.actions,
+        };
+      }
       const monsterData = (associatedToken as any).monsterData;
       if (monsterData) {
         const mActions: DnDAction[] = (monsterData.actions || []).map((a: any) => ({
@@ -1684,6 +1703,37 @@ export function addBlockToTokenOrCharacter({
         range: block.range,
         description: block.description,
       };
+
+      if (targetToken && !rawChar) {
+        const updatedActions = [...(targetToken.actions || []), newAction];
+        const updatedToken: Token = {
+          ...targetToken,
+          actions: updatedActions,
+        };
+        onSyncToken(targetToken.id, { actions: updatedActions });
+        onSetAssociatedToken?.(updatedToken);
+        confirmText = `✅ Added attack **${block.name}** to ${targetToken.name}'s token attacks.`;
+        onSendMessage?.({
+          id: crypto.randomUUID(),
+          senderId: 'system',
+          senderName: 'VTT Guide',
+          senderColor: '#10b981',
+          text: confirmText,
+          timestamp: Date.now(),
+          isEphemeral: true,
+          recipientId: player.id,
+        });
+        return {
+          targetType: 'token',
+          targetId: targetToken.id,
+          targetName: targetToken.name,
+          updatedCharacter: {
+            ...baseChar,
+            actions: updatedActions,
+          },
+        };
+      }
+
       updatedChar = {
         ...baseChar,
         actions: [...(baseChar.actions || []), newAction],

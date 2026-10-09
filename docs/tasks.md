@@ -319,8 +319,8 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-196 | Move chat back to the left sidebar. Put it below the measuring tape icon.                                                                                                                                                                                                                                                                                                                                                                                                            | Common         | Ready    | [Feature](#ob-196) |
 | OB-197 | Brawl mode does not have a top bar so I cannot switch back. See [OB-154](#ob-154).                                                                                                                                                                                                                                                                                                                                                                                                   | Common         | Ready    | [Bug](#ob-197)     |
 | OB-198 | Reveal fog should be 'shift-f' instead of 'r' for the shortcut key.                                                                                                                                                                                                                                                                                                                                                                                                                  | Vtt            | Testing  | [Feature](#ob-198) |
-| OB-199 | *Make fog be a single layer.*                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Vtt            | Triage   | [Feature](#ob-199) |
-| OB-200 | I want to be able to add attacks to a token without syncing it with a character.                                                                                                                                                                                                                                                                                                                                                                                                     | Vtt            | Ready    | [Feature](#ob-200) |
+| OB-199 | Make fog be a single layer.                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Vtt            | Ready    | [Feature](#ob-199) |
+| OB-200 | I want to be able to add attacks to a token without syncing it with a character.                                                                                                                                                                                                                                                                                                                                                                                                     | Vtt            | Testing  | [Feature](#ob-200) |
 | OB-201 | When a player spawns a token it should automatically be controlled by them. See [OB-143](#ob-143).                                                                                                                                                                                                                                                                                                                                                                                   | Vtt            | Done     | [Bug](#ob-201)     |
 | OB-202 | *Make help in chat look better.*                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Common         | Triage   | [Feature](#ob-202) |
 | OB-203 | *Make draggable windows resizable on desktop. Especially chat.*                                                                                                                                                                                                                                                                                                                                                                                                                      | Common         | Triage   | [Feature](#ob-203) |
@@ -3192,31 +3192,27 @@ Describe task objectives and implementation requirements here.
 
 - [x]
 
-<a id="ob-199" class="task" data-project="vtt" data-status="triage" data-task-type="feature"></a>
+<a id="ob-199" class="task" data-project="vtt" data-status="ready" data-task-type="feature"></a>
 ### Make fog be a single layer.
 **ID:** OB-199
-**Project:** Vtt
-**Status:** Triage
-**Type:** Feature
-
-
-**Description:**
-The Reveal fog tool only removes from the topmost layer of fog it encounters. We should only have 1 layer at a time and track it as an svg preferably or a raster image so we can brush it on and off later.
-
-- [ ]
-
-<a id="ob-200" class="task" data-project="vtt" data-status="ready" data-task-type="feature"></a>
-### I want to be able to add attacks to a token without syncing it with a character.
-**ID:** OB-200
 **Project:** Vtt
 **Status:** Ready
 **Type:** Feature
 
+**Description:**
+The Reveal fog tool only removes from the topmost layer of fog it encounters. We should only have 1 layer at a time and track it as an svg preferably or a raster image so we can brush it on and off later with a circular brush or a rectangle selection. The size of the brush should be adjustable somehow maybe the , and . keys, the [ ] keys, the - = keys, or preferably someting you can click on and drag up or down, it would how up either before or after the tool to switch your color.
+
+<a id="ob-200" class="task" data-project="vtt" data-status="testing" data-task-type="feature"></a>
+### I want to be able to add attacks to a token without syncing it with a character.
+**ID:** OB-200
+**Project:** Vtt
+**Status:** Testing
+**Type:** Feature
 
 **Description:**
 Describe task objectives and implementation requirements here.
 
-- [ ]
+- [x]
 
 <a id="ob-201" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
 ### When a player spawns a token it should automatically be controlled by them. See [OB-143](#ob-143).

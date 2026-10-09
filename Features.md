@@ -104,6 +104,7 @@ Accessible via the Drawing Tools sub-menu in the left HUD or number keys (`1` - 
 - **Movement Lock (`🔒`)**: Lock tokens or props to prevent accidental dragging during gameplay.
 - **Multi-Token Assignment**: GMs can assign control of any token to specific players or assign multiple tokens to one player.
 - **Combat Stats**: Inline tracking for Current HP, Max HP, Temporary HP, Armor Class (AC), Speed, and standard 5e Condition Badges (Blinded, Charmed, Concentrating, etc.).
+- **Standalone Attacks & Actions (OB-200)**: Add, edit, and roll attacks directly on any token without requiring a synced D&D Beyond or Pathbuilder character sheet. Attacks can be managed in Full Token Settings, viewed and rolled via the `Swords` button on the floating HUD, added in the Character Flyout for unsynced tokens, or appended directly from chat statblock cards.
 
 ### Props System (Tasks #107, #113, #114, #115)
 - **Props as Environmental Objects**: Treat props as furniture, doors, walls, trees, or unkillable NPCs.
