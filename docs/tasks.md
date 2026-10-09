@@ -302,8 +302,8 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-179 | Chat Input Message History Navigation (Up/Down Arrow Keys)                                                                                                                                                                                                                                                                                                                                                                                                                           | Old Bear VTT   | Done     | [Bug](#ob-179)     |
 | OB-180 | System-Agnostic EntityAction Schema & Statblock Card Renderer                                                                                                                                                                                                                                                                                                                                                                                                                        | Old Bear VTT   | Done     | [Feature](#ob-180) |
 | OB-181 | Statblock Inspection Syntax (`?`) for Chat Commands                                                                                                                                                                                                                                                                                                                                                                                                                                  | Old Bear VTT   | Done     | [Feature](#ob-181) |
-| OB-182 | Associate Controllable Token with Chat Panel                                                                                                                                                                                                                                                                                                                                                                                                                                         | Old Bear VTT   | Testing  | [Feature](#ob-182) |
-| OB-183 | Codebase Simplification & Refactoring Plan (docs/refactor-1.md)                                                                                                                                                                                                                                                                                                                                                                                                                      | Old Bear VTT   | Testing  | [Chore](#ob-183)   |
+| OB-182 | Associate Controllable Token with Chat Panel                                                                                                                                                                                                                                                                                                                                                                                                                                         | Old Bear VTT   | Done     | [Feature](#ob-182) |
+| OB-183 | Codebase Simplification & Refactoring Plan (docs/refactor-1.md)                                                                                                                                                                                                                                                                                                                                                                                                                      | Old Bear VTT   | Done     | [Chore](#ob-183)   |
 | OB-184 | HelpTip Component & Placement Guide (docs/helptip-locations.md)                                                                                                                                                                                                                                                                                                                                                                                                                      | Old Bear VTT   | Testing  | [Feature](#ob-184) |
 | OB-185 | Backlog Research & Implementation Guide (docs/backlog-implementation-guide.md)                                                                                                                                                                                                                                                                                                                                                                                                       | Old Bear VTT   | Testing  | [Feature](#ob-185) |
 | OB-186 | Unable to create new maps or duplicate existing ones.                                                                                                                                                                                                                                                                                                                                                                                                                                | Shared         | Done     | [Bug](#ob-186)     |
@@ -327,7 +327,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-204 | *Error when trying to import pf2 content with /import*                                                                                                                                                                                                                                                                                                                                                                                                                               | Vtt            | Triage   | [Bug](#ob-204)     |
 | OB-205 | The add to character sheet button on an inspected spell adds to the currently selected character. Not the as token.                                                                                                                                                                                                                                                                                                                                                                  | Vtt            | Done     | [Bug](#ob-205)     |
 | OB-206 | Inspecting a spell like /spell? magic missile' shows the spell, but it has the wrong buttons.                                                                                                                                                                                                                                                                                                                                                                                        | Vtt            | Done     | [Bug](#ob-206)     |
-| OB-207 | Changing to a token without a bound character sheet should reset the form to the token's state.                                                                                                                                                                                                                                                                                                                                                                                      | Vtt            | Testing  | [Bug](#ob-207)     |
+| OB-207 | Changing to a token without a bound character sheet should reset the form to the token's state.                                                                                                                                                                                                                                                                                                                                                                                      | Vtt            | Done     | [Bug](#ob-207)     |
 | OB-208 | Update the Open5EFetcher to use the v2 api.                                                                                                                                                                                                                                                                                                                                                                                                                                          | Vtt            | Ready    | [Feature](#ob-208) |
 | OB-209 | There is no settings button next to the active scene name in the top bar.                                                                                                                                                                                                                                                                                                                                                                                                            | Common         | Done     | [Bug](#ob-209)     |
 | OB-210 | Remove references to rodeo and obr to be nice.                                                                                                                                                                                                                                                                                                                                                                                                                                       | Common         | Done     | [Chore](#ob-210)   |
@@ -2932,16 +2932,14 @@ Add a trailing question mark (`?`) convention to chat commands to display refere
 - Standard usage without `?` performs the active roll/cast (e.g. `/spell magic-missile` makes the damage/attack roll).
 - Inspection mode displays the formatted `<StatBlockCard />` in chat (or local popover) with action cost, traits, full rules text, and a `[+ Add to Character]` button.
 
-<a id="ob-182" class="task" data-project="old-bear-vtt" data-status="testing" data-task-type="feature"></a>
+<a id="ob-182" class="task" data-project="old-bear-vtt" data-status="done" data-task-type="feature"></a>
 ### Associate Controllable Token with Chat Panel
 **ID:** OB-182
 **Project:** Old Bear VTT
-**Status:** Testing
+**Status:** Done
 **Type:** Feature
 
-
 **Description:**
-
 Enable associating a controllable token with the chat panel so commands like `/attack`, `/spell`, rolls, and in-character speech are attributed directly to that token:
 
 - Added **Speaking as:** selector bar above chat message input displaying controllable tokens and a `[Bind Selected]` button for the actively selected canvas token.
@@ -2956,16 +2954,14 @@ Enable associating a controllable token with the chat panel so commands like `/a
   - `/roll d20+init`: Automatically rolls initiative using the associated token's initiative bonus / dexterity modifier.
   - Attributed rolls and messages display `Player (TokenName)` and render the token's avatar image.
 
-<a id="ob-183" class="task" data-project="old-bear-vtt" data-status="testing" data-task-type="chore"></a>
+<a id="ob-183" class="task" data-project="old-bear-vtt" data-status="done" data-task-type="chore"></a>
 ### Codebase Simplification & Refactoring Plan (docs/refactor-1.md)
 **ID:** OB-183
 **Project:** Old Bear VTT
-**Status:** Testing
+**Status:** Done
 **Type:** Chore
 
-
 **Description:**
-
 Perform an architectural review of the codebase and create [docs/refactor-1.md](docs/refactor-1.md) detailing 8 high-impact refactoring tasks:
 
 - **REF-001**: Unified Entity Statblock & Character Schema Consolidation (consolidating `DnDCharacter`, `MonsterCard`, and `EntityStatBlock`).
@@ -3309,11 +3305,11 @@ Inspecting a spell like '/spell? magic missile' shows the spell, but it has a sp
   - Added unit tests in chat.test.ts verifying default character sheet initialization on spell addition and token spawn permissions.
 - Removed the useless 'Roll' button from monster stat blocks in StatBlockCard.tsx and ChatPanel.tsx (restricting roll/cast exclusively to spells, attacks, actions, and features).
 
-<a id="ob-207" class="task" data-project="vtt" data-status="testing" data-task-type="bug"></a>
+<a id="ob-207" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
 ### Changing to a token without a bound character sheet should reset the form to the token's state.
 **ID:** OB-207
 **Project:** Vtt
-**Status:** Testing
+**Status:** Done
 **Type:** Bug
 
 **Description:**

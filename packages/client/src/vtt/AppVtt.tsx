@@ -1859,7 +1859,7 @@ export const AppVtt: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
-      if (tag === 'input' || tag === 'textarea' || (e.target as HTMLElement)?.isContentEditable) {
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || (e.target as HTMLElement)?.isContentEditable) {
         return;
       }
 
@@ -1931,6 +1931,11 @@ export const AppVtt: React.FC = () => {
       if (key === 'm') {
         e.preventDefault();
         setActiveTool('measure');
+        return;
+      }
+      if (key === 'c' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setShowCharacterFlyout((v) => !v);
         return;
       }
       if (key === 'f') {

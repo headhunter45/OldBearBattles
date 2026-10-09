@@ -25,6 +25,7 @@ describe('Reusable Help & Tooltip Component (OB-139)', () => {
     assert.ok(keys.includes('8'), 'Must include 8 for spray decal');
     assert.ok(keys.includes('R'), 'Must include R for fog reveal');
     assert.ok(keys.includes('F'), 'Must include F for fog hide');
+    assert.ok(keys.includes('C'), 'Must include C for character sheet');
     assert.ok(keys.includes('Esc'), 'Must include Esc for deselect/close');
   });
 

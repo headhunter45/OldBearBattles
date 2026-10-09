@@ -31,6 +31,7 @@ export const HOTKEYS: HotkeyItem[] = [
   { key: 'F', description: 'Hide / Cover Fog of War', category: 'Fog of War' },
 
   // General
+  { key: 'C', description: 'Toggle Character Sheet Window', category: 'General' },
   { key: '? / Shift + /', description: 'Open Keyboard Shortcuts Cheat Sheet', category: 'General' },
   { key: 'Esc', description: 'Deselect Token/Marker or Close Modal', category: 'General' },
   { key: 'Del / Backspace', description: 'Delete Selected Token or Persistent Marker', category: 'General' },

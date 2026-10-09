@@ -35,7 +35,7 @@ This document provides step-by-step instructions for manually verifying all feat
 
 - **Reference in tasks.md:** [tasks.md: OB-207](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-207)
 - **Primary Source Code:** [CharacterFlyout.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/vtt/components/CharacterFlyout.tsx)
-- **Where to find it:** The Character Sheet floating window (`Alt+C` or Character icon in top/sidebar) and battlemap canvas tokens.
+- **Where to find it:** The Character Sheet floating window (Character button in top bar or sidebar) and battlemap canvas tokens.
 
 #### Step-by-Step Instructions:
 
