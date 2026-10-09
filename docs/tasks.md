@@ -333,6 +333,13 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-210 | Remove references to rodeo and obr to be nice.                                                                                                                                                                                                                                                                                                                                                                                                                                       | Common         | Done     | [Chore](#ob-210)   |
 | OB-211 | Remove excess display form the info commands.                                                                                                                                                                                                                                                                                                                                                                                                                                        | Common         | Testing  | [Feature](#ob-211) |
 | OB-212 | Add a way to request variants like the 2014 vs 2024 srds, between pf1, sf1, pf2+sf2, and between 5e and pf*/sf*.                                                                                                                                                                                                                                                                                                                                                                     | Old Bear VTT   | Ready    | [Feature](#ob-212) |
+| OB-213 | *when creating a token and then checking its character sheet I see some kind of id in the dndbeyond url block. That should be empty.*                                                                                                                                                                                                                                                                                                                                                | Old Bear VTT   | Triage   | [Feature](#ob-213) |
+| OB-214 | Allow saving custom characters.                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Old Bear VTT   | Ready    | [Feature](#ob-214) |
+| OB-215 | *Find a source for icons and images.*                                                                                                                                                                                                                                                                                                                                                                                                                                                | Old Bear VTT   | Planning | [Feature](#ob-215) |
+| OB-216 | Add to character on an item card does nothing. It should add the attack/ability to the character sheet,                                                                                                                                                                                                                                                                                                                                                                              | Old Bear VTT   | Ready    | [Bug](#ob-216)     |
+| OB-217 | Allow /attack? to query compendium weapons and attacks from Open5e and PF2e                                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Ready    | [Feature](#ob-217) |
+| OB-218 | Chat textbox does not lose focus when we click something else. I clicked a token and the box still had the cursor in it. I wasn't able to use hotkeys until I had selected some text elsewhere.                                                                                                                                                                                                                                                                                      | Common         | Ready    | [Bug](#ob-218)     |
+| OB-219 | Don't favor 3nd on the character sheet.                                                                                                                                                                                                                                                                                                                                                                                                                                              | Common         | Ready    | [Feature](#ob-219) |
 
 ---
 
@@ -3381,6 +3388,83 @@ Make the info responses for commands like /spell? and /monster? show only to the
 
 **Description:**
 Document any missing backends, but assume we will have an api eventually. Stub out the actual requests and fail gracefully. This shouls apply to all info commands. If no system is specified check the character for the named action (attack/spell/item) then check the cached db this may have more item types like monsters and items if characters do not havke them. Plan for adding more commands later like /class? /race? /ability? /feat? etc... when making architectural decisions, but do not worry about implementing them now.
+- [ ]
+
+<a id="ob-213" class="task" data-project="old-bear-vtt" data-status="triage" data-task-type="feature"></a>
+### when creating a token and then checking its character sheet I see some kind of id in the dndbeyond url block. That should be empty.
+**ID:** OB-213
+**Project:** Old Bear VTT
+**Status:** Triage
+**Type:** Feature
+
+**Description:**
+Describe task objectives and implementation requirements here.
+- [ ]
+
+<a id="ob-214" class="task" data-project="old-bear-vtt" data-status="ready" data-task-type="feature"></a>
+### Allow saving custom characters.
+**ID:** OB-214
+**Project:** Old Bear VTT
+**Status:** Ready
+**Type:** Feature
+
+**Description:**
+When I open the character sheet I should be able to save that character to my database as a character/token.
+- [ ]
+
+<a id="ob-215" class="task" data-project="old-bear-vtt" data-status="planning" data-task-type="feature"></a>
+### Find a source for icons and images.
+**ID:** OB-215
+**Project:** Old Bear VTT
+**Status:** Planning
+**Type:** Feature
+
+**Description:**
+Find a source for images. Maybe some kind of tagged db where we can calculate the relevance based on how many tags match the request. I don't want ot burn through ai tokens generating these for people. We could look for places to link to if users want more images or a variety of images. Icons for spells, items, attacks, and abilities too. At worst give me a bunch of prompts to generate images locally and cache them with the prompt text for searching and scoring later.
+- [ ]
+
+<a id="ob-216" class="task" data-project="old-bear-vtt" data-status="ready" data-task-type="bug"></a>
+### Add to character on an item card does nothing. It should add the attack/ability to the character sheet,
+**ID:** OB-216
+**Project:** Old Bear VTT
+**Status:** Ready
+**Type:** Bug
+
+**Description:**
+Describe task objectives and implementation requirements here.
+- [ ]
+
+<a id="ob-217" class="task" data-project="old-bear-vtt" data-status="ready" data-task-type="feature"></a>
+### Allow /attack? to query compendium weapons and attacks from Open5e and PF2e
+**ID:** OB-217
+**Project:** Old Bear VTT
+**Status:** Ready
+**Type:** Feature
+
+**Description:**
+When using /attack? <name> in chat, if the attack is not found in the active character's actions or token's actions, fall back to querying the Open5e weapons/SRD database and PF2e reference database. Display the resulting weapon or attack as an EntityStatBlock card with damage formula, damage type, reach/range, and an '+ Add to Sheet' / '+ Add to Token Attacks' button.
+- [ ]
+
+<a id="ob-218" class="task" data-project="cmn" data-status="ready" data-task-type="bug"></a>
+### Chat textbox does not lose focus when we click something else. I clicked a token and the box still had the cursor in it. I wasn't able to use hotkeys until I had selected some text elsewhere.
+**ID:** OB-218
+**Project:** Common
+**Status:** Ready
+**Type:** Bug
+
+**Description:**
+Describe task objectives and implementation requirements here.
+- [ ]
+
+<a id="ob-219" class="task" data-project="cmn" data-status="ready" data-task-type="feature"></a>
+### Don't favor 3nd on the character sheet.
+**ID:** OB-219
+**Project:** Common
+**Status:** Ready
+**Type:** Feature
+
+**Description:**
+We should not favor a specific ruleset. Currently the character sheet starts with dndbeyod selected. I think we should have a third option that is just our local character that everything imports to.
 - [ ]
 
 ---
