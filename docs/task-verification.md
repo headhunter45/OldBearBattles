@@ -909,6 +909,60 @@ This document provides step-by-step instructions for manually verifying all feat
 - The chat toggle button is positioned on the left sidebar floating toolbar directly below the measuring tape icon.
 - Clicking the button toggles chat visibility and reflects active state and unread message count.
 
+---
+
+### OB-199 - Single-Layer Sequential Fog of War and Interactive Brush
+
+- **Reference in tasks.md:** [tasks.md: OB-199](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-199)
+- **Primary Source Code:** [FogRenderer.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/engine/FogRenderer.ts), [CanvasEngine.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/engine/CanvasEngine.ts), [ToolBar.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/ToolBar.tsx), [AppVtt.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/vtt/AppVtt.tsx)
+- **Where to find it:** Left floating toolbar > **Fog of War Controls** button (Cloud/Eye icon) and bottom toolbar Brush Size widget.
+
+#### Step-by-Step Instructions:
+
+1. **Verify Fog Sub-Menu Controls:**
+   - As GM in VTT mode, click the **Fog of War Controls** button on the left sidebar.
+   - Verify the flyout menu lists:
+     - **Rect Reveal (Shift+F)**
+     - **Rect Hide (F)**
+     - **Brush Reveal** (circular brush icon)
+     - **Brush Hide** (circular brush icon)
+     - **Brush Size** slider and indicator
+     - **Cover All Fog**
+     - **Clear All Fog**
+
+2. **Verify Single-Layer Sequential Reveal & Hide:**
+   - Click **Cover All Fog** so the map is shrouded in darkness.
+   - Select **Rect Reveal** and drag a rectangular region over the center of the map: verify the region becomes clear.
+   - Select **Rect Hide** and drag a smaller rectangle covering half of the revealed region: verify fog is painted back over that half.
+   - Now select **Rect Reveal** and drag a small box inside the newly re-hidden area:
+     - Verify the small box is immediately revealed and visible! (Previously, reveal operations were evaluated before hide operations in separate passes, making it impossible to re-reveal previously hidden areas).
+   - Verify that sequential reveal and hide operations layer cleanly without ghost fog layers.
+
+3. **Verify Circular Brush Reveal and Hide:**
+   - Open the Fog menu and select **Brush Reveal**.
+   - Hover your mouse over the canvas: verify a circular dashed ring outlines the current brush diameter under your cursor.
+   - Click and drag across the fogged map:
+     - Verify a smooth, continuous circular stroke reveals the map along the cursor path.
+   - Open the Fog menu and select **Brush Hide**:
+     - Drag across a revealed area: verify smooth fog is painted back on along the circular stroke path.
+
+4. **Verify Dynamic Brush Resizing via Toolbar Drag and Slider:**
+   - Locate the circular brush size widget positioned directly above the user color circle on the left toolbar.
+   - Click and drag upward on the widget: verify the brush radius increases (e.g. from 40px to 80px), the inner dot expands, and the pixel readout updates.
+   - Drag downward: verify the radius smoothly decreases.
+   - Also test adjusting the slider inside the Fog menu.
+
+5. **Verify Hotkey Resizing:**
+   - Move mouse cursor over the canvas while in Fog Brush mode.
+   - Press `[` or `-` or `,`: verify brush radius decreases by 5px and the cursor ring contracts.
+   - Press `]` or `=` or `.`: verify brush radius increases by 5px and the cursor ring expands.
+
+#### Expected Result (Pass Criteria):
+- Fog of War operates on a single unified raster layer where reveal and hide shapes are evaluated in chronological order, allowing infinite alternating reveals and hides.
+- Circular brush reveal and hide tools are available alongside rectangular tools.
+- Brush size is easily adjustable via hotkeys, the flyout slider, and the draggable left toolbar widget.
+
+
 
 
 

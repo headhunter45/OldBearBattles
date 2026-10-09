@@ -154,6 +154,7 @@ export const AppVtt: React.FC = () => {
   const prevInitTurnRef = useRef<{ round: number; index: number; id?: string } | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [fogBrushRadius, setFogBrushRadius] = useState<number>(40);
 
   // Timers & Progress Clocks State (OB-132)
   const [timerDuration, setTimerDuration] = useState<number>(60);
@@ -1953,6 +1954,32 @@ export const AppVtt: React.FC = () => {
         return;
       }
 
+      if (key === '[' || key === '-' || key === ',') {
+        const target = e.target as HTMLElement | null;
+        if (!target || (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable)) {
+          e.preventDefault();
+          setFogBrushRadius((r) => {
+            const next = Math.max(10, r - 5);
+            engineRef.current?.setFogBrushRadius(next);
+            return next;
+          });
+          return;
+        }
+      }
+
+      if (key === ']' || key === '=' || key === '.') {
+        const target = e.target as HTMLElement | null;
+        if (!target || (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable)) {
+          e.preventDefault();
+          setFogBrushRadius((r) => {
+            const next = Math.min(250, r + 5);
+            engineRef.current?.setFogBrushRadius(next);
+            return next;
+          });
+          return;
+        }
+      }
+
       if (e.key === 'Delete' || e.key === 'Backspace') {
         const target = e.target as HTMLElement | null;
         if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
@@ -2362,6 +2389,11 @@ export const AppVtt: React.FC = () => {
         }}
         isChatOpen={isChatOpen}
         unreadChatCount={unreadChatCount}
+        fogBrushRadius={fogBrushRadius}
+        onChangeFogBrushRadius={(r) => {
+          setFogBrushRadius(r);
+          engineRef.current?.setFogBrushRadius(r);
+        }}
       />
 
       {/* Selected Persistent Shape Controls */}

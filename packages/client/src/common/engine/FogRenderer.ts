@@ -1,16 +1,18 @@
 import { FogState, FogShape } from '@oldbear/shared';
 
 export class FogRenderer {
-  private offscreen: HTMLCanvasElement;
-  private offCtx: CanvasRenderingContext2D;
+  private offscreen?: HTMLCanvasElement;
+  private offCtx?: CanvasRenderingContext2D;
 
   constructor() {
-    this.offscreen = document.createElement('canvas');
-    this.offCtx = this.offscreen.getContext('2d')!;
+    if (typeof document !== 'undefined') {
+      this.offscreen = document.createElement('canvas');
+      this.offCtx = this.offscreen.getContext('2d')!;
+    }
   }
 
   resize(width: number, height: number) {
-    if (this.offscreen.width !== width || this.offscreen.height !== height) {
+    if (this.offscreen && (this.offscreen.width !== width || this.offscreen.height !== height)) {
       this.offscreen.width = Math.max(1, width);
       this.offscreen.height = Math.max(1, height);
     }
@@ -25,55 +27,38 @@ export class FogRenderer {
   ) {
     this.resize(mapWidth, mapHeight);
     const ctx = this.offCtx;
+    if (!ctx) return;
 
     // Reset offscreen canvas
     ctx.clearRect(0, 0, mapWidth, mapHeight);
 
     const fogColor = isGm ? 'rgba(8, 12, 22, 0.65)' : 'rgba(8, 12, 22, 1.0)';
 
+    // Single raster layer: start with base coverage if globalCovered is true
     if (fog.globalCovered) {
-      // Entire map covered by default
-      ctx.fillStyle = fogColor;
-      ctx.fillRect(0, 0, mapWidth, mapHeight);
-
-      // Now cut out revealed shapes
-      ctx.globalCompositeOperation = 'destination-out';
-      for (const shape of fog.shapes) {
-        if (shape.mode === 'reveal') {
-          this.drawShape(ctx, shape);
-        }
-      }
-
-      // Re-hide any areas that were hidden afterwards
       ctx.globalCompositeOperation = 'source-over';
       ctx.fillStyle = fogColor;
-      for (const shape of fog.shapes) {
-        if (shape.mode === 'hide') {
-          this.drawShape(ctx, shape);
-        }
-      }
-    } else {
-      // Uncovered by default, only explicit 'hide' shapes add fog
-      ctx.fillStyle = fogColor;
-      for (const shape of fog.shapes) {
-        if (shape.mode === 'hide') {
-          this.drawShape(ctx, shape);
-        }
-      }
+      ctx.fillRect(0, 0, mapWidth, mapHeight);
+    }
 
-      // Cut out any explicit reveal shapes
-      ctx.globalCompositeOperation = 'destination-out';
-      for (const shape of fog.shapes) {
-        if (shape.mode === 'reveal') {
-          this.drawShape(ctx, shape);
-        }
+    // Sequentially apply each shape in chronological order onto the single raster layer
+    for (const shape of fog.shapes) {
+      if (shape.mode === 'reveal') {
+        ctx.globalCompositeOperation = 'destination-out';
+        this.drawShape(ctx, shape);
+      } else if (shape.mode === 'hide') {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = fogColor;
+        this.drawShape(ctx, shape);
       }
     }
 
     ctx.globalCompositeOperation = 'source-over';
 
     // Composite offscreen fog canvas to main target
-    targetCtx.drawImage(this.offscreen, 0, 0);
+    if (this.offscreen) {
+      targetCtx.drawImage(this.offscreen, 0, 0);
+    }
   }
 
   private drawShape(ctx: CanvasRenderingContext2D, shape: FogShape) {
@@ -81,12 +66,21 @@ export class FogRenderer {
 
     if (shape.type === 'brush') {
       const radius = shape.radius || 30;
-      ctx.beginPath();
-      for (const pt of shape.points) {
-        ctx.moveTo(pt.x + radius, pt.y);
-        ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
+      if (shape.points.length === 1) {
+        ctx.beginPath();
+        ctx.arc(shape.points[0].x, shape.points[0].y, radius, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.beginPath();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = radius * 2;
+        ctx.moveTo(shape.points[0].x, shape.points[0].y);
+        for (let i = 1; i < shape.points.length; i++) {
+          ctx.lineTo(shape.points[i].x, shape.points[i].y);
+        }
+        ctx.stroke();
       }
-      ctx.fill();
     } else if (shape.type === 'polygon' || shape.type === 'rect') {
       ctx.beginPath();
       ctx.moveTo(shape.points[0].x, shape.points[0].y);

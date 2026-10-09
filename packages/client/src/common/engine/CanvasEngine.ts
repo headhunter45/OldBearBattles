@@ -52,7 +52,9 @@ export type ActiveTool =
   | 'spray'
   | 'measure'
   | 'fog-reveal'
-  | 'fog-hide';
+  | 'fog-hide'
+  | 'fog-brush-reveal'
+  | 'fog-brush-hide';
 
 export interface CanvasEngineCallbacks {
   onTokenMove?: (id: string, x: number, y: number) => void;
@@ -98,6 +100,11 @@ export class CanvasEngine {
   draggingMarkerHandle: { marker: ScreenMarker; handle: 'spread' | 'rotate' | 'start' | 'end' } | null = null;
   activeSprayImage?: string;
   activeSprayShape: 'circle' | 'square' = 'circle';
+
+  // Fog brush state
+  fogBrushRadius: number = 40;
+  fogBrushPoints: Point[] = [];
+  hoverWorldPos: Point | null = null;
 
   // Shape drawing state (for markers & fog)
   isDrawing: boolean = false;
@@ -323,6 +330,23 @@ export class CanvasEngine {
 
     // 8. Render Current Drawing In-Progress (markers/fog preview)
     this.renderDrawingPreview(ctx, currentMap);
+
+    // 8b. Render Hover Fog Brush Ring if hovering
+    if (
+      !this.isDrawing &&
+      (this.activeTool === 'fog-brush-reveal' || this.activeTool === 'fog-brush-hide') &&
+      this.hoverWorldPos
+    ) {
+      const isReveal = this.activeTool === 'fog-brush-reveal';
+      ctx.save();
+      ctx.beginPath();
+      ctx.strokeStyle = isReveal ? '#10b981' : '#f43f5e';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.arc(this.hoverWorldPos.x, this.hoverWorldPos.y, this.fogBrushRadius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
 
     ctx.restore();
   }
@@ -638,6 +662,28 @@ export class CanvasEngine {
 
       const distFt = Math.round((dist / gridSize) * scaleFtPerCell);
       this.drawMeasurementBadge(ctx, `${distFt} ft tether`, (x1 + x2) / 2, (y1 + y2) / 2 - 14, color);
+    } else if (this.activeTool === 'fog-brush-reveal' || this.activeTool === 'fog-brush-hide') {
+      const isReveal = this.activeTool === 'fog-brush-reveal';
+      const radius = this.fogBrushRadius;
+      ctx.fillStyle = isReveal ? 'rgba(16, 185, 129, 0.25)' : 'rgba(244, 63, 94, 0.25)';
+      ctx.strokeStyle = isReveal ? '#10b981' : '#f43f5e';
+      ctx.lineWidth = 2;
+      if (this.fogBrushPoints.length > 1) {
+        ctx.beginPath();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = radius * 2;
+        ctx.moveTo(this.fogBrushPoints[0].x, this.fogBrushPoints[0].y);
+        for (let i = 1; i < this.fogBrushPoints.length; i++) {
+          ctx.lineTo(this.fogBrushPoints[i].x, this.fogBrushPoints[i].y);
+        }
+        ctx.stroke();
+      }
+      // Render circle at current cursor
+      ctx.beginPath();
+      ctx.lineWidth = 1.5;
+      ctx.arc(x2, y2, radius, 0, Math.PI * 2);
+      ctx.stroke();
     } else if (this.activeTool === 'rectangle' || this.activeTool.startsWith('fog') || this.activeTool === 'box-select') {
       ctx.fillStyle = this.activeTool === 'fog-reveal'
         ? 'rgba(255, 255, 255, 0.2)'
@@ -755,6 +801,8 @@ export class CanvasEngine {
       this.drawCurrent = worldPos;
       if (this.activeTool === 'laser') {
         this.laserPoints = [worldPos];
+      } else if (this.activeTool === 'fog-brush-reveal' || this.activeTool === 'fog-brush-hide') {
+        this.fogBrushPoints = [worldPos];
       }
     }
   };
@@ -989,6 +1037,7 @@ export class CanvasEngine {
     }
 
     const worldPos = this.viewport.screenToWorld(e.clientX, e.clientY);
+    this.hoverWorldPos = worldPos;
 
     // Cone spread angle or Spray rotation handle dragging
     if (this.draggingMarkerHandle) {
@@ -1191,6 +1240,8 @@ export class CanvasEngine {
         this.laserPoints.push(worldPos);
         // keep laser points within reasonable length
         if (this.laserPoints.length > 25) this.laserPoints.shift();
+      } else if (this.activeTool === 'fog-brush-reveal' || this.activeTool === 'fog-brush-hide') {
+        this.fogBrushPoints.push(worldPos);
       }
     }
   };
@@ -1542,19 +1593,32 @@ export class CanvasEngine {
         }
       }
     } else if (this.activeTool.startsWith('fog')) {
-      const mode = this.activeTool === 'fog-reveal' ? 'reveal' : 'hide';
-      const shape: FogShape = {
-        id: crypto.randomUUID(),
-        mode,
-        type: 'rect',
-        points: [
-          { x: Math.min(x1, x2), y: Math.min(y1, y2) },
-          { x: Math.max(x1, x2), y: Math.min(y1, y2) },
-          { x: Math.max(x1, x2), y: Math.max(y1, y2) },
-          { x: Math.min(x1, x2), y: Math.max(y1, y2) },
-        ],
-      };
-      this.callbacks.onFogUpdate?.(shape);
+      if (this.activeTool === 'fog-brush-reveal' || this.activeTool === 'fog-brush-hide') {
+        const mode = this.activeTool === 'fog-brush-reveal' ? 'reveal' : 'hide';
+        const shape: FogShape = {
+          id: crypto.randomUUID(),
+          mode,
+          type: 'brush',
+          points: this.fogBrushPoints.length > 0 ? [...this.fogBrushPoints] : [worldPos],
+          radius: this.fogBrushRadius,
+        };
+        this.callbacks.onFogUpdate?.(shape);
+        this.fogBrushPoints = [];
+      } else {
+        const mode = this.activeTool === 'fog-reveal' ? 'reveal' : 'hide';
+        const shape: FogShape = {
+          id: crypto.randomUUID(),
+          mode,
+          type: 'rect',
+          points: [
+            { x: Math.min(x1, x2), y: Math.min(y1, y2) },
+            { x: Math.max(x1, x2), y: Math.min(y1, y2) },
+            { x: Math.max(x1, x2), y: Math.max(y1, y2) },
+            { x: Math.min(x1, x2), y: Math.max(y1, y2) },
+          ],
+        };
+        this.callbacks.onFogUpdate?.(shape);
+      }
     }
   }
 
@@ -1567,6 +1631,10 @@ export class CanvasEngine {
 
   setPersistMarkersMode(persist: boolean) {
     this.persistMarkersMode = persist;
+  }
+
+  setFogBrushRadius(radius: number) {
+    this.fogBrushRadius = Math.max(10, Math.min(250, radius));
   }
 
   deleteSelectedMarker() {

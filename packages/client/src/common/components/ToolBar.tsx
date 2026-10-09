@@ -42,6 +42,8 @@ export interface ToolBarProps {
   onToggleChat?: () => void;
   isChatOpen?: boolean;
   unreadChatCount?: number;
+  fogBrushRadius?: number;
+  onChangeFogBrushRadius?: (radius: number) => void;
 }
 
 const COLORS = COLOR_VALUES;
@@ -63,6 +65,8 @@ export const ToolBar: React.FC<ToolBarProps> = ({
   onToggleChat,
   isChatOpen = false,
   unreadChatCount = 0,
+  fogBrushRadius = 40,
+  onChangeFogBrushRadius,
 }) => {
   const [showSelectMenu, setShowSelectMenu] = useState(false);
   const selectMenuRef = useRef<HTMLDivElement>(null);
@@ -581,7 +585,7 @@ export const ToolBar: React.FC<ToolBarProps> = ({
                   title="Drag rectangle to reveal fog (Shift+F)"
                 >
                   <Eye size={16} />
-                  <span>Reveal Fog (Shift+F)</span>
+                  <span>Rect Reveal (Shift+F)</span>
                 </button>
 
                 <button
@@ -602,8 +606,68 @@ export const ToolBar: React.FC<ToolBarProps> = ({
                   title="Drag rectangle to hide fog (F)"
                 >
                   <EyeOff size={16} />
-                  <span>Hide Fog (F)</span>
+                  <span>Rect Hide (F)</span>
                 </button>
+
+                <button
+                  className={`btn btn-secondary ${activeTool === 'fog-brush-reveal' ? 'active' : ''}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.35rem 0.6rem',
+                    fontSize: '0.8rem',
+                    justifyContent: 'flex-start',
+                    color: '#10b981',
+                  }}
+                  onClick={() => {
+                    onSelectTool('fog-brush-reveal');
+                    setShowFogMenu(false);
+                  }}
+                  title="Circular brush to reveal fog"
+                >
+                  <Circle size={16} />
+                  <span>Brush Reveal</span>
+                </button>
+
+                <button
+                  className={`btn btn-secondary ${activeTool === 'fog-brush-hide' ? 'active' : ''}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.35rem 0.6rem',
+                    fontSize: '0.8rem',
+                    justifyContent: 'flex-start',
+                    color: '#f43f5e',
+                  }}
+                  onClick={() => {
+                    onSelectTool('fog-brush-hide');
+                    setShowFogMenu(false);
+                  }}
+                  title="Circular brush to hide fog"
+                >
+                  <Circle size={16} />
+                  <span>Brush Hide</span>
+                </button>
+
+                {onChangeFogBrushRadius && (
+                  <div style={{ padding: '0.3rem 0.4rem', background: 'rgba(0,0,0,0.2)', borderRadius: '4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                      <span>Brush Size</span>
+                      <span style={{ fontWeight: 600, color: 'white' }}>{fogBrushRadius}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="10"
+                      max="200"
+                      step="5"
+                      value={fogBrushRadius}
+                      onChange={(e) => onChangeFogBrushRadius(Number(e.target.value))}
+                      style={{ width: '100%', marginTop: '4px' }}
+                    />
+                  </div>
+                )}
 
                 <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '0.1rem 0' }} />
 
@@ -729,6 +793,64 @@ export const ToolBar: React.FC<ToolBarProps> = ({
           </div>
         )}
       </div>
+
+      {/* Brush Size Drag / Click Controller (OB-199) */}
+      {onChangeFogBrushRadius && (
+        <div
+          title={`Fog Brush Size: ${fogBrushRadius}px (Drag up/down to resize, or use [ / ] or - / = or , / .)`}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            cursor: 'ns-resize',
+            userSelect: 'none',
+            padding: '2px',
+            marginTop: '0.2rem',
+          }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            const startY = e.clientY;
+            const startRadius = fogBrushRadius;
+            const handleMouseMove = (moveEvent: MouseEvent) => {
+              const deltaY = startY - moveEvent.clientY;
+              const nextRadius = Math.max(10, Math.min(250, startRadius + Math.round(deltaY / 2)));
+              onChangeFogBrushRadius(nextRadius);
+            };
+            const handleMouseUp = () => {
+              window.removeEventListener('mousemove', handleMouseMove);
+              window.removeEventListener('mouseup', handleMouseUp);
+            };
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+          }}
+        >
+          <div
+            style={{
+              width: '24px',
+              height: '24px',
+              borderRadius: '50%',
+              border: '1.5px dashed var(--border-subtle, #94a3b8)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              position: 'relative',
+            }}
+          >
+            <div
+              style={{
+                width: `${Math.max(4, Math.min(18, Math.round((fogBrushRadius / 100) * 16)))}px`,
+                height: `${Math.max(4, Math.min(18, Math.round((fogBrushRadius / 100) * 16)))}px`,
+                borderRadius: '50%',
+                backgroundColor: 'var(--text-secondary, #cbd5e1)',
+              }}
+            />
+          </div>
+          <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-secondary, #94a3b8)', marginTop: '2px' }}>
+            {fogBrushRadius}
+          </span>
+        </div>
+      )}
 
       {/* User Color Selector */}
       <div
