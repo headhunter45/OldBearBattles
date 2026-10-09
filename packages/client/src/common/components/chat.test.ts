@@ -667,6 +667,14 @@ describe('Dice Parser & Slash Command Utilities', () => {
     assert.strictEqual(sentMessages[4].statBlock.actions?.length, 1);
     assert.strictEqual(sentMessages[4].statBlock.actions?.[0].name, 'Shortbow');
 
+    // OB-211: Info inspection responses must be ephemeral to player, system-sent, and have no player wrapping text
+    for (let i = 0; i < 5; i++) {
+      assert.strictEqual(sentMessages[i].isEphemeral, true, `Message ${i} must be ephemeral`);
+      assert.strictEqual(sentMessages[i].recipientId, testPlayer.id, `Message ${i} must be addressed to player`);
+      assert.strictEqual(sentMessages[i].senderId, 'system', `Message ${i} must not wrap as player speech`);
+      assert.strictEqual(sentMessages[i].text, '', `Message ${i} must have empty wrapping text`);
+    }
+
     // 6. Contrast with active roll: /attack 1
     const activeAttack = processSlashCommand('/attack 1', ctx);
     assert.strictEqual(activeAttack, true);
@@ -1078,6 +1086,10 @@ describe('Dice Parser & Slash Command Utilities', () => {
     const lastMsg = sentMessages[sentMessages.length - 1];
     assert.strictEqual(lastMsg.statBlock?.name, 'Magic Missile');
     assert.strictEqual(lastMsg.tokenId, 'tok-wizard');
+    assert.strictEqual(lastMsg.isEphemeral, true);
+    assert.strictEqual(lastMsg.recipientId, testPlayer.id);
+    assert.strictEqual(lastMsg.senderId, 'system');
+    assert.strictEqual(lastMsg.text, '');
   });
 
   it('adds an inspected spell to an "as" token that did not initially have a character sheet', () => {

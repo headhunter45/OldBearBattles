@@ -215,6 +215,32 @@ export function processSlashCommand(
     });
   };
 
+  // Helper to send client-only ephemeral statblock info inspection messages (OB-211)
+  const sendPrivateInfoMessage = (
+    statBlock: EntityStatBlock,
+    options?: {
+      tokenId?: string;
+      tokenName?: string;
+      tokenImageUrl?: string;
+    }
+  ) => {
+    onSendMessage({
+      id: crypto.randomUUID(),
+      senderId: 'system',
+      senderName: 'Reference',
+      senderColor: '#6366f1',
+      text: '',
+      timestamp: Date.now(),
+      isCommand: true,
+      isEphemeral: true,
+      recipientId: player.id,
+      statBlock,
+      tokenId: options?.tokenId,
+      tokenName: options?.tokenName,
+      tokenImageUrl: options?.tokenImageUrl,
+    });
+  };
+
   // 1. /help
   if (cmd === 'help') {
     sendPrivateSystemMessage(
@@ -465,14 +491,7 @@ export function processSlashCommand(
         }
 
         const statBlock = convertDnDActionToEntityAction(found, '5e');
-        onSendMessage({
-          id: crypto.randomUUID(),
-          senderId: player.id,
-          senderName: effectiveSenderName,
-          senderColor: player.color,
-          text: `inspects attack: **${found.name}**`,
-          timestamp: Date.now(),
-          statBlock,
+        sendPrivateInfoMessage(statBlock, {
           tokenId: associatedToken?.id,
           tokenName: associatedToken?.name,
           tokenImageUrl: associatedToken?.imageUrl,
@@ -623,14 +642,7 @@ export function processSlashCommand(
 
         if (found) {
           const statBlock = convertDnDSpellToEntityAction(found, '5e');
-          onSendMessage({
-            id: crypto.randomUUID(),
-            senderId: player.id,
-            senderName: effectiveSenderName,
-            senderColor: player.color,
-            text: `inspects spell: **${found.name}**`,
-            timestamp: Date.now(),
-            statBlock,
+          sendPrivateInfoMessage(statBlock, {
             tokenId: associatedToken?.id,
             tokenName: associatedToken?.name,
             tokenImageUrl: associatedToken?.imageUrl,
@@ -641,14 +653,7 @@ export function processSlashCommand(
         // 2. Fetch from Open5e reference, with PF2e fallback
         fetchOpen5eSpell(spellQuery).then(async (open5eBlock) => {
           if (open5eBlock) {
-            onSendMessage({
-              id: crypto.randomUUID(),
-              senderId: player.id,
-              senderName: effectiveSenderName,
-              senderColor: player.color,
-              text: `inspects spell: **${open5eBlock.name}**`,
-              timestamp: Date.now(),
-              statBlock: open5eBlock,
+            sendPrivateInfoMessage(open5eBlock, {
               tokenId: associatedToken?.id,
               tokenName: associatedToken?.name,
               tokenImageUrl: associatedToken?.imageUrl,
@@ -659,14 +664,7 @@ export function processSlashCommand(
           // Fallback to PF2e reference
           const pf2eBlock = await fetchPF2eReference('spell', spellQuery);
           if (pf2eBlock) {
-            onSendMessage({
-              id: crypto.randomUUID(),
-              senderId: player.id,
-              senderName: effectiveSenderName,
-              senderColor: player.color,
-              text: `inspects PF2e spell: **${pf2eBlock.name}**`,
-              timestamp: Date.now(),
-              statBlock: pf2eBlock,
+            sendPrivateInfoMessage(pf2eBlock, {
               tokenId: associatedToken?.id,
               tokenName: associatedToken?.name,
               tokenImageUrl: associatedToken?.imageUrl,
@@ -926,14 +924,7 @@ export function processSlashCommand(
 
         if (found) {
           const statBlock = convertDnDItemToEntityAction(found, '5e');
-          onSendMessage({
-            id: crypto.randomUUID(),
-            senderId: player.id,
-            senderName: effectiveSenderName,
-            senderColor: player.color,
-            text: `inspects item: **${found.name}**`,
-            timestamp: Date.now(),
-            statBlock,
+          sendPrivateInfoMessage(statBlock, {
             tokenId: associatedToken?.id,
             tokenName: associatedToken?.name,
             tokenImageUrl: associatedToken?.imageUrl,
@@ -944,14 +935,7 @@ export function processSlashCommand(
         // 2. Fetch from Open5e reference, with PF2e fallback
         fetchOpen5eItem(itemQuery).then(async (open5eBlock) => {
           if (open5eBlock) {
-            onSendMessage({
-              id: crypto.randomUUID(),
-              senderId: player.id,
-              senderName: effectiveSenderName,
-              senderColor: player.color,
-              text: `inspects item: **${open5eBlock.name}**`,
-              timestamp: Date.now(),
-              statBlock: open5eBlock,
+            sendPrivateInfoMessage(open5eBlock, {
               tokenId: associatedToken?.id,
               tokenName: associatedToken?.name,
               tokenImageUrl: associatedToken?.imageUrl,
@@ -962,14 +946,7 @@ export function processSlashCommand(
           // Fallback to PF2e reference
           const pf2eBlock = await fetchPF2eReference('item', itemQuery);
           if (pf2eBlock) {
-            onSendMessage({
-              id: crypto.randomUUID(),
-              senderId: player.id,
-              senderName: effectiveSenderName,
-              senderColor: player.color,
-              text: `inspects PF2e item: **${pf2eBlock.name}**`,
-              timestamp: Date.now(),
-              statBlock: pf2eBlock,
+            sendPrivateInfoMessage(pf2eBlock, {
               tokenId: associatedToken?.id,
               tokenName: associatedToken?.name,
               tokenImageUrl: associatedToken?.imageUrl,
@@ -1037,14 +1014,7 @@ export function processSlashCommand(
         // OB-141: If not in local character sheet, attempt Open5e item fetch
         fetchOpen5eItem(itemQuery).then((open5eItem) => {
           if (open5eItem) {
-            onSendMessage({
-              id: crypto.randomUUID(),
-              senderId: player.id,
-              senderName: effectiveSenderName,
-              senderColor: player.color,
-              text: `inspects item: **${open5eItem.name}**`,
-              timestamp: Date.now(),
-              statBlock: open5eItem,
+            sendPrivateInfoMessage(open5eItem, {
               tokenId: associatedToken?.id,
               tokenName: associatedToken?.name,
               tokenImageUrl: associatedToken?.imageUrl,
@@ -1091,14 +1061,7 @@ export function processSlashCommand(
 
         const statBlock = convertDnDActionToEntityAction(found, '5e');
         statBlock.type = 'ability';
-        onSendMessage({
-          id: crypto.randomUUID(),
-          senderId: player.id,
-          senderName: effectiveSenderName,
-          senderColor: player.color,
-          text: `inspects ability: **${found.name}**`,
-          timestamp: Date.now(),
-          statBlock,
+        sendPrivateInfoMessage(statBlock, {
           tokenId: associatedToken?.id,
           tokenName: associatedToken?.name,
           tokenImageUrl: associatedToken?.imageUrl,
@@ -1113,7 +1076,7 @@ export function processSlashCommand(
 
         if (!monsterQuery) {
           const sceneTokens = (context.tokens || []).filter(
-            (t) => t.customProps?.character || (t as any).monsterData || t.character
+            (t) => (t as any).customProps?.character || (t as any).monsterData || t.character
           );
           const names = Array.from(new Set(sceneTokens.map((t) => t.name)));
           sendPrivateSystemMessage(
@@ -1130,19 +1093,11 @@ export function processSlashCommand(
           t.name.toLowerCase().includes(monsterQuery.toLowerCase())
         );
         if (matchedToken) {
-          const char = matchedToken.customProps?.character || matchedToken.character;
+          const char = (matchedToken as any).customProps?.character || matchedToken.character;
           if (char) {
             const statBlock = convertCharacterToMonsterStatBlock(char, '5e');
             statBlock.name = matchedToken.name;
-            onSendMessage({
-              id: crypto.randomUUID(),
-              senderId: player.id,
-              senderName: player.name,
-              senderColor: player.color,
-              text: `inspects creature: **${statBlock.name}**`,
-              timestamp: Date.now(),
-              statBlock,
-            });
+            sendPrivateInfoMessage(statBlock);
             return true;
           }
         }
@@ -1150,29 +1105,13 @@ export function processSlashCommand(
         // 2. Query Open5e monsters, with PF2e fallback
         fetchOpen5eMonster(monsterQuery).then(async (open5eBlock) => {
           if (open5eBlock) {
-            onSendMessage({
-              id: crypto.randomUUID(),
-              senderId: player.id,
-              senderName: player.name,
-              senderColor: player.color,
-              text: `inspects monster: **${open5eBlock.name}**`,
-              timestamp: Date.now(),
-              statBlock: open5eBlock,
-            });
+            sendPrivateInfoMessage(open5eBlock);
             return;
           }
 
           const pf2eBlock = await fetchPF2eReference('monster', monsterQuery);
           if (pf2eBlock) {
-            onSendMessage({
-              id: crypto.randomUUID(),
-              senderId: player.id,
-              senderName: player.name,
-              senderColor: player.color,
-              text: `inspects PF2e creature: **${pf2eBlock.name}**`,
-              timestamp: Date.now(),
-              statBlock: pf2eBlock,
-            });
+            sendPrivateInfoMessage(pf2eBlock);
             return;
           }
 
@@ -2154,6 +2093,126 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 const isSelf = m.senderId === player.id;
                 const isSys = m.senderId === 'system';
 
+                const renderStatBlockCard = (msg: ChatMessage) => {
+                  if (!msg.statBlock) return null;
+                  const targetToken =
+                    (activeAssociatedToken
+                      ? (tokens || []).find((t) => t.id === activeAssociatedToken.id) || activeAssociatedToken
+                      : null) ||
+                    (selectedToken
+                      ? (tokens || []).find((t) => t.id === selectedToken.id) || (player.role === 'gm' || selectedToken.ownerId === player.id ? selectedToken : null)
+                      : null) ||
+                    (msg.tokenId ? (tokens || []).find((t) => t.id === msg.tokenId) : null) ||
+                    (tokens && tokens.length === 1 ? tokens[0] : null);
+                  const canAddToCharacter = Boolean(
+                    (targetToken && onSyncToken) ||
+                    onUpdatePlayerChar ||
+                    (character && onUpdatePlayerChar)
+                  );
+
+                  return (
+                    <StatBlockCard
+                      statBlock={msg.statBlock}
+                      compact
+                      canAddToCharacter={canAddToCharacter}
+                      canSpawnToken={msg.statBlock.type === 'monster'}
+                      canRoll={msg.statBlock.type !== 'monster'}
+                      onAddToCharacter={
+                        canAddToCharacter
+                          ? (block) => {
+                              addBlockToTokenOrCharacter({
+                                block,
+                                targetToken,
+                                character,
+                                player,
+                                onSyncToken,
+                                onUpdatePlayerChar,
+                                onSendMessage,
+                                onSetAssociatedToken: (updatedTok) => {
+                                  if (activeAssociatedToken?.id === targetToken?.id) {
+                                    handleSetAssociatedToken(updatedTok);
+                                  }
+                                },
+                              });
+                            }
+                          : undefined
+                      }
+                      onRoll={
+                        msg.statBlock.type !== 'monster'
+                          ? (block) => {
+                              const expr = block.damageFormula || block.rollFormula;
+                              if (expr) {
+                                const parsed = parseDiceExpression(expr);
+                                if (parsed) {
+                                  const rollResult: DiceRollResult = {
+                                    id: crypto.randomUUID(),
+                                    userId: player.id,
+                                    userName: player.name,
+                                    userColor: player.color,
+                                    diceType: parsed.diceType,
+                                    count: parsed.count,
+                                    modifier: parsed.modifier,
+                                    rolls: parsed.rolls,
+                                    total: parsed.total,
+                                    timestamp: Date.now(),
+                                  };
+                                  onBroadcastRoll?.(rollResult);
+                                  const actionVerb = block.type === 'spell' ? 'casts' : block.type === 'attack' ? 'attacks with' : 'rolls';
+                                  onSendMessage({
+                                    id: crypto.randomUUID(),
+                                    senderId: player.id,
+                                    senderName: player.name,
+                                    senderColor: player.color,
+                                    text: `${actionVerb} **${block.name}** (${expr}) = ${parsed.total} [${parsed.rolls.join(', ')}]`,
+                                    timestamp: Date.now(),
+                                    roll: rollResult,
+                                  });
+                                  return;
+                                }
+                              }
+                              const actionVerb = block.type === 'spell' ? 'casts' : 'uses';
+                              const subtitleText = 'subtitle' in block && (block as any).subtitle ? ` (${(block as any).subtitle})` : '';
+                              onSendMessage({
+                                id: crypto.randomUUID(),
+                                senderId: player.id,
+                                senderName: player.name,
+                                senderColor: player.color,
+                                text: `${actionVerb} **${block.name}**${subtitleText}`,
+                                timestamp: Date.now(),
+                              });
+                            }
+                          : undefined
+                      }
+                      onSpawnToken={
+                        onSpawnMonsterToken && msg.statBlock.type === 'monster'
+                          ? (block) => {
+                              onSpawnMonsterToken(block);
+                              onSendMessage({
+                                id: crypto.randomUUID(),
+                                senderId: 'system',
+                                senderName: 'VTT Guide',
+                                senderColor: '#10b981',
+                                text: `✨ Spawned token for **${block.name}** on the canvas.`,
+                                timestamp: Date.now(),
+                                isEphemeral: true,
+                                recipientId: player.id,
+                              });
+                            }
+                          : undefined
+                      }
+                    />
+                  );
+                };
+
+                // OB-211: If info command message has statBlock without wrapping chat text, display StatBlockCard directly without player wrapper
+                if (m.statBlock && !m.text) {
+                  return (
+                    <div key={m.id} style={{ position: 'relative' }}>
+                      {renderStatBlockCard(m)}
+                    </div>
+                  );
+                }
+
                 return (
                   <div
                     key={m.id}
@@ -2186,115 +2245,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                       </div>
                     )}
 
-                    {m.statBlock && (() => {
-                      const targetToken =
-                        (activeAssociatedToken
-                          ? (tokens || []).find((t) => t.id === activeAssociatedToken.id) || activeAssociatedToken
-                          : null) ||
-                        (selectedToken
-                          ? (tokens || []).find((t) => t.id === selectedToken.id) || (player.role === 'gm' || selectedToken.ownerId === player.id ? selectedToken : null)
-                          : null) ||
-                        (m.tokenId ? (tokens || []).find((t) => t.id === m.tokenId) : null) ||
-                        (tokens && tokens.length === 1 ? tokens[0] : null);
-                      const canAddToCharacter = Boolean(
-                        (targetToken && onSyncToken) ||
-                        onUpdatePlayerChar ||
-                        (character && onUpdatePlayerChar)
-                      );
-
-                      return (
-                        <StatBlockCard
-                          statBlock={m.statBlock}
-                          compact
-                          canAddToCharacter={canAddToCharacter}
-                          canSpawnToken={m.statBlock.type === 'monster'}
-                          canRoll={m.statBlock.type !== 'monster'}
-                          onAddToCharacter={
-                            canAddToCharacter
-                              ? (block) => {
-                                  addBlockToTokenOrCharacter({
-                                    block,
-                                    targetToken,
-                                    character,
-                                    player,
-                                    onSyncToken,
-                                    onUpdatePlayerChar,
-                                    onSendMessage,
-                                    onSetAssociatedToken: (updatedTok) => {
-                                      if (activeAssociatedToken?.id === targetToken?.id) {
-                                        handleSetAssociatedToken(updatedTok);
-                                      }
-                                    },
-                                  });
-                                }
-                              : undefined
-                          }
-                          onRoll={
-                            m.statBlock.type !== 'monster'
-                              ? (block) => {
-                                  const expr = block.damageFormula || block.rollFormula;
-                                  if (expr) {
-                                    const parsed = parseDiceExpression(expr);
-                                    if (parsed) {
-                                      const rollResult: DiceRollResult = {
-                                        id: crypto.randomUUID(),
-                                        userId: player.id,
-                                        userName: player.name,
-                                        userColor: player.color,
-                                        diceType: parsed.diceType,
-                                        count: parsed.count,
-                                        modifier: parsed.modifier,
-                                        rolls: parsed.rolls,
-                                        total: parsed.total,
-                                        timestamp: Date.now(),
-                                      };
-                                      onBroadcastRoll?.(rollResult);
-                                      const actionVerb = block.type === 'spell' ? 'casts' : block.type === 'attack' ? 'attacks with' : 'rolls';
-                                      onSendMessage({
-                                        id: crypto.randomUUID(),
-                                        senderId: player.id,
-                                        senderName: player.name,
-                                        senderColor: player.color,
-                                        text: `${actionVerb} **${block.name}** (${expr}) = ${parsed.total} [${parsed.rolls.join(', ')}]`,
-                                        timestamp: Date.now(),
-                                        roll: rollResult,
-                                      });
-                                      return;
-                                    }
-                                  }
-                                  const actionVerb = block.type === 'spell' ? 'casts' : 'uses';
-                                  const subtitleText = 'subtitle' in block && (block as any).subtitle ? ` (${(block as any).subtitle})` : '';
-                                  onSendMessage({
-                                    id: crypto.randomUUID(),
-                                    senderId: player.id,
-                                    senderName: player.name,
-                                    senderColor: player.color,
-                                    text: `${actionVerb} **${block.name}**${subtitleText}`,
-                                    timestamp: Date.now(),
-                                  });
-                                }
-                              : undefined
-                          }
-                          onSpawnToken={
-                            onSpawnMonsterToken && m.statBlock.type === 'monster'
-                              ? (block) => {
-                                  onSpawnMonsterToken(block);
-                                  onSendMessage({
-                                    id: crypto.randomUUID(),
-                                    senderId: 'system',
-                                    senderName: 'VTT Guide',
-                                    senderColor: '#10b981',
-                                    text: `✨ Spawned token for **${block.name}** on the canvas.`,
-                                    timestamp: Date.now(),
-                                    isEphemeral: true,
-                                    recipientId: player.id,
-                                  });
-                                }
-                              : undefined
-                          }
-                        />
-                      );
-                    })()}
+                    {m.statBlock && renderStatBlockCard(m)}
                   </div>
                 );
               })

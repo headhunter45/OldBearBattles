@@ -11,6 +11,7 @@ This document provides step-by-step instructions for manually verifying all feat
 
 | Task ID | Feature Title | Domain | Status |
 | :--- | :--- | :--- | :--- |
+| **[OB-211](#ob-211---remove-excess-display-from-info-commands)** | Remove Excess Display from Info Commands | Common / Chat | Testing |
 | **[OB-207](#ob-207---unbound-token-resets-character-sheet-form-state)** | Unbound Token Resets Character Sheet Form State | VTT / Character Sheet | Testing |
 | **[OB-182](#ob-182---associate-controllable-token-with-chat-panel)** | Associate Controllable Token with Chat Panel | VTT / Chat | Testing |
 | **[OB-154](#ob-154---game_mode-environment-configuration--deployment-toggles)** | `GAME_MODE` Environment Configuration & Deployment Toggles | Platform / Brawl | Testing |
@@ -30,6 +31,38 @@ This document provides step-by-step instructions for manually verifying all feat
 ---
 
 ## VTT & Chat
+
+### OB-211 - Remove Excess Display from Info Commands
+
+- **Reference in tasks.md:** [tasks.md: OB-211](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-211)
+- **Primary Source Code:** [ChatPanel.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/ChatPanel.tsx)
+- **Where to find it:** Chat Panel (`/spell?`, `/monster?`, `/attack?`, `/item?`, `/ability?`).
+
+#### Step-by-Step Instructions:
+
+1. Open the VTT room in two browser tabs or windows (Player 1 and Player 2).
+2. In Player 1's chat input, run an info inspection command, e.g.:
+   - `/spell? Magic Missile` (or `/spell? Fireball`)
+   - `/monster? Goblin`
+   - `/attack? Longsword`
+   - `/item? Potion of Healing`
+   - `/ability? Second Wind`
+3. Inspect Player 1's chat window:
+   - Verify the `StatBlockCard` displays cleanly and directly.
+   - Verify there is **no** wrapping player speech container (no player name banner, no player color border, no timestamp header, and no redundant `inspects spell: **Magic Missile**` text).
+4. Inspect Player 2's chat window:
+   - Verify that **nothing** appeared in Player 2's chat window (the info response is completely ephemeral and private to Player 1).
+5. On Player 1's displayed card, test interaction buttons:
+   - For spells/attacks/items, click "Roll" or "Add to Character" to ensure card functionality remains intact.
+   - For monsters, click "Spawn Token" to ensure canvas spawning works as expected.
+
+#### Expected Result (Pass Criteria):
+
+- Info command responses (`/spell?`, `/monster?`, `/attack?`, `/item?`, `/ability?`) are only displayed to the user who ran them (`isEphemeral: true`).
+- Other players in the room do not receive or see the inspection cards.
+- The cards render directly in the chat feed without being wrapped in the executing player's chat speech bubble or accompanied by redundant `inspects ...` text.
+
+---
 
 ### OB-207 - Unbound Token Resets Character Sheet Form State
 

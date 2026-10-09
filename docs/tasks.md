@@ -331,7 +331,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-208 | Update the Open5EFetcher to use the v2 api.                                                                                                                                                                                                                                                                                                                                                                                                                                          | Vtt            | Ready    | [Feature](#ob-208) |
 | OB-209 | There is no settings button next to the active scene name in the top bar.                                                                                                                                                                                                                                                                                                                                                                                                            | Common         | Done     | [Bug](#ob-209)     |
 | OB-210 | Remove references to rodeo and obr to be nice.                                                                                                                                                                                                                                                                                                                                                                                                                                       | Common         | Done     | [Chore](#ob-210)   |
-| OB-211 | Remove excess display form the info commands.                                                                                                                                                                                                                                                                                                                                                                                                                                        | Common         | Ready    | [Feature](#ob-211) |
+| OB-211 | Remove excess display form the info commands.                                                                                                                                                                                                                                                                                                                                                                                                                                        | Common         | Testing  | [Feature](#ob-211) |
 
 ---
 
@@ -3360,16 +3360,16 @@ Describe task objectives and implementation requirements here.
 
 - [ ]
 
-<a id="ob-211" class="task" data-project="cmn" data-status="ready" data-task-type="feature"></a>
+<a id="ob-211" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
 ### Remove excess display form the info commands.
 **ID:** OB-211
 **Project:** Common
-**Status:** Ready
+**Status:** Testing
 **Type:** Feature
 
 **Description:**
 Make the info responses for commands like /spell? and /monster? show only to the user that executed them and don't wrap them as if that player said them.
-- [ ]
+- [x]
 
 ---
 
