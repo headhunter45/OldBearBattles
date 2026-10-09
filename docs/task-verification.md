@@ -33,6 +33,7 @@ This document provides step-by-step instructions for manually verifying all feat
 | **[OB-187](#ob-187---submap--deployment-zone-customization-ui)** | Submap & Deployment Zone Customization UI | VTT & Brawl / Scenes | Testing |
 | **[OB-188](#ob-188---relative-dragging-for-tokens-modular-tiles-and-props)** | Relative Dragging for Tokens, Modular Tiles, and Props | VTT & Brawl / Canvas | Testing |
 | **[OB-189](#ob-189---edit-modular-tiles-and-center-on-random-draw)** | Edit Modular Tiles & Center on Random Draw | Common / Assets | Testing |
+| **[OB-191](#ob-191---no-ring-color-default-for-props-and-tiles)** | No Ring Color as Default for Props & Tiles | Common / Canvas | Testing |
 
 ---
 
@@ -704,6 +705,38 @@ This document provides step-by-step instructions for manually verifying all feat
 #### Expected Result (Pass Criteria):
 - Uploaded modular tiles support custom width/height editing with quick dimension preset chips (`1×1`, `2×2`, `4×2`, `4×4`, `8×8`).
 - Placed tiles respect edited dimensions, and random tile generation automatically centers the camera viewport on the newly spawned tile.
+
+---
+
+### OB-191 - No Ring Color Default for Props and Tiles
+
+- **Reference in tasks.md:** [tasks.md: OB-191](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-191)
+- **Primary Source Code:** [ModularTileManager.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/engine/ModularTileManager.ts), [TokenRenderer.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/engine/TokenRenderer.ts), [TokenEditorModal.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/TokenEditorModal.tsx), [DataBackupModal.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/DataBackupModal.tsx), [GlobalDropOverlay.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/GlobalDropOverlay.tsx)
+- **Where to find it:** Main Battlemap Canvas (props and modular room tiles) and Token/Tile Editor modal.
+
+#### Step-by-Step Instructions:
+
+1. **Deploy Modular Tile or Prop from Asset Drawer / Presets:**
+   - Open the **Saved Props & Tiles** modal or drawer.
+   - Deploy or drop any modular tile or prop onto the canvas.
+   - Inspect the placed tile/prop on the canvas: verify that it renders without an artificial colored border/ring outline (e.g. no blue or cyan ring around the borders).
+   - Verify the image seamlessly blends directly into the canvas.
+
+2. **Verify Token/Tile Editor Modal Ring Color:**
+   - Select the placed tile or prop and click the **Settings** gear to open the Token/Tile Editor modal.
+   - Inspect the **Ring Color** palette: verify the selected swatch is **Transparent (No Ring)** by default.
+   - Select a colored ring swatch (e.g. Red or Green) and click **Save Changes**: verify the tile/prop now renders with the chosen colored border.
+   - Re-open the editor, click **Transparent (No Ring)**, and save: verify the colored ring outline is cleanly removed.
+
+3. **Verify Convert Token to Prop:**
+   - Create a standard creature token (which defaults to a colored player/creature ring).
+   - Open its Token Editor modal and check **Treat as Map Prop (no health bar)**.
+   - Verify the ring color automatically switches to **Transparent (No Ring)** unless the user explicitly selected a custom ring color.
+
+#### Expected Result (Pass Criteria):
+- Newly spawned modular tiles, room tiles, and props default to `transparent` (no ring outline).
+- Existing custom rings remain configurable in the Token/Tile Editor modal with full toggle support.
+
 
 
 

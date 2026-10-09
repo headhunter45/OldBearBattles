@@ -105,6 +105,7 @@ describe('Modular / Tileable Maps & Snapping Map Tiles (OB-128)', () => {
     assert.strictEqual(token.layer, 'map'); // placed on map layer underneath tokens
     assert.strictEqual(token.propWidth, 8);
     assert.strictEqual(token.propHeight, 8);
+    assert.strictEqual(token.ringColor, 'transparent');
     assert.strictEqual(token.fillColor, '#1e293b');
   });
 

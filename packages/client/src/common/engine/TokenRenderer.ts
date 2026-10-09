@@ -104,9 +104,11 @@ export function renderToken(
     } else {
       ctx.fillStyle = token.fillColor || 'rgba(30, 41, 59, 0.85)';
       ctx.fillRect(-pivotOffsetX, -pivotOffsetY, propW, propH);
-      ctx.strokeStyle = token.ringColor || '#eab308';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(-pivotOffsetX, -pivotOffsetY, propW, propH);
+      if (token.ringColor && token.ringColor !== 'transparent') {
+        ctx.strokeStyle = token.ringColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-pivotOffsetX, -pivotOffsetY, propW, propH);
+      }
 
       ctx.fillStyle = '#f8fafc';
       ctx.font = `600 ${Math.max(11, Math.min(propW, propH) * 0.2)}px Outfit, sans-serif`;

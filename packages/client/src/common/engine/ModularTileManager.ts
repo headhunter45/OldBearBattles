@@ -171,7 +171,7 @@ export function createModularTileToken(
     propWidth,
     propHeight,
     rotation: 0,
-    ringColor: '#38bdf8',
+    ringColor: 'transparent',
     fillColor: tile.backgroundColor || '#1e293b',
     clipCircle: false,
     clipShape: 'square',

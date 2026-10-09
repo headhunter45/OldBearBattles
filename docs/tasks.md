@@ -311,7 +311,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-188 | Relative Dragging for Tokens, Modular Tiles, and Props                                                                                                                                                                                                                                                                                                                                                                                                                               | Old Bear VTT   | Testing  | [Feature](#ob-188) |
 | OB-189 | Add a way to edit tiles after they have been uploaded.                                                                                                                                                                                                                                                                                                                                                                                                                               | Common         | Testing  | [Feature](#ob-189) |
 | OB-190 | When tiles is selected the tab bar in the asset manager is positioned up underneath the header.                                                                                                                                                                                                                                                                                                                                                                                      | Common         | Done     | [Bug](#ob-190)     |
-| OB-191 | Make no ring color be the default for props and tiles.                                                                                                                                                                                                                                                                                                                                                                                                                               | Common         | Ready    | [Feature](#ob-191) |
+| OB-191 | Make no ring color be the default for props and tiles.                                                                                                                                                                                                                                                                                                                                                                                                                               | Common         | Testing  | [Feature](#ob-191) |
 | OB-192 | Custom statuses can't be created.'                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Common         | Ready    | [Bug](#ob-192)     |
 | OB-193 | Add a way to change token images to existing images.                                                                                                                                                                                                                                                                                                                                                                                                                                 | Common         | Ready    | [Feature](#ob-193) |
 | OB-194 | The hitbox for tapping a token should be anywhere within it's ring or rectangle border.                                                                                                                                                                                                                                                                                                                                                                                              | Common         | Done     | [Bug](#ob-194)     |
@@ -3097,18 +3097,17 @@ When tiles is selected the tab bar in the asset manager is positioned up underne
 - [x]
   Fixed by enforcing flexShrink: 0 on header, tabs, and bottom section, setting minHeight: 0 on the scrollable content container, and overriding maxHeight: 'none' when expanded on .draggable-window-body.
 
-<a id="ob-191" class="task" data-project="cmn" data-status="ready" data-task-type="feature"></a>
+<a id="ob-191" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
 ### Make no ring color be the default for props and tiles.
 **ID:** OB-191
 **Project:** Common
-**Status:** Ready
+**Status:** Testing
 **Type:** Feature
-
 
 **Description:**
 Describe task objectives and implementation requirements here.
 
-- [ ]
+- [x]
 
 <a id="ob-192" class="task" data-project="cmn" data-status="ready" data-task-type="bug"></a>
 ### Custom statuses can't be created.'

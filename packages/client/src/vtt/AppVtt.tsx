@@ -1354,7 +1354,7 @@ export const AppVtt: React.FC = () => {
       y: pos.y,
       size: data.size || 1,
       rotation: 0,
-      ringColor: data.ringColor || (isProp ? '#94a3b8' : (localPlayer.color || '#3b82f6')),
+      ringColor: data.ringColor || (isProp ? 'transparent' : (localPlayer.color || '#3b82f6')),
       fillColor: data.fillColor || (isProp ? '#1e293b' : '#1e3a8a'),
       clipCircle: data.clipCircle ?? !isProp,
       clipShape: data.clipShape || (isProp ? 'square' : 'circle'),
@@ -2651,7 +2651,7 @@ export const AppVtt: React.FC = () => {
               y: pos.y,
               ownerId: !isGm && !isPropOrTile && !newToken.ownerId ? localPlayer?.id : newToken.ownerId,
               isPlayerToken: !isGm && !isPropOrTile ? true : newToken.isPlayerToken,
-              ringColor: !isGm && !isPropOrTile && localPlayer?.color && (!newToken.ringColor || newToken.ringColor === '#ef4444' || newToken.ringColor === '#3b82f6') ? localPlayer.color : newToken.ringColor,
+              ringColor: isPropOrTile ? (newToken.ringColor || 'transparent') : (!isGm && localPlayer?.color && (!newToken.ringColor || newToken.ringColor === '#ef4444' || newToken.ringColor === '#3b82f6') ? localPlayer.color : (newToken.ringColor || '#3b82f6')),
             };
             setSession((prev) => {
               if (!prev) return prev;
@@ -2826,7 +2826,7 @@ export const AppVtt: React.FC = () => {
             ...newToken,
             ownerId: !isGm && !isPropOrTile && !newToken.ownerId ? localPlayer?.id : newToken.ownerId,
             isPlayerToken: !isGm && !isPropOrTile ? true : newToken.isPlayerToken,
-            ringColor: !isGm && !isPropOrTile && localPlayer?.color ? localPlayer.color : newToken.ringColor,
+            ringColor: isPropOrTile ? (newToken.ringColor || 'transparent') : (!isGm && localPlayer?.color ? localPlayer.color : (newToken.ringColor || '#3b82f6')),
           };
           setSession((prev) => {
             if (!prev) return prev;

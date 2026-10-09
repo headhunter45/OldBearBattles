@@ -34,8 +34,12 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
   const [speed, setSpeed] = useState(token.speed || 30);
   const [currentHp, setCurrentHp] = useState(token.currentHp);
   const [maxHp, setMaxHp] = useState(token.maxHp);
-  const [tempHp, setTempHp] = useState(token.tempHp || 0);
-  const [ringColor, setRingColor] = useState(token.ringColor || '#3b82f6');
+  const isPropOrTile = Boolean(token.isProp || token.layer === 'map' || token.layer === 'prop');
+  const [ringColor, setRingColor] = useState(
+    token.ringColor !== undefined && token.ringColor !== ''
+      ? token.ringColor
+      : (isPropOrTile ? 'transparent' : '#3b82f6')
+  );
   const [fillColor, setFillColor] = useState(token.fillColor || '#1e293b');
   const [ownerId, setOwnerId] = useState(token.ownerId || '');
   const [isPlayerToken, setIsPlayerToken] = useState(token.isPlayerToken || token.ownerId === 'unassigned');
@@ -1764,7 +1768,13 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
             type="checkbox"
             id="isPropCheck"
             checked={isProp}
-            onChange={(e) => setIsProp(e.target.checked)}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              setIsProp(checked);
+              if (checked && (!ringColor || ringColor === '#3b82f6')) {
+                setRingColor('transparent');
+              }
+            }}
           />
           <label htmlFor="isPropCheck" style={{ fontSize: '0.875rem' }}>
             Treat as Map Prop (no health bar)
