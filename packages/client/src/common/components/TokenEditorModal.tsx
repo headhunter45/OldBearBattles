@@ -46,9 +46,9 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
   const [clipZoom, setClipZoom] = useState(token.clipZoom || 1.0);
   const [clipPanX, setClipPanX] = useState(token.clipPanX || 0);
   const [clipPanY, setClipPanY] = useState(token.clipPanY || 0);
-  const [isProp, setIsProp] = useState(token.isProp || false);
-  const [propWidth, setPropWidth] = useState<number | undefined>(token.propWidth ?? (token.isProp ? token.size : undefined));
-  const [propHeight, setPropHeight] = useState<number | undefined>(token.propHeight ?? (token.isProp ? token.size : undefined));
+  const [isProp, setIsProp] = useState(token.isProp || token.layer === 'map' || false);
+  const [propWidth, setPropWidth] = useState<number | undefined>(token.propWidth ?? (token.isProp || token.layer === 'map' ? token.size : undefined));
+  const [propHeight, setPropHeight] = useState<number | undefined>(token.propHeight ?? (token.isProp || token.layer === 'map' ? token.size : undefined));
   const [rotation, setRotation] = useState<number>(token.rotation || 0);
   const [locked, setLocked] = useState<boolean>(token.locked || false);
   const [conditions, setConditions] = useState<string[]>(token.conditions || []);

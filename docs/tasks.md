@@ -309,7 +309,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-186 | Unable to create new maps or duplicate existing ones.                                                                                                                                                                                                                                                                                                                                                                                                                                | Shared         | Done     | [Bug](#ob-186)     |
 | OB-187 | Submap & Deployment Zone Customization UI (Position, Dimensions, Colors, Background Images)                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Testing  | [Feature](#ob-187) |
 | OB-188 | Relative Dragging for Tokens, Modular Tiles, and Props                                                                                                                                                                                                                                                                                                                                                                                                                               | Old Bear VTT   | Testing  | [Feature](#ob-188) |
-| OB-189 | Add a way to edit tiles after they have been uploaded.                                                                                                                                                                                                                                                                                                                                                                                                                               | Common         | Ready    | [Feature](#ob-189) |
+| OB-189 | Add a way to edit tiles after they have been uploaded.                                                                                                                                                                                                                                                                                                                                                                                                                               | Common         | Testing  | [Feature](#ob-189) |
 | OB-190 | When tiles is selected the tab bar in the asset manager is positioned up underneath the header.                                                                                                                                                                                                                                                                                                                                                                                      | Common         | Done     | [Bug](#ob-190)     |
 | OB-191 | Make no ring color be the default for props and tiles.                                                                                                                                                                                                                                                                                                                                                                                                                               | Common         | Ready    | [Feature](#ob-191) |
 | OB-192 | Custom statuses can't be created.'                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Common         | Ready    | [Bug](#ob-192)     |
@@ -3071,18 +3071,17 @@ Make dragging tokens, modular tiles, and props relative to the initial cursor gr
 - [x] Preserve multi-token group drag relative offsets for all selected tokens.
 - [x] Verify dragging feels natural for both standard 1x1 tokens and large multi-tile props (e.g. 8x8 rooms, 4x1 corridors).
 
-<a id="ob-189" class="task" data-project="cmn" data-status="ready" data-task-type="feature"></a>
+<a id="ob-189" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
 ### Add a way to edit tiles after they have been uploaded.
 **ID:** OB-189
 **Project:** Common
-**Status:** Ready
+**Status:** Testing
 **Type:** Feature
-
 
 **Description:**
 Add a way to edit tiles after they have been uploaded. I can't set their sizes or anything, but name them. Draw a random tile should pan the view so the tile is in the center.
 
-- [ ]
+- [x]
 
 <a id="ob-190" class="task" data-project="cmn" data-status="done" data-task-type="bug"></a>
 ### When tiles is selected the tab bar in the asset manager is positioned up underneath the header.

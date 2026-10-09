@@ -150,6 +150,25 @@ export class CanvasEngine {
     this.viewport.centerOn(mapW / 2, mapH / 2, screenW, screenH);
   }
 
+  centerOnPosition(worldX: number, worldY: number) {
+    const screenW = this.canvas.width || window.innerWidth;
+    const screenH = this.canvas.height || window.innerHeight;
+    this.viewport.centerOn(worldX, worldY, screenW, screenH);
+  }
+
+  centerOnToken(tokenId: string) {
+    if (!this.session) return;
+    const token = this.session.tokens[tokenId];
+    if (token) {
+      const currentMap = this.session.maps.find((m) => m.id === this.currentMapId) || this.session.maps[0];
+      const gridSize = currentMap?.gridSize || 50;
+      const isProp = Boolean(token.isProp || token.layer === 'map');
+      const w = (isProp && token.propWidth !== undefined ? token.propWidth : token.size) * gridSize;
+      const h = (isProp && token.propHeight !== undefined ? token.propHeight : token.size) * gridSize;
+      this.centerOnPosition(token.x + w / 2, token.y + h / 2);
+    }
+  }
+
   setActiveMap(mapId: string, centerOnSwitch: boolean = false) {
     const changed = this.currentMapId !== mapId;
     this.currentMapId = mapId;

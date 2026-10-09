@@ -858,6 +858,7 @@ export const AppBrawl: React.FC = () => {
           onAddMap={handleAddMap}
           onUpdateMap={handleUpdateMap}
           onDeleteMap={handleDeleteMap}
+          onCenterOnPosition={(x, y) => engineRef.current?.centerOnPosition(x, y)}
           onClose={() => setShowBackupModal(false)}
         />
       )}

@@ -85,6 +85,7 @@ interface DataBackupModalProps {
   onAddMap?: (map: GameMap) => void;
   onSpawnToken?: (asset: StoredAsset) => void;
   onAddToken?: (token: Token) => void;
+  onCenterOnPosition?: (x: number, y: number) => void;
   onClose: () => void;
   extensions?: AssetManagerExtensions;
 }
@@ -109,6 +110,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
   onAddMap,
   onSpawnToken,
   onAddToken,
+  onCenterOnPosition,
   onClose,
   extensions,
 }) => {
@@ -350,6 +352,10 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
     }
     const token = createModularTileToken(preset, mapId, spawnX, spawnY);
     onAddToken(token);
+    const gridSize = session?.maps.find((m) => m.id === mapId)?.gridSize || 50;
+    const tileW = (token.propWidth || token.size || 4) * gridSize;
+    const tileH = (token.propHeight || token.size || 4) * gridSize;
+    onCenterOnPosition?.(token.x + tileW / 2, token.y + tileH / 2);
     setResultMessage({
       type: 'success',
       text: `Spawned modular tile "${preset.name}" onto the battlemap!`,
@@ -1656,12 +1662,13 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                       )}
                     </div>
 
-                    {/* Dimension Controls for Props (Task #113) */}
-                    {activeTab === 'props' && (
+                    {/* Dimension Controls for Props & Modular Tiles (OB-189) */}
+                    {(activeTab === 'props' || activeTab === 'tiles') && (
                       <div
                         style={{
                           padding: '0.2rem 0.5rem 0.35rem 0.5rem',
                           display: 'flex',
+                          flexDirection: 'column',
                           alignItems: 'center',
                           justifyContent: 'center',
                           gap: '4px',
@@ -1672,67 +1679,102 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                         }}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <span style={{ fontWeight: 600, color: '#eab308' }}>Size:</span>
-                        <input
-                          type="number"
-                          step="any"
-                          min="0.1"
-                          defaultValue={asset.propWidth ?? asset.size ?? 1}
-                          onBlur={async (e) => {
-                            const val = parseFloat(e.target.value);
-                            if (!isNaN(val) && val > 0 && val !== asset.propWidth) {
-                              await updateAsset(asset.id, { propWidth: val });
-                              await loadAssets();
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              (e.target as HTMLInputElement).blur();
-                            }
-                          }}
-                          style={{
-                            width: '44px',
-                            padding: '1px 3px',
-                            fontSize: '0.72rem',
-                            borderRadius: '3px',
-                            background: '#090d16',
-                            border: '1px solid rgba(234, 179, 8, 0.4)',
-                            color: '#fff',
-                            textAlign: 'center',
-                          }}
-                          title="Prop Width in tiles (e.g. 1.5)"
-                        />
-                        <span>×</span>
-                        <input
-                          type="number"
-                          step="any"
-                          min="0.1"
-                          defaultValue={asset.propHeight ?? asset.size ?? 1}
-                          onBlur={async (e) => {
-                            const val = parseFloat(e.target.value);
-                            if (!isNaN(val) && val > 0 && val !== asset.propHeight) {
-                              await updateAsset(asset.id, { propHeight: val });
-                              await loadAssets();
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              (e.target as HTMLInputElement).blur();
-                            }
-                          }}
-                          style={{
-                            width: '44px',
-                            padding: '1px 3px',
-                            fontSize: '0.72rem',
-                            borderRadius: '3px',
-                            background: '#090d16',
-                            border: '1px solid rgba(234, 179, 8, 0.4)',
-                            color: '#fff',
-                            textAlign: 'center',
-                          }}
-                          title="Prop Height in tiles (e.g. 3.24)"
-                        />
-                        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>tiles</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontWeight: 600, color: activeTab === 'tiles' ? '#38bdf8' : '#eab308' }}>Size:</span>
+                          <input
+                            type="number"
+                            step="any"
+                            min="0.1"
+                            defaultValue={asset.propWidth ?? asset.size ?? (activeTab === 'tiles' ? 4 : 1)}
+                            onBlur={async (e) => {
+                              const val = parseFloat(e.target.value);
+                              if (!isNaN(val) && val > 0 && val !== asset.propWidth) {
+                                await updateAsset(asset.id, { propWidth: val });
+                                await loadAssets();
+                              }
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                (e.target as HTMLInputElement).blur();
+                              }
+                            }}
+                            style={{
+                              width: '44px',
+                              padding: '1px 3px',
+                              fontSize: '0.72rem',
+                              borderRadius: '3px',
+                              background: '#090d16',
+                              border: `1px solid ${activeTab === 'tiles' ? 'rgba(56, 189, 248, 0.4)' : 'rgba(234, 179, 8, 0.4)'}`,
+                              color: '#fff',
+                              textAlign: 'center',
+                            }}
+                            title={activeTab === 'tiles' ? 'Tile Width in grid cells (e.g. 4)' : 'Prop Width in tiles (e.g. 1.5)'}
+                          />
+                          <span>×</span>
+                          <input
+                            type="number"
+                            step="any"
+                            min="0.1"
+                            defaultValue={asset.propHeight ?? asset.size ?? (activeTab === 'tiles' ? 4 : 1)}
+                            onBlur={async (e) => {
+                              const val = parseFloat(e.target.value);
+                              if (!isNaN(val) && val > 0 && val !== asset.propHeight) {
+                                await updateAsset(asset.id, { propHeight: val });
+                                await loadAssets();
+                              }
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                (e.target as HTMLInputElement).blur();
+                              }
+                            }}
+                            style={{
+                              width: '44px',
+                              padding: '1px 3px',
+                              fontSize: '0.72rem',
+                              borderRadius: '3px',
+                              background: '#090d16',
+                              border: `1px solid ${activeTab === 'tiles' ? 'rgba(56, 189, 248, 0.4)' : 'rgba(234, 179, 8, 0.4)'}`,
+                              color: '#fff',
+                              textAlign: 'center',
+                            }}
+                            title={activeTab === 'tiles' ? 'Tile Height in grid cells (e.g. 4)' : 'Prop Height in tiles (e.g. 3.24)'}
+                          />
+                          <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>tiles</span>
+                        </div>
+                        {/* Quick preset chips for tiles */}
+                        {activeTab === 'tiles' && (
+                          <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                            {([
+                              { label: '1×1', w: 1, h: 1 },
+                              { label: '2×2', w: 2, h: 2 },
+                              { label: '4×2', w: 4, h: 2 },
+                              { label: '4×4', w: 4, h: 4 },
+                              { label: '8×8', w: 8, h: 8 },
+                            ] as const).map((dim) => (
+                              <button
+                                key={dim.label}
+                                type="button"
+                                style={{
+                                  fontSize: '0.62rem',
+                                  padding: '1px 3px',
+                                  borderRadius: '2px',
+                                  background: 'rgba(56, 189, 248, 0.1)',
+                                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                                  color: '#38bdf8',
+                                  cursor: 'pointer',
+                                }}
+                                onClick={async () => {
+                                  await updateAsset(asset.id, { propWidth: dim.w, propHeight: dim.h, size: Math.max(dim.w, dim.h) });
+                                  await loadAssets();
+                                }}
+                                title={`Set tile to ${dim.label}`}
+                              >
+                                {dim.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
 

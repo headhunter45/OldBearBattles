@@ -2664,6 +2664,7 @@ export const AppVtt: React.FC = () => {
             setSelectedToken(tokenWithPos);
             engineRef.current?.selectToken(tokenWithPos.id);
           }}
+          onCenterOnPosition={(x, y) => engineRef.current?.centerOnPosition(x, y)}
           onAddMap={handleAddMap}
           onRestoreSession={(restoredSession) => {
             setSession(restoredSession);

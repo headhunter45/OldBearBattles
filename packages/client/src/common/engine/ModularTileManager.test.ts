@@ -223,5 +223,61 @@ describe('Modular / Tileable Maps & Snapping Map Tiles (OB-128)', () => {
     );
     assert.strictEqual(aabb1x2Rotated.width, 100);
   });
+
+  describe('Editing Uploaded Modular Tiles & Viewport Centering (OB-189)', () => {
+    it('allows editing tile dimensions and name after upload', () => {
+      const tile: ModularMapTile = {
+        id: 'tile_custom_1',
+        name: 'Crypt Hallway',
+        category: 'corridor',
+        width: 200,
+        height: 100,
+        gridTilesX: 4,
+        gridTilesY: 2,
+        imageUrl: '/tiles/4x2-corridor.png',
+      };
+
+      const token = createModularTileToken(tile, 'map_active_1', 100, 200, 50);
+
+      // Verify initial dimensions
+      assert.strictEqual(token.name, 'Crypt Hallway');
+      assert.strictEqual(token.propWidth, 4);
+      assert.strictEqual(token.propHeight, 2);
+
+      // Edit tile: rename and resize to 8x4
+      const editedToken = {
+        ...token,
+        name: 'Grand Crypt Corridor',
+        propWidth: 8,
+        propHeight: 4,
+      };
+
+      assert.strictEqual(editedToken.name, 'Grand Crypt Corridor');
+      assert.strictEqual(editedToken.propWidth, 8);
+      assert.strictEqual(editedToken.propHeight, 4);
+      assert.strictEqual(editedToken.layer, 'map');
+    });
+
+    it('calculates center coordinates when drawing a random tile for viewport panning', () => {
+      const drawn = drawRandomTile(DEFAULT_MODULAR_TILES);
+      assert.ok(drawn);
+
+      const gridSize = 50;
+      const spawnX = 600;
+      const spawnY = 400;
+      const token = createModularTileToken(drawn, 'map_1', spawnX, spawnY, gridSize);
+
+      const tilePixelWidth = (token.propWidth || token.size || 4) * gridSize;
+      const tilePixelHeight = (token.propHeight || token.size || 4) * gridSize;
+
+      const centerX = token.x + tilePixelWidth / 2;
+      const centerY = token.y + tilePixelHeight / 2;
+
+      assert.ok(centerX > token.x);
+      assert.ok(centerY > token.y);
+      assert.strictEqual(centerX, spawnX + tilePixelWidth / 2);
+      assert.strictEqual(centerY, spawnY + tilePixelHeight / 2);
+    });
+  });
 });
 

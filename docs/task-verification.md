@@ -32,6 +32,7 @@ This document provides step-by-step instructions for manually verifying all feat
 | **[OB-185](#ob-185---backlog-research--implementation-guide-docsbacklog-implementation-guidemd)** | Backlog Research & Implementation Guide (`docs/backlog-implementation-guide.md`) | Architecture / Guide | Testing |
 | **[OB-187](#ob-187---submap--deployment-zone-customization-ui)** | Submap & Deployment Zone Customization UI | VTT & Brawl / Scenes | Testing |
 | **[OB-188](#ob-188---relative-dragging-for-tokens-modular-tiles-and-props)** | Relative Dragging for Tokens, Modular Tiles, and Props | VTT & Brawl / Canvas | Testing |
+| **[OB-189](#ob-189---edit-modular-tiles-and-center-on-random-draw)** | Edit Modular Tiles & Center on Random Draw | Common / Assets | Testing |
 
 ---
 
@@ -669,5 +670,40 @@ This document provides step-by-step instructions for manually verifying all feat
 #### Expected Result (Pass Criteria):
 - Dragging tokens, modular tiles, and props is relative to the initial cursor grab point without sudden pivot or center jumps.
 - Multi-token group dragging maintains exact relative positions for all selected entities.
+
+---
+
+### OB-189 - Modular Tiles Custom Size Editing, Quick Dimension Chips, & Viewport Centering on Random Draw
+
+- **Reference in tasks.md:** [tasks.md: OB-189](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-189)
+- **Primary Source Code:** [DataBackupModal.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/DataBackupModal.tsx), [CanvasEngine.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/engine/CanvasEngine.ts), [TokenEditorModal.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/TokenEditorModal.tsx)
+- **Where to find it:** Main Menu > **Saved Props & Tiles** modal (Tiles tab) and Canvas Modular Tile Drawer / Random Draw.
+
+#### Step-by-Step Instructions:
+
+1. **Open Saved Props & Tiles Modal:**
+   - Click the hamburger menu in the top left and select **Saved Props & Tiles** (or click the Tiles icon in the toolbar).
+   - Switch to the **Tiles** tab.
+
+2. **Verify Custom Size Controls on Uploaded Modular Tiles:**
+   - Locate an uploaded or preset modular tile card.
+   - Verify that width and height numerical inputs (in grid units) are displayed on the tile card.
+   - Verify quick dimension chips are present: **1×1**, **2×2**, **4×2**, **4×4**, **8×8**.
+   - Click the **4×2** chip or manually enter `6` for width and `3` for height.
+   - Verify the tile preview card dimensions and metadata immediately update and save.
+
+3. **Verify Canvas Placement with Custom Dimensions:**
+   - Click the tile or drag/deploy it onto the battlemap canvas.
+   - Verify the tile renders at the custom width/height (e.g. 6×3 grid cells) rather than a default size.
+   - Right-click / edit the placed tile: verify the Token/Tile Editor modal allows editing map-layer tile properties without restrictions.
+
+4. **Verify Viewport Auto-Centering on Random Tile Draw:**
+   - In the Tiles drawer / picker, click the **Draw Random Tile** button (or deploy a random tile).
+   - Verify the canvas viewport smoothly centers directly on the coordinates where the new random tile spawned, ensuring it is immediately visible even on large scenes.
+
+#### Expected Result (Pass Criteria):
+- Uploaded modular tiles support custom width/height editing with quick dimension preset chips (`1×1`, `2×2`, `4×2`, `4×4`, `8×8`).
+- Placed tiles respect edited dimensions, and random tile generation automatically centers the camera viewport on the newly spawned tile.
+
 
 
