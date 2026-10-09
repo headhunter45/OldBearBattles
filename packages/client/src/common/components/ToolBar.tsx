@@ -19,12 +19,13 @@ import {
   Zap,
   Link,
   Stamp,
+  MessageSquare,
 } from 'lucide-react';
 import { ActiveTool } from '../engine/CanvasEngine.js';
 
 import { COLOR_VALUES } from '../config/colors.js';
 
-interface ToolBarProps {
+export interface ToolBarProps {
   activeTool: ActiveTool;
   onSelectTool: (tool: ActiveTool) => void;
   isGm: boolean;
@@ -38,6 +39,9 @@ interface ToolBarProps {
   onClearAllFog?: () => void;
   persistMarkersMode?: boolean;
   onTogglePersistMarkers?: (persist: boolean) => void;
+  onToggleChat?: () => void;
+  isChatOpen?: boolean;
+  unreadChatCount?: number;
 }
 
 const COLORS = COLOR_VALUES;
@@ -56,6 +60,9 @@ export const ToolBar: React.FC<ToolBarProps> = ({
   onClearAllFog,
   persistMarkersMode = false,
   onTogglePersistMarkers,
+  onToggleChat,
+  isChatOpen = false,
+  unreadChatCount = 0,
 }) => {
   const [showSelectMenu, setShowSelectMenu] = useState(false);
   const selectMenuRef = useRef<HTMLDivElement>(null);
@@ -475,6 +482,49 @@ export const ToolBar: React.FC<ToolBarProps> = ({
       >
         <Ruler size={18} />
       </button>
+
+      {/* Chat Toggle Button (OB-196) */}
+      {onToggleChat && (
+        <button
+          className={`btn-icon ${isChatOpen ? 'active' : ''}`}
+          onClick={() => {
+            onToggleChat();
+            setShowSelectMenu(false);
+            setShowHighlightMenu(false);
+            setShowFogMenu(false);
+            setShowGridMenu(false);
+          }}
+          title={isChatOpen ? 'Close Chat (` or ~)' : 'Chat (` or ~)'}
+          style={{
+            position: 'relative',
+            color: isChatOpen ? 'var(--accent-primary)' : undefined,
+          }}
+        >
+          <MessageSquare size={18} />
+          {Boolean(unreadChatCount && unreadChatCount > 0) && (
+            <span
+              style={{
+                position: 'absolute',
+                top: '-4px',
+                right: '-4px',
+                backgroundColor: 'var(--accent-rose, #f43f5e)',
+                color: 'white',
+                fontSize: '10px',
+                fontWeight: 'bold',
+                borderRadius: '50%',
+                width: '16px',
+                height: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
+              }}
+            >
+              {unreadChatCount > 99 ? '99+' : unreadChatCount}
+            </span>
+          )}
+        </button>
+      )}
 
       {/* GM Fog of War Tools Sub-menu (Bug #58) */}
       {isGm && (

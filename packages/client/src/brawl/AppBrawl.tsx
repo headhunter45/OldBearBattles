@@ -635,6 +635,9 @@ export const AppBrawl: React.FC = () => {
         onToggleGrid={() => setShowGrid(!showGrid)}
         onClearAllFog={() => {}}
         onCoverAllFog={() => {}}
+        onToggleChat={() => setIsChatOpen((v) => !v)}
+        isChatOpen={isChatOpen}
+        unreadChatCount={unreadChatCount}
       />
 
       {/* Army Roster Flyout */}

@@ -875,6 +875,41 @@ This document provides step-by-step instructions for manually verifying all feat
 #### Expected Result (Pass Criteria):
 - Preset tokens retain calibrated zoom and vertical/horizontal offset framing in thumbnail chips, the selection preview box, and when placed onto the active game map.
 
+---
+
+### OB-196 - Move Chat Button to Left Sidebar Below Measuring Tape
+
+- **Reference in tasks.md:** [tasks.md: OB-196](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-196)
+- **Primary Source Code:** [ToolBar.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/ToolBar.tsx), [AppVtt.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/vtt/AppVtt.tsx), [AppBrawl.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/brawl/AppBrawl.tsx)
+- **Where to find it:** Left floating toolbar (sidebar).
+
+#### Step-by-Step Instructions:
+
+1. **Locate Left Sidebar Floating Toolbar:**
+   - In both VTT mode and Brawl mode, observe the vertical floating toolbar on the left side of the screen.
+   - Locate the **Measuring Tape** icon (`Ruler`, shortcut `M`).
+
+2. **Verify Chat Icon Position:**
+   - Verify that directly below the **Measuring Tape** icon, a **Chat** icon button (`MessageSquare`) is rendered.
+
+3. **Verify Chat Toggle Action:**
+   - Click the Chat button on the left sidebar:
+     - Verify the Chat window opens (floating draggable window).
+     - Verify the Chat button shows an active highlight state.
+   - Click the Chat button again:
+     - Verify the Chat window closes.
+
+4. **Verify Unread Chat Notification Badge:**
+   - Have another player send a message or simulate an incoming message while the Chat window is closed:
+     - Verify an unread badge counter appears at the top-right corner of the Chat button in the left sidebar.
+   - Click the Chat button to open chat:
+     - Verify the unread badge is cleared.
+
+#### Expected Result (Pass Criteria):
+- The chat toggle button is positioned on the left sidebar floating toolbar directly below the measuring tape icon.
+- Clicking the button toggles chat visibility and reflects active state and unread message count.
+
+
 
 
 

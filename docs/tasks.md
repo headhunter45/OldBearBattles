@@ -316,7 +316,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-193 | Add a way to change token images to existing images.                                                                                                                                                                                                                                                                                                                                                                                                                                 | Common         | Testing  | [Feature](#ob-193) |
 | OB-194 | The hitbox for tapping a token should be anywhere within it's ring or rectangle border.                                                                                                                                                                                                                                                                                                                                                                                              | Common         | Done     | [Bug](#ob-194)     |
 | OB-195 | Add zoom and offset to the PRESET_TOKENS in TokenPickerModal.                                                                                                                                                                                                                                                                                                                                                                                                                        | Common         | Testing  | [Feature](#ob-195) |
-| OB-196 | Move chat back to the left sidebar. Put it below the measuring tape icon.                                                                                                                                                                                                                                                                                                                                                                                                            | Common         | Ready    | [Feature](#ob-196) |
+| OB-196 | Move chat back to the left sidebar. Put it below the measuring tape icon.                                                                                                                                                                                                                                                                                                                                                                                                            | Common         | Testing  | [Feature](#ob-196) |
 | OB-197 | Brawl mode does not have a top bar so I cannot switch back. See [OB-154](#ob-154).                                                                                                                                                                                                                                                                                                                                                                                                   | Common         | Done     | [Bug](#ob-197)     |
 | OB-198 | Reveal fog should be 'shift-f' instead of 'r' for the shortcut key.                                                                                                                                                                                                                                                                                                                                                                                                                  | Old Bear VTT   | Done     | [Feature](#ob-198) |
 | OB-199 | Make fog be a single layer.                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Ready    | [Feature](#ob-199) |
@@ -3159,18 +3159,17 @@ I want to add zoom and offset or their equivalents to the PRESET_TOKENS in Token
 
 - [x]
 
-<a id="ob-196" class="task" data-project="cmn" data-status="ready" data-task-type="feature"></a>
+<a id="ob-196" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
 ### Move chat back to the left sidebar. Put it below the measuring tape icon.
 **ID:** OB-196
 **Project:** Common
-**Status:** Ready
+**Status:** Testing
 **Type:** Feature
-
 
 **Description:**
 Describe task objectives and implementation requirements here.
 
-- [ ]
+- [x]
 
 <a id="ob-197" class="task" data-project="cmn" data-status="done" data-task-type="bug"></a>
 ### Brawl mode does not have a top bar so I cannot switch back. See [OB-154](#ob-154).

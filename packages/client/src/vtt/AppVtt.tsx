@@ -2354,6 +2354,14 @@ export const AppVtt: React.FC = () => {
         onChangeColor={(c) => handleUpdateProfile(localPlayer?.name || 'Player', c)}
         persistMarkersMode={persistMarkersMode}
         onTogglePersistMarkers={handleTogglePersistMarkers}
+        onToggleChat={() => {
+          setIsChatOpen((v) => {
+            if (!v) setUnreadChatCount(0);
+            return !v;
+          });
+        }}
+        isChatOpen={isChatOpen}
+        unreadChatCount={unreadChatCount}
       />
 
       {/* Selected Persistent Shape Controls */}
