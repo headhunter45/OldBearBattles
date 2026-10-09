@@ -65,21 +65,23 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
   onClose,
   isGm = false,
 }) => {
-  const initialChar =
-    targetToken?.character || player.dndBeyondCharacter || null;
+  const initialChar = targetToken
+    ? (targetToken.character || null)
+    : (player.dndBeyondCharacter || null);
   const getKnownSyncUrl = (char: DnDCharacter | null): string => {
-    if (player.dndBeyondCharacterId) {
-      const id = player.dndBeyondCharacterId;
-      return /^\d+$/.test(id)
-        ? `https://www.dndbeyond.com/characters/${id}`
-        : id;
-    }
-    const cid =
-      targetToken?.character?.id || char?.id || player.dndBeyondCharacter?.id;
+    const cid = char?.id || targetToken?.character?.id;
     if (cid) {
       return /^\d+$/.test(cid)
         ? `https://www.dndbeyond.com/characters/${cid}`
         : cid;
+    }
+    if (!targetToken) {
+      const pid = player.dndBeyondCharacterId || player.dndBeyondCharacter?.id;
+      if (pid) {
+        return /^\d+$/.test(pid)
+          ? `https://www.dndbeyond.com/characters/${pid}`
+          : pid;
+      }
     }
     return '';
   };
@@ -118,8 +120,8 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
     });
 
   // Manual fallback HP
-  const [localHp, setLocalHp] = useState(targetToken?.currentHp || 25);
-  const [localMaxHp, setLocalMaxHp] = useState(targetToken?.maxHp || 25);
+  const [localHp, setLocalHp] = useState(targetToken?.currentHp ?? 25);
+  const [localMaxHp, setLocalMaxHp] = useState(targetToken?.maxHp ?? 25);
 
   const refreshSavedCharacters = () => {
     setSavedCharacters(getSavedCharacters(isGm));
@@ -177,21 +179,48 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
   };
 
   useEffect(() => {
-    if (targetToken?.character) {
-      setCharacter(targetToken.character);
-      const cid = targetToken.character.id;
-      if (cid) {
-        setCharInput(
-          /^\d+$/.test(cid)
-            ? `https://www.dndbeyond.com/characters/${cid}`
-            : cid,
-        );
+    if (targetToken) {
+      setSyncTokenId(targetToken.id);
+      setLocalHp(targetToken.currentHp ?? 25);
+      setLocalMaxHp(targetToken.maxHp ?? 25);
+      setError(null);
+      setExpandedSpell(null);
+      setExpandedAction(null);
+
+      if (targetToken.character) {
+        setCharacter(targetToken.character);
+        const cid = targetToken.character.id;
+        if (cid) {
+          setCharInput(
+            /^\d+$/.test(cid)
+              ? `https://www.dndbeyond.com/characters/${cid}`
+              : cid,
+          );
+        } else {
+          setCharInput('');
+        }
+      } else {
+        // Reset to default state for unbound token (OB-207)
+        setCharacter(null);
+        setCharInput('');
       }
+    } else {
+      const fallbackChar = player.dndBeyondCharacter || null;
+      setCharacter(fallbackChar);
+      setCharInput(getKnownSyncUrl(fallbackChar));
+      setSyncTokenId(
+        ownedTokens.length > 0 ? ownedTokens[0].id : 'create_new',
+      );
+      setLocalHp(fallbackChar?.currentHp ?? 25);
+      setLocalMaxHp(fallbackChar?.maxHp ?? 25);
+      setError(null);
+      setExpandedSpell(null);
+      setExpandedAction(null);
     }
   }, [targetToken?.id, targetToken?.character]);
 
   useEffect(() => {
-    if (!charInput) {
+    if (!charInput && character) {
       const known = getKnownSyncUrl(character);
       if (known) setCharInput(known);
     }

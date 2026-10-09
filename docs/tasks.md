@@ -327,7 +327,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-204 | *Error when trying to import pf2 content with /import*                                                                                                                                                                                                                                                                                                                                                                                                                               | Vtt            | Triage   | [Bug](#ob-204)     |
 | OB-205 | The add to character sheet button on an inspected spell adds to the currently selected character. Not the as token.                                                                                                                                                                                                                                                                                                                                                                  | Vtt            | Done     | [Bug](#ob-205)     |
 | OB-206 | Inspecting a spell like /spell? magic missile' shows the spell, but it has the wrong buttons.                                                                                                                                                                                                                                                                                                                                                                                        | Vtt            | Done     | [Bug](#ob-206)     |
-| OB-207 | Changing to a token without a bound character sheet should reset the form to the token's state.                                                                                                                                                                                                                                                                                                                                                                                      | Vtt            | Ready    | [Bug](#ob-207)     |
+| OB-207 | Changing to a token without a bound character sheet should reset the form to the token's state.                                                                                                                                                                                                                                                                                                                                                                                      | Vtt            | Testing  | [Bug](#ob-207)     |
 | OB-208 | Update the Open5EFetcher to use the v2 api.                                                                                                                                                                                                                                                                                                                                                                                                                                          | Vtt            | Ready    | [Feature](#ob-208) |
 | OB-209 | There is no settings button next to the active scene name in the top bar.                                                                                                                                                                                                                                                                                                                                                                                                            | Common         | Done     | [Bug](#ob-209)     |
 | OB-210 | Remove references to rodeo and obr to be nice.                                                                                                                                                                                                                                                                                                                                                                                                                                       | Common         | Done     | [Chore](#ob-210)   |
@@ -3309,18 +3309,17 @@ Inspecting a spell like '/spell? magic missile' shows the spell, but it has a sp
   - Added unit tests in chat.test.ts verifying default character sheet initialization on spell addition and token spawn permissions.
 - Removed the useless 'Roll' button from monster stat blocks in StatBlockCard.tsx and ChatPanel.tsx (restricting roll/cast exclusively to spells, attacks, actions, and features).
 
-<a id="ob-207" class="task" data-project="vtt" data-status="ready" data-task-type="bug"></a>
+<a id="ob-207" class="task" data-project="vtt" data-status="testing" data-task-type="bug"></a>
 ### Changing to a token without a bound character sheet should reset the form to the token's state.
 **ID:** OB-207
 **Project:** Vtt
-**Status:** Ready
+**Status:** Testing
 **Type:** Bug
-
 
 **Description:**
 I added a token via Create without image. I already have my character sheet window open. I click on another token and see all the details for that token's character. I click the new 'Hero' token and the character sheet doesn't change. When I click on a token without a bound hero the character sheet should go to the default state and then let me select a character from the dropdown to synchronize with.
 
-- [ ]
+- [x]
 
 <a id="ob-208" class="task" data-project="vtt" data-status="ready" data-task-type="feature"></a>
 ### Update the Open5EFetcher to use the v2 api.

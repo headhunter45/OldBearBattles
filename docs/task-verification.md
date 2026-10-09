@@ -11,6 +11,7 @@ This document provides step-by-step instructions for manually verifying all feat
 
 | Task ID | Feature Title | Domain | Status |
 | :--- | :--- | :--- | :--- |
+| **[OB-207](#ob-207---unbound-token-resets-character-sheet-form-state)** | Unbound Token Resets Character Sheet Form State | VTT / Character Sheet | Testing |
 | **[OB-182](#ob-182---associate-controllable-token-with-chat-panel)** | Associate Controllable Token with Chat Panel | VTT / Chat | Testing |
 | **[OB-154](#ob-154---game_mode-environment-configuration--deployment-toggles)** | `GAME_MODE` Environment Configuration & Deployment Toggles | Platform / Brawl | Testing |
 | **[OB-155](#ob-155---army-unit-and-model-domain-hierarchy--disambiguation)** | Army, Unit, and Model Domain Hierarchy & Disambiguation | Wargaming / Brawl | Testing |
@@ -29,6 +30,34 @@ This document provides step-by-step instructions for manually verifying all feat
 ---
 
 ## VTT & Chat
+
+### OB-207 - Unbound Token Resets Character Sheet Form State
+
+- **Reference in tasks.md:** [tasks.md: OB-207](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-207)
+- **Primary Source Code:** [CharacterFlyout.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/vtt/components/CharacterFlyout.tsx)
+- **Where to find it:** The Character Sheet floating window (`Alt+C` or Character icon in top/sidebar) and battlemap canvas tokens.
+
+#### Step-by-Step Instructions:
+
+1. Open the VTT room in your browser.
+2. Select or create a token with a linked character (or open Character Sheet and select a saved character to bind to the token).
+3. Confirm that the open Character Sheet floating window displays all details for that token's character (name in title bar, level, stats, HP).
+4. Add a new token via Token Picker "Create without image" (default name "Hero" with no bound character).
+5. While the Character Sheet floating window remains open, click the newly created "Hero" token on the board to select it.
+6. Verify that the Character Sheet resets to its default unbound state:
+   - Header title displays generic **Character Sheet** (not the previously selected character's name).
+   - "Load Saved Character" dropdown shows `-- Choose from saved characters --`.
+   - "Board Token Assignment" targets the selected Hero token.
+   - Body displays the saved character selection cards and the unlinked manual HP tracker matching the token's HP.
+7. Select a character from the saved characters dropdown (or click "Select" on a saved character card).
+8. Verify that the selected token on the board is immediately synchronized with the chosen character (name, stats, and avatar updated).
+
+#### Expected Result (Pass Criteria):
+
+- Switching selection from a bound character token to an unbound token immediately clears stale character data and resets the sheet to the default token state.
+- Selecting a saved character from the dropdown while targeting the unbound token synchronizes that character directly to the active token.
+
+---
 
 ### OB-182 - Associate Controllable Token with Chat Panel
 
