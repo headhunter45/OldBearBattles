@@ -313,7 +313,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-190 | When tiles is selected the tab bar in the asset manager is positioned up underneath the header.                                                                                                                                                                                                                                                                                                                                                                                      | Common         | Done     | [Bug](#ob-190)     |
 | OB-191 | Make no ring color be the default for props and tiles.                                                                                                                                                                                                                                                                                                                                                                                                                               | Common         | Testing  | [Feature](#ob-191) |
 | OB-192 | Custom statuses can't be created.'                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Common         | Testing  | [Bug](#ob-192)     |
-| OB-193 | Add a way to change token images to existing images.                                                                                                                                                                                                                                                                                                                                                                                                                                 | Common         | Ready    | [Feature](#ob-193) |
+| OB-193 | Add a way to change token images to existing images.                                                                                                                                                                                                                                                                                                                                                                                                                                 | Common         | Testing  | [Feature](#ob-193) |
 | OB-194 | The hitbox for tapping a token should be anywhere within it's ring or rectangle border.                                                                                                                                                                                                                                                                                                                                                                                              | Common         | Done     | [Bug](#ob-194)     |
 | OB-195 | Add zoom and offset to the PRESET_TOKENS in TokenPickerModal.                                                                                                                                                                                                                                                                                                                                                                                                                        | Common         | Ready    | [Feature](#ob-195) |
 | OB-196 | Move chat back to the left sidebar. Put it below the measuring tape icon.                                                                                                                                                                                                                                                                                                                                                                                                            | Common         | Ready    | [Feature](#ob-196) |
@@ -3121,18 +3121,17 @@ Custom statuses are saved and loaded at the global and scene levels, but they do
 
 - [x]
 
-<a id="ob-193" class="task" data-project="cmn" data-status="ready" data-task-type="feature"></a>
+<a id="ob-193" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
 ### Add a way to change token images to existing images.
 **ID:** OB-193
 **Project:** Common
-**Status:** Ready
+**Status:** Testing
 **Type:** Feature
-
 
 **Description:**
 I should be able to change the image on a token after it has been created. I can upload a new image, but I should be able to browse my saved tokens and the preset tokens to use one of those as well.
 
-- [ ]
+- [x]
 
 <a id="ob-194" class="task" data-project="cmn" data-status="done" data-task-type="bug"></a>
 ### The hitbox for tapping a token should be anywhere within it's ring or rectangle border.

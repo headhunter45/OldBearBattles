@@ -35,6 +35,7 @@ This document provides step-by-step instructions for manually verifying all feat
 | **[OB-189](#ob-189---edit-modular-tiles-and-center-on-random-draw)** | Edit Modular Tiles & Center on Random Draw | Common / Assets | Testing |
 | **[OB-191](#ob-191---no-ring-color-default-for-props-and-tiles)** | No Ring Color as Default for Props & Tiles | Common / Canvas | Testing |
 | **[OB-192](#ob-192---custom-status-creation-editing-and-token-controls-integration)** | Custom Status Creation, Editing, & Token Controls Integration | Common / Statuses | Testing |
+| **[OB-193](#ob-193---choose-existing-and-preset-images-in-token-editor)** | Choose Existing & Preset Images in Token Editor | Common / Tokens | Testing |
 
 ---
 
@@ -797,6 +798,50 @@ This document provides step-by-step instructions for manually verifying all feat
 - Token controls and token editor dynamically load all built-in, global, and scene-level custom statuses.
 - Users can create, customize, and delete custom statuses with custom colors, descriptions, numeric counters, and turn lifecycle triggers.
 - Custom statuses are cleanly persisted and immediately usable on tokens across the canvas.
+
+---
+
+### OB-193 - Choose Existing and Preset Images in Token Editor
+
+- **Reference in tasks.md:** [tasks.md: OB-193](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-193)
+- **Primary Source Code:** [TokenEditorModal.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/TokenEditorModal.tsx), [TokenImageBrowserModal.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/TokenImageBrowserModal.tsx), [TokenPickerModal.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/TokenPickerModal.tsx)
+- **Where to find it:** Full Token Settings (`Settings` gear icon) > **Token Preview & Crop** image controls.
+
+#### Step-by-Step Instructions:
+
+1. **Open Token Editor on Existing Token:**
+   - Select any existing token on the canvas (whether with an image or initials avatar).
+   - In the floating token controls, click the **Settings** gear icon (`Full Token Settings`).
+   - Locate the **Token Preview & Crop** area.
+
+2. **Verify "Choose Existing..." Action:**
+   - Verify that next to the **Upload Image** button, a new **Choose Existing...** button with a sparkles icon is displayed.
+   - Click **Choose Existing...**.
+   - Verify the **Choose Token Image** modal opens with two tabs: **Preset Tokens** and **Saved Library**.
+
+3. **Browse and Select a Preset Token:**
+   - On the **Preset Tokens** tab, type a search query in the search box (e.g. `Anime` or `Mask`).
+   - Verify the preset gallery filters in real-time.
+   - Click on any preset token card.
+   - Verify the modal closes and the Token Editor crop canvas immediately displays the selected preset portrait.
+   - Drag to pan or use mouse wheel to zoom: verify crop positioning works flawlessly with the newly selected image.
+
+4. **Browse and Select a Saved Library Token/Prop:**
+   - Click **Choose Existing...** again.
+   - Switch to the **Saved Library** tab.
+   - Verify previously uploaded tokens, props, and assets from IndexedDB are displayed in the gallery.
+   - Click on any saved asset: verify it loads into the editor crop preview immediately.
+
+5. **Verify "Remove Image" Action:**
+   - While an image is loaded, verify the red **Remove** trash can button appears next to "Choose Existing...".
+   - Click the **Remove** button.
+   - Verify the image is cleared and the crop canvas falls back to rendering the clean initials avatar.
+   - Click **Save Changes** and verify the token on the canvas updates accordingly.
+
+#### Expected Result (Pass Criteria):
+- Users can switch an existing token's image to any preset token or previously saved asset from their IndexedDB library without re-uploading.
+- Interactive cropping, zoom, pan, and removal are fully supported.
+
 
 
 

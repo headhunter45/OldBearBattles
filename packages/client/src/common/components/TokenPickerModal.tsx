@@ -50,7 +50,17 @@ export interface TokenPickerModalProps {
 /*
   { name: '', base: ''},
 */
-const PRESET_TOKENS = [
+export interface PresetTokenItem {
+  name: string;
+  base: string;
+  author: { name: string; url: string };
+  url: string;
+  zoom?: number;
+  offsetX?: number;
+  offsetY?: number;
+}
+
+const RAW_PRESET_TOKENS = [
   // { name: '', base: ''},
   {
     name: 'Mask of human face in multicolored',
@@ -398,7 +408,9 @@ const PRESET_TOKENS = [
     base: 'photo-1572337382669-5896358c14fe',
     author: { name: 'JJ Jordan', url: 'https://unsplash.com/@jjjordan' },
   },
-].map((token) => ({
+];
+
+export const PRESET_TOKENS: PresetTokenItem[] = RAW_PRESET_TOKENS.map((token) => ({
   ...token,
   url: `https://images.unsplash.com/${token.base}?w=150&auto=format&fit=crop&q=80`,
 }));

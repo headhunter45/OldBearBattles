@@ -5,6 +5,7 @@ import { saveAsset } from '../storage/db.js';
 import { traceTokenShape } from '../engine/TokenRenderer.js';
 import { resolveStatusDefinitions, formatCondition } from '../status/StatusManager.js';
 import { CustomStatusModal } from './CustomStatusModal.js';
+import { TokenImageBrowserModal } from './TokenImageBrowserModal.js';
 
 interface TokenEditorModalProps {
   token: Token;
@@ -29,6 +30,7 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
   onUpdateMap,
 }) => {
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showImageBrowserModal, setShowImageBrowserModal] = useState(false);
   const statusDefs = resolveStatusDefinitions(activeMap);
   const allAvailableStatuses = Object.keys(statusDefs).sort();
   const [name, setName] = useState(token.name);
@@ -596,10 +598,36 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
             </div>
 
             <div style={{ flex: 1, minWidth: '180px' }}>
-              <label className="btn btn-secondary" style={{ cursor: 'pointer', display: 'inline-flex', marginBottom: '0.6rem' }}>
-                <Upload size={16} /> Upload Image
-                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageFile} />
-              </label>
+              <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.6rem', flexWrap: 'wrap' }}>
+                <label className="btn btn-secondary" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem', padding: '0.35rem 0.65rem' }}>
+                  <Upload size={14} /> Upload Image
+                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageFile} />
+                </label>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowImageBrowserModal(true)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem', padding: '0.35rem 0.65rem' }}
+                >
+                  <Sparkles size={14} color="var(--accent-primary)" /> Choose Existing...
+                </button>
+                {imageUrl && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setImageUrl('');
+                      setClipZoom(1.0);
+                      setClipPanX(0);
+                      setClipPanY(0);
+                    }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', padding: '0.35rem 0.55rem', color: '#ef4444' }}
+                    title="Remove image and use initials avatar"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                )}
+              </div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                 <span style={{ color: 'var(--primary)', fontWeight: 600 }}>• Drag</span> preview to pan image.
               </div>
@@ -1829,6 +1857,25 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
           if (!conditions.some((c) => c.split(':')[0] === base)) {
             setConditions((prev) => [...prev, conditionStr]);
           }
+        }}
+      />
+    )}
+    {showImageBrowserModal && (
+      <TokenImageBrowserModal
+        isOpen={showImageBrowserModal}
+        onClose={() => setShowImageBrowserModal(false)}
+        currentImageUrl={imageUrl}
+        onSelectImage={(newUrl, options) => {
+          setImageUrl(newUrl);
+          if (options?.zoom !== undefined) setClipZoom(options.zoom);
+          if (options?.panX !== undefined) setClipPanX(options.panX);
+          if (options?.panY !== undefined) setClipPanY(options.panY);
+        }}
+        onRemoveImage={() => {
+          setImageUrl('');
+          setClipZoom(1.0);
+          setClipPanX(0);
+          setClipPanY(0);
         }}
       />
     )}
