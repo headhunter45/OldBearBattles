@@ -1941,14 +1941,11 @@ export const AppVtt: React.FC = () => {
       if (key === 'f') {
         if (isGm) {
           e.preventDefault();
-          setActiveTool('fog-hide');
-        }
-        return;
-      }
-      if (key === 'r') {
-        if (isGm) {
-          e.preventDefault();
-          setActiveTool('fog-reveal');
+          if (e.shiftKey) {
+            setActiveTool('fog-reveal');
+          } else {
+            setActiveTool('fog-hide');
+          }
         }
         return;
       }

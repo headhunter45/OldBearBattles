@@ -318,7 +318,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-195 | *Add zoom and offset to the PRESET_TOKENS in TokenPickerModal.*                                                                                                                                                                                                                                                                                                                                                                                                                      | Common         | Triage   | [Feature](#ob-195) |
 | OB-196 | Move chat back to the left sidebar. Put it below the measuring tape icon.                                                                                                                                                                                                                                                                                                                                                                                                            | Common         | Ready    | [Feature](#ob-196) |
 | OB-197 | Brawl mode does not have a top bar so I cannot switch back. See [OB-154](#ob-154).                                                                                                                                                                                                                                                                                                                                                                                                   | Common         | Ready    | [Bug](#ob-197)     |
-| OB-198 | Reveal fog should be 'shift-f' instead of 'r' for the shortcut key.                                                                                                                                                                                                                                                                                                                                                                                                                  | Vtt            | Ready    | [Feature](#ob-198) |
+| OB-198 | Reveal fog should be 'shift-f' instead of 'r' for the shortcut key.                                                                                                                                                                                                                                                                                                                                                                                                                  | Vtt            | Testing  | [Feature](#ob-198) |
 | OB-199 | *Make fog be a single layer.*                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Vtt            | Triage   | [Feature](#ob-199) |
 | OB-200 | I want to be able to add attacks to a token without syncing it with a character.                                                                                                                                                                                                                                                                                                                                                                                                     | Vtt            | Ready    | [Feature](#ob-200) |
 | OB-201 | When a player spawns a token it should automatically be controlled by them. See [OB-143](#ob-143).                                                                                                                                                                                                                                                                                                                                                                                   | Vtt            | Done     | [Bug](#ob-201)     |
@@ -3180,18 +3180,17 @@ Describe task objectives and implementation requirements here.
 
 - [ ]
 
-<a id="ob-198" class="task" data-project="vtt" data-status="ready" data-task-type="feature"></a>
+<a id="ob-198" class="task" data-project="vtt" data-status="testing" data-task-type="feature"></a>
 ### Reveal fog should be 'shift-f' instead of 'r' for the shortcut key.
 **ID:** OB-198
 **Project:** Vtt
-**Status:** Ready
+**Status:** Testing
 **Type:** Feature
-
 
 **Description:**
 Describe task objectives and implementation requirements here.
 
-- [ ]
+- [x]
 
 <a id="ob-199" class="task" data-project="vtt" data-status="triage" data-task-type="feature"></a>
 ### Make fog be a single layer.

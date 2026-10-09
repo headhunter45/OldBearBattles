@@ -23,7 +23,7 @@ describe('Reusable Help & Tooltip Component (OB-139)', () => {
     assert.ok(keys.includes('M'), 'Must include M for measure');
     assert.ok(keys.includes('1'), 'Must include 1 for laser');
     assert.ok(keys.includes('8'), 'Must include 8 for spray decal');
-    assert.ok(keys.includes('R'), 'Must include R for fog reveal');
+    assert.ok(keys.includes('Shift + F'), 'Must include Shift + F for fog reveal');
     assert.ok(keys.includes('F'), 'Must include F for fog hide');
     assert.ok(keys.includes('C'), 'Must include C for character sheet');
     assert.ok(keys.includes('Esc'), 'Must include Esc for deselect/close');
@@ -51,7 +51,7 @@ describe('Reusable Help & Tooltip Component (OB-139)', () => {
         h.category.toLowerCase().includes(query.toLowerCase())
     );
     assert.ok(matches.length >= 2, 'Should match fog shortcuts');
-    assert.ok(matches.some((m) => m.key === 'R'));
+    assert.ok(matches.some((m) => m.key === 'Shift + F'));
     assert.ok(matches.some((m) => m.key === 'F'));
   });
 

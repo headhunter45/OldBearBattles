@@ -27,7 +27,7 @@ export const HOTKEYS: HotkeyItem[] = [
   { key: 'Shift + Drag', description: 'Invert Persistent / Quick Ping Drawing Mode', category: 'Drawings' },
 
   // Fog of War
-  { key: 'R', description: 'Reveal Fog of War', category: 'Fog of War' },
+  { key: 'Shift + F', description: 'Reveal Fog of War', category: 'Fog of War' },
   { key: 'F', description: 'Hide / Cover Fog of War', category: 'Fog of War' },
 
   // General

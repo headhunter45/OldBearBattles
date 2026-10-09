@@ -528,10 +528,10 @@ export const ToolBar: React.FC<ToolBarProps> = ({
                     onSelectTool('fog-reveal');
                     setShowFogMenu(false);
                   }}
-                  title="Drag rectangle to reveal fog (R)"
+                  title="Drag rectangle to reveal fog (Shift+F)"
                 >
                   <Eye size={16} />
-                  <span>Reveal Fog (R)</span>
+                  <span>Reveal Fog (Shift+F)</span>
                 </button>
 
                 <button

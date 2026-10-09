@@ -11,6 +11,7 @@ This document provides step-by-step instructions for manually verifying all feat
 
 | Task ID | Feature Title | Domain | Status |
 | :--- | :--- | :--- | :--- |
+| **[OB-198](#ob-198---reveal-fog-shortcut-key-shift-f)** | Reveal Fog Shortcut Key (`Shift+F`) | VTT / Fog of War | Testing |
 | **[OB-211](#ob-211---remove-excess-display-from-info-commands)** | Remove Excess Display from Info Commands | Common / Chat | Testing |
 | **[OB-207](#ob-207---unbound-token-resets-character-sheet-form-state)** | Unbound Token Resets Character Sheet Form State | VTT / Character Sheet | Testing |
 | **[OB-182](#ob-182---associate-controllable-token-with-chat-panel)** | Associate Controllable Token with Chat Panel | VTT / Chat | Testing |
@@ -31,6 +32,37 @@ This document provides step-by-step instructions for manually verifying all feat
 ---
 
 ## VTT & Chat
+
+### OB-198 - Reveal Fog Shortcut Key (`Shift+F`)
+
+- **Reference in tasks.md:** [tasks.md: OB-198](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-198)
+- **Primary Source Code:** [AppVtt.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/vtt/AppVtt.tsx), [ToolBar.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/ToolBar.tsx), [HotkeyCheatSheetModal.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/HotkeyCheatSheetModal.tsx)
+- **Where to find it:** VTT Canvas Toolbar, Fog menu, and Keyboard Shortcuts Cheat Sheet modal (`?`).
+
+#### Step-by-Step Instructions:
+
+1. Open the VTT room in your browser as a GM player.
+2. Ensure you are on a map with Fog of War active (or toggle Fog on).
+3. Press `f` on your keyboard (without Shift):
+   - Verify that the active tool changes to **Hide Fog** (`fog-hide`).
+4. Press `Shift + F` on your keyboard:
+   - Verify that the active tool changes to **Reveal Fog** (`fog-reveal`).
+5. Press `r` on your keyboard:
+   - Verify that pressing `r` no longer switches to the Reveal Fog tool.
+6. Open the Toolbar Fog submenu:
+   - Verify the tooltip and menu item for Reveal Fog display `Reveal Fog (Shift+F)`.
+7. Press `?` (or `Shift + /`) to open the Keyboard Shortcuts Cheat Sheet:
+   - Verify that under **Fog of War**, the shortcut for *Reveal Fog of War* is listed as `Shift + F`.
+   - Verify that *Hide / Cover Fog of War* remains `F`.
+
+#### Expected Result (Pass Criteria):
+
+- Pressing `Shift+F` activates the Reveal Fog tool.
+- Pressing `F` activates the Hide/Cover Fog tool.
+- Pressing `R` no longer triggers the Reveal Fog tool.
+- Toolbar tooltips, menu labels, and the hotkey cheat sheet accurately show `Shift+F` for Reveal Fog.
+
+---
 
 ### OB-211 - Remove Excess Display from Info Commands
 
