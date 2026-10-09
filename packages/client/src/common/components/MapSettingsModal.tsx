@@ -10,6 +10,8 @@ import {
   Plus,
 } from 'lucide-react';
 import { createSubmapPreset } from '../engine/SubmapManager.js';
+import { SubmapEditorDrawer } from './SubmapEditorDrawer.js';
+import { getAssetsByType, StoredAsset } from '../storage/db.js';
 
 interface MapSettingsModalProps {
   map: GameMap;
@@ -55,6 +57,8 @@ export const MapSettingsModal: React.FC<MapSettingsModalProps> = ({
     map.backgroundColor || '#090d16',
   );
   const [submaps, setSubmaps] = useState<SubmapConfig[]>(map.submaps || []);
+  const [expandedSubmapId, setExpandedSubmapId] = useState<string | null>(null);
+  const [savedMapAssets, setSavedMapAssets] = useState<StoredAsset[]>([]);
 
   // String state for inputs to allow smooth backspacing without auto-snapping to 1
   const initialTilesX =
@@ -94,9 +98,23 @@ export const MapSettingsModal: React.FC<MapSettingsModalProps> = ({
     setGridSizeStr(String(map.gridSize || 50));
     setGridOffsetXStr(String(map.gridOffsetX ?? 0));
     setGridOffsetYStr(String(map.gridOffsetY ?? 0));
+    setExpandedSubmapId(null);
     setError(null);
     setConfirmDelete(false);
   }, [map.id]);
+
+  // Load saved map assets for custom submap battlemaps
+  useEffect(() => {
+    let isMounted = true;
+    getAssetsByType('map')
+      .then((assets) => {
+        if (isMounted) setSavedMapAssets(assets);
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Focus on Tiles Wide on open and select all text
   useEffect(() => {
@@ -137,10 +155,18 @@ export const MapSettingsModal: React.FC<MapSettingsModalProps> = ({
   const handleAddPreset = (type: SubmapType) => {
     const newSubmap = createSubmapPreset(type, { ...map, submaps });
     setSubmaps((prev) => [...prev, newSubmap]);
+    setExpandedSubmapId(newSubmap.id);
+  };
+
+  const handleUpdateSubmap = (id: string, updates: Partial<SubmapConfig>) => {
+    setSubmaps((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
+    );
   };
 
   const handleRemoveSubmap = (id: string) => {
     setSubmaps((prev) => prev.filter((s) => s.id !== id));
+    setExpandedSubmapId((cur) => (cur === id ? null : cur));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -862,64 +888,27 @@ export const MapSettingsModal: React.FC<MapSettingsModalProps> = ({
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '0.5rem',
+                  gap: '0.6rem',
                 }}
               >
                 {submaps.map((sub) => (
-                  <div
+                  <SubmapEditorDrawer
                     key={sub.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '0.4rem 0.6rem',
-                      background: 'var(--bg-surface)',
-                      borderRadius: 'var(--radius-sm)',
-                      border: `1px solid ${sub.borderColor || 'var(--border-subtle)'}`,
-                      fontSize: '0.78rem',
+                    submap={sub}
+                    parentMap={{
+                      ...map,
+                      gridSize: parseInt(gridSizeStr, 10) || map.gridSize || 50,
                     }}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: '8px',
-                          height: '8px',
-                          borderRadius: '50%',
-                          backgroundColor: sub.borderColor || '#38bdf8',
-                        }}
-                      />
-                      <span style={{ fontWeight: 600, color: 'white' }}>
-                        {sub.name}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: '0.68rem',
-                          color: 'var(--text-muted)',
-                        }}
-                      >
-                        ({sub.width} × {sub.height}px)
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn-icon"
-                      style={{
-                        width: '22px',
-                        height: '22px',
-                        color: 'var(--accent-rose)',
-                      }}
-                      onClick={() => handleRemoveSubmap(sub.id)}
-                      title="Remove submap"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
+                    isExpanded={expandedSubmapId === sub.id}
+                    onToggleExpand={() =>
+                      setExpandedSubmapId((cur) =>
+                        cur === sub.id ? null : sub.id
+                      )
+                    }
+                    onUpdate={(updates) => handleUpdateSubmap(sub.id, updates)}
+                    onDelete={() => handleRemoveSubmap(sub.id)}
+                    savedMapAssets={savedMapAssets}
+                  />
                 ))}
               </div>
             ) : (

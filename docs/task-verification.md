@@ -30,6 +30,7 @@ This document provides step-by-step instructions for manually verifying all feat
 | **[OB-183](#ob-183---codebase-simplification--refactoring-plan-docsrefactor-1md)** | Codebase Simplification & Refactoring Plan (`docs/refactor-1.md`) | Architecture / Plan | Testing |
 | **[OB-184](#ob-184---helptip-component--placement-guide-docshelptip-locationsmd)** | HelpTip Component & Placement Guide (`docs/helptip-locations.md`) | UI / UX Guide | Testing |
 | **[OB-185](#ob-185---backlog-research--implementation-guide-docsbacklog-implementation-guidemd)** | Backlog Research & Implementation Guide (`docs/backlog-implementation-guide.md`) | Architecture / Guide | Testing |
+| **[OB-187](#ob-187---submap--deployment-zone-customization-ui)** | Submap & Deployment Zone Customization UI | VTT & Brawl / Scenes | Testing |
 
 ---
 
@@ -563,3 +564,73 @@ This document provides step-by-step instructions for manually verifying all feat
 - The Brawl mode top bar is prominently visible and completely styled as a floating HUD above the canvas.
 - Mode switching works bidirectionally (VTT to Brawl and Brawl to VTT).
 - The selected mode correctly persists in `localStorage` so users are never trapped in a mode.
+
+---
+
+### OB-187 - Submap & Deployment Zone Customization UI
+
+- **Reference in tasks.md:** [tasks.md: OB-187](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-187)
+- **Primary Source Code:** [SubmapEditorDrawer.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/SubmapEditorDrawer.tsx), [MapSettingsModal.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/MapSettingsModal.tsx), [SubmapManager.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/engine/SubmapManager.ts)
+- **Where to find it:** Scene Settings Modal (`MapSettingsModal` via Top Bar Scene Settings or Map Manager) -> "Secondary Submaps & Regions" section.
+
+#### Step-by-Step Instructions:
+
+1. **Open Scene Settings:**
+   - In either VTT or Brawl mode, click the gear/settings icon for the active scene (or open Map Manager and click the edit settings icon for any map).
+   - Scroll down to the **Secondary Submaps & Regions** section.
+
+2. **Add a Submap Preset:**
+   - Click one of the preset buttons: `+ Floor`, `+ Dungeon`, `+ Deployment Zone`, `+ Casualty Tray`, or `+ Staging Area`.
+   - Observe that the submap is added and its property editor drawer automatically expands.
+
+3. **Verify Header Summary & Expand / Collapse:**
+   - Verify the header row displays the color dot indicator, submap name, type badge (e.g. `Deployment Zone`), dimensions in px & cells, and expand/collapse chevron button.
+   - Click the header row or chevron button to collapse the editor, then click again to expand.
+
+4. **Edit Submap Identity:**
+   - Change the **Submap Name** (e.g., `Red Attacker Front`).
+   - Change the **Badge Label (On Canvas)** (e.g., `Red Front`).
+   - Change the **Area Type** dropdown (e.g., `Wargaming Deployment Zone`).
+   - Verify the header summary updates in real time.
+
+5. **Adjust Position & Canvas Offsets:**
+   - Try the quick alignment buttons:
+     - Click **Right of Map**: verify X offset shifts to the right of parent map (`parentWidth + 80`), Y becomes 0.
+     - Click **Left of Map**: verify X offset shifts to the left (`-(width + 80)`).
+     - Click **Below Map**: verify Y offset shifts below parent map (`parentHeight + 80`).
+     - Click **Top Edge**: verify X = 0, Y = 0.
+     - Click **Bottom Edge**: verify X = 0, Y = parentHeight - height.
+   - Manually type custom values in **Offset X** and **Offset Y** number inputs.
+
+6. **Adjust Dimensions in Pixels and Grid Cells:**
+   - Enter a new **Width (px)** or **Width (cells)**: verify that editing cells recalculates pixels and vice-versa based on the scene grid size.
+   - Enter a new **Height (px)** or **Height (cells)**.
+   - Click **Snap to Grid**: verify dimensions snap to clean multiples of the grid cell size.
+   - Click **Full Width**: verify submap width matches parent map width.
+
+7. **Customize Color & Border Styling:**
+   - In **Border Outline / Badge Color**, click different preset swatches (e.g. Red `#ef4444`, Green `#10b981`, Purple `#8b5cf6`).
+   - Verify the border swatch, dot indicator, and custom hex input update.
+   - Use the native color picker to select a custom color.
+   - In **Background Fill / Tint**, click preset swatches (e.g. Transparent, Dark Slate, Red Tint `rgba(239, 68, 68, 0.18)`).
+   - Enter a custom hex or rgba value in the background input.
+
+8. **Attach Background Battlemap / Floor Plan Image:**
+   - Enter a valid image URL in the **Image URL** field (or click **Upload File** to choose an image file from disk).
+   - Verify a thumbnail preview appears with the image name/URL and a **Clear** button.
+   - Click **Clear** to remove the image.
+   - If previous map assets exist in IndexedDB, test selecting an asset from the **Choose from Saved Assets...** dropdown.
+
+9. **Verify Grid Overlay Toggle:**
+   - Toggle the **Show Grid Overlay** checkbox on/off.
+   - Adjust the custom **Grid Size** (e.g. change 50 to 70px).
+
+10. **Save and Canvas Verification:**
+    - Click **Save Changes** in the modal.
+    - Inspect the 2D canvas: verify the submap appears at the configured position (X, Y) with the specified dimensions, border color, background tint or floor plan image, and canvas identification badge.
+    - Re-open Scene Settings: verify all edited submap properties were preserved.
+
+#### Expected Result (Pass Criteria):
+- Submap property editor provides expandable drawers with controls for position, dimensions (px & cells), border/badge colors, background fill/tint, custom battlemap images, and grid settings.
+- All properties update smoothly and persist across scene saves and template duplications.
+

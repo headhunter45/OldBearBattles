@@ -188,6 +188,125 @@ export function duplicateSceneAsTemplate(
 }
 
 /**
+ * Calculates number of grid cells for a pixel dimension given a grid size.
+ */
+export function calculateSubmapCells(pixels: number, gridSize: number): number {
+  const size = Math.max(1, gridSize || 50);
+  return Math.max(1, Math.round(pixels / size));
+}
+
+/**
+ * Calculates pixel dimension from grid cells and grid size.
+ */
+export function calculateSubmapPixels(cells: number, gridSize: number): number {
+  const size = Math.max(1, gridSize || 50);
+  return Math.max(size, Math.round(cells * size));
+}
+
+/**
+ * Snaps a pixel value (dimension or coordinate) to the nearest grid step.
+ */
+export function snapToGrid(value: number, gridSize: number): number {
+  const size = Math.max(1, gridSize || 50);
+  return Math.round(value / size) * size;
+}
+
+export type SubmapAlignment =
+  | 'right'
+  | 'left'
+  | 'below'
+  | 'above'
+  | 'top_deploy'
+  | 'bottom_deploy';
+
+/**
+ * Calculates aligned world coordinates (x, y) for a submap relative to the parent map.
+ */
+export function alignSubmapPosition(
+  submap: Pick<SubmapConfig, 'width' | 'height'>,
+  parentMap: Pick<GameMap, 'width' | 'height'>,
+  alignment: SubmapAlignment,
+  spacing = 80
+): { x: number; y: number } {
+  const parentWidth = parentMap.width || 2000;
+  const parentHeight = parentMap.height || 2000;
+
+  switch (alignment) {
+    case 'right':
+      return { x: parentWidth + spacing, y: 0 };
+    case 'left':
+      return { x: -(submap.width + spacing), y: 0 };
+    case 'below':
+      return { x: 0, y: parentHeight + spacing };
+    case 'above':
+      return { x: 0, y: -(submap.height + spacing) };
+    case 'top_deploy':
+      return { x: 0, y: 0 };
+    case 'bottom_deploy':
+      return { x: 0, y: Math.max(0, parentHeight - submap.height) };
+  }
+}
+
+/**
+ * Updates a submap with partial updates, validating and clamping coordinate & dimension bounds.
+ */
+export function updateSubmapConfig(
+  submap: SubmapConfig,
+  updates: Partial<SubmapConfig>
+): SubmapConfig {
+  const updated: SubmapConfig = {
+    ...submap,
+    ...updates,
+  };
+
+  // Ensure width and height are at least 50px
+  if (typeof updated.width === 'number') {
+    updated.width = Math.max(50, Math.round(updated.width));
+  }
+  if (typeof updated.height === 'number') {
+    updated.height = Math.max(50, Math.round(updated.height));
+  }
+  if (typeof updated.x === 'number') {
+    updated.x = Math.round(updated.x);
+  }
+  if (typeof updated.y === 'number') {
+    updated.y = Math.round(updated.y);
+  }
+  if (updates.borderColor && !updates.colorCode) {
+    updated.colorCode = updates.borderColor;
+  }
+  if (updates.colorCode && !updates.borderColor) {
+    updated.borderColor = updates.colorCode;
+  }
+
+  return updated;
+}
+
+export const SUBMAP_BORDER_PRESET_COLORS = [
+  '#38bdf8', // Sky
+  '#3b82f6', // Blue
+  '#ef4444', // Red
+  '#10b981', // Emerald
+  '#f59e0b', // Amber
+  '#8b5cf6', // Purple
+  '#ec4899', // Pink
+  '#ffffff', // White
+  '#64748b', // Slate
+];
+
+export const SUBMAP_BG_PRESET_COLORS = [
+  'transparent',
+  '#1e293b',
+  '#0f172a',
+  '#090d16',
+  'rgba(239, 68, 68, 0.18)',
+  'rgba(59, 130, 246, 0.18)',
+  'rgba(16, 185, 129, 0.18)',
+  'rgba(139, 92, 246, 0.18)',
+  'rgba(245, 158, 11, 0.18)',
+];
+
+/**
  * Renders an individual submap including its background, grid, border, and identification badge.
  */
 export function renderSubmap(
