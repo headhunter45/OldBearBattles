@@ -315,7 +315,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-192 | Custom statuses can't be created.'                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Common         | Testing  | [Bug](#ob-192)     |
 | OB-193 | Add a way to change token images to existing images.                                                                                                                                                                                                                                                                                                                                                                                                                                 | Common         | Testing  | [Feature](#ob-193) |
 | OB-194 | The hitbox for tapping a token should be anywhere within it's ring or rectangle border.                                                                                                                                                                                                                                                                                                                                                                                              | Common         | Done     | [Bug](#ob-194)     |
-| OB-195 | Add zoom and offset to the PRESET_TOKENS in TokenPickerModal.                                                                                                                                                                                                                                                                                                                                                                                                                        | Common         | Ready    | [Feature](#ob-195) |
+| OB-195 | Add zoom and offset to the PRESET_TOKENS in TokenPickerModal.                                                                                                                                                                                                                                                                                                                                                                                                                        | Common         | Testing  | [Feature](#ob-195) |
 | OB-196 | Move chat back to the left sidebar. Put it below the measuring tape icon.                                                                                                                                                                                                                                                                                                                                                                                                            | Common         | Ready    | [Feature](#ob-196) |
 | OB-197 | Brawl mode does not have a top bar so I cannot switch back. See [OB-154](#ob-154).                                                                                                                                                                                                                                                                                                                                                                                                   | Common         | Done     | [Bug](#ob-197)     |
 | OB-198 | Reveal fog should be 'shift-f' instead of 'r' for the shortcut key.                                                                                                                                                                                                                                                                                                                                                                                                                  | Old Bear VTT   | Done     | [Feature](#ob-198) |
@@ -3147,18 +3147,17 @@ Describe task objectives and implementation requirements here.
 - [x]
   Implemented isPointInToken in TokenRenderer.ts and integrated with CanvasEngine.ts. Hitbox now accurately covers the full circular ring border for circular tokens, full rectangular bounds for square/rounded tokens and props/tiles, and circumscribed polygon boundaries for hexagon/octagon tokens. Correctly centers multi-tile tokens (e.g. size 2, 3) at (x + propW/2, y + propH/2).
 
-<a id="ob-195" class="task" data-project="cmn" data-status="ready" data-task-type="feature"></a>
+<a id="ob-195" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
 ### Add zoom and offset to the PRESET_TOKENS in TokenPickerModal.
 **ID:** OB-195
 **Project:** Common
-**Status:** Ready
+**Status:** Testing
 **Type:** Feature
-
 
 **Description:**
 I want to add zoom and offset or their equivalents to the PRESET_TOKENS in TokenPickerModal and use those values when showing the icons in the picker and when creating the tokens.
 
-- [ ]
+- [x]
 
 <a id="ob-196" class="task" data-project="cmn" data-status="ready" data-task-type="feature"></a>
 ### Move chat back to the left sidebar. Put it below the measuring tape icon.

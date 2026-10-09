@@ -1370,6 +1370,9 @@ export const AppVtt: React.FC = () => {
       character: data.character,
       propWidth: data.propWidth,
       propHeight: data.propHeight,
+      clipZoom: data.clipZoom,
+      clipPanX: data.clipPanX,
+      clipPanY: data.clipPanY,
     };
 
     setSession((prev) => {

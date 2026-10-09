@@ -39,6 +39,9 @@ export interface TokenSpawnData {
   clipShape?: 'circle' | 'square' | 'rounded' | 'hexagon' | 'octagon';
   propWidth?: number;
   propHeight?: number;
+  clipZoom?: number;
+  clipPanX?: number;
+  clipPanY?: number;
 }
 
 export interface TokenPickerModalProps {
@@ -60,22 +63,38 @@ export interface PresetTokenItem {
   offsetY?: number;
 }
 
-const RAW_PRESET_TOKENS = [
+const RAW_PRESET_TOKENS: Array<{
+  name: string;
+  base: string;
+  author: { name: string; url: string };
+  zoom?: number;
+  offsetX?: number;
+  offsetY?: number;
+}> = [
   // { name: '', base: ''},
   {
     name: 'Mask of human face in multicolored',
     base: 'vector-1760005368300-d2edc728bb40',
     author: { name: 'Rudra K', url: 'https://unsplash.com/@rudra_ind' },
+    zoom: 1.15,
+    offsetX: 0,
+    offsetY: 0,
   },
   {
     name: 'A multicolored Dragon Mask with yellow eyes that looks real. Using red, perple, blue, orange, yellow, green, etc. Colored shades using in this art of dragon mask.',
     base: 'vector-1769793467599-c40ce42d2133',
     author: { name: 'Rudra K', url: 'https://unsplash.com/@rudra_ind' },
+    zoom: 1.2,
+    offsetX: 0,
+    offsetY: 0,
   },
   {
     name: 'A highly detailed, symmetrical vector illustration of an iguana’s head, designed with the intricate patterns of a traditional ceremonial mask.',
     base: 'vector-1777123850186-f3b3523aa067',
     author: { name: 'Rudra K', url: 'https://unsplash.com/@rudra_ind' },
+    zoom: 1.2,
+    offsetX: 0,
+    offsetY: 0,
   },
   {
     name: 'Anime Girl',
@@ -84,6 +103,9 @@ const RAW_PRESET_TOKENS = [
       name: 'Ands Mahardika',
       url: 'https://unsplash.com/@andsproject',
     },
+    zoom: 1.25,
+    offsetX: 0,
+    offsetY: -6,
   },
   {
     name: 'Ands-1',
@@ -92,6 +114,9 @@ const RAW_PRESET_TOKENS = [
       name: 'Ands Mahardika',
       url: 'https://unsplash.com/@andsproject',
     },
+    zoom: 1.2,
+    offsetX: 0,
+    offsetY: -5,
   },
   {
     name: 'Ands-2',
@@ -100,6 +125,9 @@ const RAW_PRESET_TOKENS = [
       name: 'Ands Mahardika',
       url: 'https://unsplash.com/@andsproject',
     },
+    zoom: 1.2,
+    offsetX: 0,
+    offsetY: -5,
   },
   {
     name: 'Ands-3',
@@ -108,6 +136,9 @@ const RAW_PRESET_TOKENS = [
       name: 'Ands Mahardika',
       url: 'https://unsplash.com/@andsproject',
     },
+    zoom: 1.25,
+    offsetX: 0,
+    offsetY: -5,
   },
   {
     name: 'Ands-4',
@@ -116,6 +147,9 @@ const RAW_PRESET_TOKENS = [
       name: 'Ands Mahardika',
       url: 'https://unsplash.com/@andsproject',
     },
+    zoom: 1.25,
+    offsetX: 0,
+    offsetY: -6,
   },
   {
     name: 'maulana',
@@ -214,11 +248,17 @@ const RAW_PRESET_TOKENS = [
     name: 'Knight Warrior',
     base: 'photo-1686747513617-ccd391daa3e2',
     author: { name: 'Anna Saveleva', url: 'https://unsplash.com/@paneva' },
+    zoom: 1.35,
+    offsetX: 0,
+    offsetY: -10,
   },
   {
     name: 'Elven Wizard',
     base: 'photo-1718750307490-f4f04761800c',
     author: { name: 'Nur demirbaş', url: 'https://unsplash.com/@nurdeniss' },
+    zoom: 1.3,
+    offsetX: 0,
+    offsetY: -12,
   },
   {
     name: 'Shadow Rogue',
@@ -227,31 +267,49 @@ const RAW_PRESET_TOKENS = [
       name: 'Christopher Luther',
       url: 'https://unsplash.com/@chriscantlose',
     },
+    zoom: 1.25,
+    offsetX: 0,
+    offsetY: -6,
   },
   {
     name: 'Holy Cleric',
     base: 'photo-1697043593484-1b8c8d475327',
     author: { name: 'HamZa NOUASRIA', url: 'https://unsplash.com/@hamza01nsr' },
+    zoom: 1.3,
+    offsetX: 0,
+    offsetY: -8,
   },
   {
     name: 'Forest Ranger',
     base: 'photo-1720462813863-cf94aef89b38',
     author: { name: 'Aditya Saxena', url: 'https://unsplash.com/@adityaries' },
+    zoom: 1.25,
+    offsetX: 0,
+    offsetY: -5,
   },
   {
     name: 'Orc Berserker',
     base: 'photo-1568224014743-c17edeea85bb',
     author: { name: 'Anne Nygård', url: 'https://unsplash.com/@polarmermaid' },
+    zoom: 1.4,
+    offsetX: 0,
+    offsetY: -12,
   },
   {
     name: 'Dragon Wyrmling',
     base: 'photo-1523586044048-b7d32d5da502',
     author: { name: 'David Clode', url: 'https://unsplash.com/@davidclode' },
+    zoom: 1.2,
+    offsetX: 5,
+    offsetY: 0,
   },
   {
     name: 'Goblin Scout',
     base: 'photo-1562433712-9474d4ef8510',
     author: { name: 'Henry Addo', url: 'https://unsplash.com/@eyedol25' },
+    zoom: 1.3,
+    offsetX: 0,
+    offsetY: -10,
   },
   {
     name: 'Amber',
@@ -298,6 +356,9 @@ const RAW_PRESET_TOKENS = [
     name: 'Necromancer',
     base: 'photo-1632112991792-efbfa8bdec49',
     author: { name: 'Nurlan Imash', url: 'https://unsplash.com/@edifieer' },
+    zoom: 1.25,
+    offsetX: 0,
+    offsetY: -8,
   },
   {
     name: 'Dmitry Vechorko',
@@ -431,6 +492,9 @@ export const TokenPickerModal: React.FC<TokenPickerModalProps> = ({
   const [maxHp, setMaxHp] = useState<number | undefined>(20);
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [clipZoom, setClipZoom] = useState<number | undefined>(undefined);
+  const [clipPanX, setClipPanX] = useState<number | undefined>(undefined);
+  const [clipPanY, setClipPanY] = useState<number | undefined>(undefined);
 
   // Attached metadata from selected card
   const [selectedCharacter, setSelectedCharacter] = useState<any>(undefined);
@@ -481,6 +545,9 @@ export const TokenPickerModal: React.FC<TokenPickerModalProps> = ({
     reader.onload = async () => {
       const dataUrl = reader.result as string;
       setSelectedImage(dataUrl);
+      setClipZoom(undefined);
+      setClipPanX(undefined);
+      setClipPanY(undefined);
       const cleanName = file.name.replace(/\.[^/.]+$/, '');
       if (!tokenName || tokenName === 'Hero') {
         setTokenName(cleanName);
@@ -504,17 +571,23 @@ export const TokenPickerModal: React.FC<TokenPickerModalProps> = ({
     reader.readAsDataURL(file);
   };
 
-  const selectPreset = (preset: { name: string; url: string }) => {
+  const selectPreset = (preset: PresetTokenItem) => {
     setSelectedImage(preset.url);
     setTokenName(preset.name);
     setIsProp(false);
     setSelectedCharacter(undefined);
     setSelectedMonster(undefined);
+    setClipZoom(preset.zoom);
+    setClipPanX(preset.offsetX);
+    setClipPanY(preset.offsetY);
   };
 
   const selectAsset = (asset: StoredAsset) => {
     setSelectedImage(asset.dataUrl);
     setTokenName(asset.name);
+    setClipZoom(undefined);
+    setClipPanX(undefined);
+    setClipPanY(undefined);
     const assetIsProp = asset.type === 'prop' || Boolean(asset.isProp);
     setIsProp(assetIsProp);
     if (asset.size) setSize(asset.size);
@@ -537,6 +610,9 @@ export const TokenPickerModal: React.FC<TokenPickerModalProps> = ({
     setTokenName(char.name || charRecord.name || 'Hero');
     setIsProp(false);
     setSize(1);
+    setClipZoom(undefined);
+    setClipPanX(undefined);
+    setClipPanY(undefined);
     const hp = char.currentHp ?? char.maxHp ?? 20;
     setCurrentHp(hp);
     setMaxHp(char.maxHp ?? 20);
@@ -557,6 +633,9 @@ export const TokenPickerModal: React.FC<TokenPickerModalProps> = ({
       monsterData: selectedMonster,
       propWidth,
       propHeight,
+      clipZoom,
+      clipPanX,
+      clipPanY,
     });
     onClose();
   };
@@ -788,23 +867,33 @@ export const TokenPickerModal: React.FC<TokenPickerModalProps> = ({
                 borderRadius: isProp ? 'var(--radius-sm)' : '50%',
                 backgroundColor: 'var(--bg-surface)',
                 border: '2px solid var(--accent-primary)',
-                backgroundImage: selectedImage
-                  ? `url("${selectedImage}")`
-                  : 'none',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
+                overflow: 'hidden',
+                position: 'relative',
               }}
             >
-              {!selectedImage &&
-                (isProp ? (
+              {selectedImage ? (
+                <img
+                  src={selectedImage}
+                  alt="Selected Preview"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    transform: `scale(${clipZoom || 1}) translate(${clipPanX || 0}%, ${clipPanY || 0}%)`,
+                    display: 'block',
+                  }}
+                />
+              ) : (
+                isProp ? (
                   <Package size={22} color="var(--text-muted)" />
                 ) : (
                   <User size={22} color="var(--text-muted)" />
-                ))}
+                )
+              )}
             </div>
 
             <div
@@ -1046,17 +1135,27 @@ export const TokenPickerModal: React.FC<TokenPickerModalProps> = ({
                           border: isSel
                             ? '2px solid var(--accent-primary)'
                             : '1px solid var(--border-subtle)',
-                          backgroundImage: `url("${preset.url}")`,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
                           cursor: 'pointer',
                           position: 'relative',
                           boxShadow: isSel
                             ? '0 0 10px var(--accent-primary)'
                             : 'none',
+                          overflow: 'hidden',
+                          backgroundColor: 'var(--bg-surface)',
                         }}
                         title={preset.name}
                       >
+                        <img
+                          src={preset.url}
+                          alt={preset.name}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            transform: `scale(${preset.zoom || 1}) translate(${preset.offsetX || 0}%, ${preset.offsetY || 0}%)`,
+                            display: 'block',
+                          }}
+                        />
                         {isSel && (
                           <div
                             style={{
@@ -1070,6 +1169,7 @@ export const TokenPickerModal: React.FC<TokenPickerModalProps> = ({
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
+                              zIndex: 2,
                             }}
                           >
                             <Check size={12} color="#fff" />

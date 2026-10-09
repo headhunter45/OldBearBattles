@@ -842,6 +842,40 @@ This document provides step-by-step instructions for manually verifying all feat
 - Users can switch an existing token's image to any preset token or previously saved asset from their IndexedDB library without re-uploading.
 - Interactive cropping, zoom, pan, and removal are fully supported.
 
+---
+
+### OB-195 - Preset Token Zoom and Offset Framing in TokenPickerModal
+
+- **Reference in tasks.md:** [tasks.md: OB-195](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-195)
+- **Primary Source Code:** [TokenPickerModal.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/TokenPickerModal.tsx), [AppVtt.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/vtt/AppVtt.tsx)
+- **Where to find it:** Left dock **Add Token or Prop** button (`+` user icon).
+
+#### Step-by-Step Instructions:
+
+1. **Open Token Picker Modal:**
+   - In VTT mode, click the **Add Token or Prop** button on the bottom left dock toolbar.
+   - Verify the **Add Token or Prop** modal opens showing the **Tokens** tab.
+
+2. **Inspect Preset Portraits Framing:**
+   - Scroll through the **Preset Portraits** gallery (e.g. `Knight Warrior`, `Elven Wizard`, `Orc Berserker`, `Dragon Wyrmling`, `Mask of human face...`).
+   - Notice how portraits are framed inside their round preview thumbnails: faces and masks are scaled up and centered without awkward neck cutoffs or excessive background headroom.
+
+3. **Verify Selected Preview Zoom & Offset:**
+   - Click on `Knight Warrior`.
+   - Verify the top preview circle displays the knight portrait with zoomed and centered framing matching the preset's calibrated zoom and offset.
+   - Click on other presets (e.g., `Orc Berserker`, `Elven Wizard`) and verify the preview dynamically reflects their calibrated framing.
+
+4. **Verify Spawned Token on Canvas:**
+   - With a framed preset selected (such as `Knight Warrior`), click **Create & Add to Map** (or double-click the preset portrait).
+   - Once spawned onto the map, inspect the token circular portrait on the HTML5 canvas:
+     - Verify it renders with the calibrated `clipZoom`, `clipPanX`, and `clipPanY` offsets instead of defaulting to unscaled/unframed bounds.
+   - Select the token and click the **Settings** gear icon:
+     - Verify the Token Editor crop canvas opens with the zoom slider and pan position pre-set to the preset's zoom and offset values.
+
+#### Expected Result (Pass Criteria):
+- Preset tokens retain calibrated zoom and vertical/horizontal offset framing in thumbnail chips, the selection preview box, and when placed onto the active game map.
+
+
 
 
 
