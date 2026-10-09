@@ -269,6 +269,20 @@ class TaskScriptsTest(unittest.TestCase):
         self.assertIn("Status:Pending", output)
         self.assertNotIn("Epic:release", output)
 
+    def test_listing_project_filters(self):
+        env = {**self.env, "PATH": "/usr/bin:/bin"}
+        output = self.run_cli("get-tasks", "--all", "--accept", "project:shared", env=env).stdout
+        self.assertIn("OT-001", output)
+        output = self.run_cli("get-tasks", "--all", "--reject", "project:shared", env=env).stdout
+        self.assertNotIn("OT-001", output)
+
+        stub = Path(self.temp.name) / "filter-table"
+        stub.write_text("#!/bin/sh\nprintf '%s\\n' \"$@\"\n")
+        stub.chmod(0o755)
+        env_stub = {**self.env, "PATH": f"{self.temp.name}:/usr/bin:/bin"}
+        output = self.run_cli("get-tasks", "--all", "--accept", "project:shared", env=env_stub).stdout
+        self.assertIn("Project:Shared", output)
+
     def test_filter_frontmatter_errors_are_reported(self):
         self.path.write_text("No frontmatter\n")
         env = {**self.env, "PATH": "/usr/bin:/bin"}
