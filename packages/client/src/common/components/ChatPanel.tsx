@@ -1663,6 +1663,9 @@ export function addBlockToTokenOrCharacter({
 
     let updatedChar: DnDCharacter;
     let confirmText = '';
+    let addedSpell: DnDSpell | undefined;
+    let addedItem: DnDItem | undefined;
+    let addedAction: DnDAction | undefined;
 
     if (block.type === 'spell') {
       const newSpell: DnDSpell = {
@@ -1676,6 +1679,7 @@ export function addBlockToTokenOrCharacter({
         description: block.description || '',
         dndBeyondUrl: block.sourceUrl || '',
       };
+      addedSpell = newSpell;
       updatedChar = {
         ...baseChar,
         spells: [...(baseChar.spells || []), newSpell],
@@ -1689,6 +1693,7 @@ export function addBlockToTokenOrCharacter({
         dndBeyondUrl: block.sourceUrl,
         quantity: 1,
       };
+      addedItem = newItem;
       updatedChar = {
         ...baseChar,
         items: [...(baseChar.items || []), newItem],
@@ -1703,6 +1708,16 @@ export function addBlockToTokenOrCharacter({
         range: block.range,
         description: block.description,
       };
+      addedAction = newAction;
+
+      const isTargetForPlayer = Boolean(
+        character &&
+        (character.id === targetToken.id ||
+         character.name.trim().toLowerCase() === targetToken.name.trim().toLowerCase() ||
+         character.id === targetToken.character?.id ||
+         targetToken.ownerId === player.id ||
+         player.assignedTokenIds?.includes(targetToken.id))
+      );
 
       if (targetToken && !rawChar) {
         const updatedActions = [...(targetToken.actions || []), newAction];
@@ -1712,6 +1727,14 @@ export function addBlockToTokenOrCharacter({
         };
         onSyncToken(targetToken.id, { actions: updatedActions });
         onSetAssociatedToken?.(updatedToken);
+
+        if (character && onUpdatePlayerChar && isTargetForPlayer) {
+          onUpdatePlayerChar({
+            ...character,
+            actions: [...(character.actions || []), newAction],
+          });
+        }
+
         confirmText = `✅ Added attack **${block.name}** to ${targetToken.name}'s token attacks.`;
         onSendMessage?.({
           id: crypto.randomUUID(),
@@ -1741,20 +1764,39 @@ export function addBlockToTokenOrCharacter({
       confirmText = `✅ Added action **${block.name}** to ${targetToken.name}'s actions.`;
     }
 
+    const updatedSpells = addedSpell
+      ? [...(targetToken.spells || []), addedSpell]
+      : targetToken.spells;
+
     const updatedToken: Token = {
       ...targetToken,
       character: updatedChar,
+      spells: updatedSpells,
     };
 
-    onSyncToken(targetToken.id, { character: updatedChar });
+    onSyncToken(targetToken.id, {
+      character: updatedChar,
+      spells: updatedSpells,
+    });
     onSetAssociatedToken?.(updatedToken);
 
-    if (
+    const isTargetForPlayer = Boolean(
       character &&
-      onUpdatePlayerChar &&
-      (character.id === targetToken.id || character.name === targetToken.name || character.id === targetToken.character?.id)
-    ) {
-      onUpdatePlayerChar(updatedChar);
+      (character.id === targetToken.id ||
+       character.name.trim().toLowerCase() === targetToken.name.trim().toLowerCase() ||
+       character.id === targetToken.character?.id ||
+       targetToken.ownerId === player.id ||
+       player.assignedTokenIds?.includes(targetToken.id))
+    );
+
+    if (character && onUpdatePlayerChar && isTargetForPlayer) {
+      const mergedChar: DnDCharacter = {
+        ...character,
+        spells: addedSpell ? [...(character.spells || []), addedSpell] : character.spells,
+        items: addedItem ? [...(character.items || []), addedItem] : character.items,
+        actions: addedAction ? [...(character.actions || []), addedAction] : character.actions,
+      };
+      onUpdatePlayerChar(mergedChar);
     }
 
     onSendMessage?.({
@@ -2153,7 +2195,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                       ? (tokens || []).find((t) => t.id === selectedToken.id) || (player.role === 'gm' || selectedToken.ownerId === player.id ? selectedToken : null)
                       : null) ||
                     (msg.tokenId ? (tokens || []).find((t) => t.id === msg.tokenId) : null) ||
-                    (tokens && tokens.length === 1 ? tokens[0] : null);
+                    (tokens && tokens.length === 1 && !character ? tokens[0] : null);
                   const canAddToCharacter = Boolean(
                     (targetToken && onSyncToken) ||
                     onUpdatePlayerChar ||

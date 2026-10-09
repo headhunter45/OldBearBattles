@@ -3210,9 +3210,14 @@ The Reveal fog tool only removes from the topmost layer of fog it encounters. We
 **Type:** Feature
 
 **Description:**
-Describe task objectives and implementation requirements here.
+Enable tokens to hold standalone attacks, actions, and spells directly (`token.actions` and `token.spells`) without requiring a synced D&D Beyond or Pathbuilder character sheet. Support viewing, adding, editing, and deleting attacks and spells in the Full Token Editor modal (`TokenEditorModal`) and Character Flyout for unsynced tokens, quick rolling via floating HUD `Swords` popup, and ensure adding spells and actions from chat updates both targeted tokens and active player character sheets.
 
 - [x]
+  Added `actions?: DnDAction[]` and `spells?: DnDSpell[]` to `Token` schema in `@oldbear/shared`.
+  Added Attacks & Actions and Spells & Magic management sections to `TokenEditorModal` with inline form, edit, delete, and full persistence.
+  Added quick attacks floating popup to `TokenControls` HUD with roll action support.
+  Added Standalone Token Attacks and Token Spells sections to `CharacterFlyout` for unsynced tokens with direct roll/cast capability and inline add/delete.
+  Updated `ChatPanel` `addBlockToTokenOrCharacter` so spells and actions added from chat update the target token's standalone properties and synchronize to active player character sheets when target matches player or no token is selected.
 
 <a id="ob-201" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
 ### When a player spawns a token it should automatically be controlled by them. See [OB-143](#ob-143).

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Token, Player, DnDAction } from '@oldbear/shared';
-import { X, Upload, Check, ZoomIn, ZoomOut, RotateCcw, Move, Swords, Plus, Trash2, Edit2 } from 'lucide-react';
+import { Token, Player, DnDAction, DnDSpell } from '@oldbear/shared';
+import { X, Upload, Check, ZoomIn, ZoomOut, RotateCcw, Move, Swords, Sparkles, Plus, Trash2, Edit2 } from 'lucide-react';
 import { saveAsset } from '../storage/db.js';
 import { traceTokenShape } from '../engine/TokenRenderer.js';
 
@@ -52,7 +52,11 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
   const [rotation, setRotation] = useState<number>(token.rotation || 0);
   const [locked, setLocked] = useState<boolean>(token.locked || false);
   const [conditions, setConditions] = useState<string[]>(token.conditions || []);
-  const [actions, setActions] = useState<DnDAction[]>(token.actions || []);
+  const [actions, setActions] = useState<DnDAction[]>(
+    token.actions && token.actions.length > 0
+      ? token.actions
+      : token.character?.actions || []
+  );
   const [isAddingAction, setIsAddingAction] = useState(false);
   const [editingActionIndex, setEditingActionIndex] = useState<number | null>(null);
   const [actionForm, setActionForm] = useState<DnDAction>({
@@ -64,6 +68,24 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
     reach: '',
     description: '',
     diceMacro: '',
+  });
+  const [spells, setSpells] = useState<DnDSpell[]>(
+    token.spells && token.spells.length > 0
+      ? token.spells
+      : token.character?.spells || []
+  );
+  const [isAddingSpell, setIsAddingSpell] = useState(false);
+  const [editingSpellIndex, setEditingSpellIndex] = useState<number | null>(null);
+  const [spellForm, setSpellForm] = useState<DnDSpell>({
+    id: '',
+    name: '',
+    level: 0,
+    school: 'Evocation',
+    castingTime: '1 action',
+    range: '60 ft',
+    duration: 'Instantaneous',
+    description: '',
+    dndBeyondUrl: '',
   });
 
   const [previewImg, setPreviewImg] = useState<HTMLImageElement | null>(null);
@@ -341,7 +363,68 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
     }
   };
 
+  const handleStartAddSpell = () => {
+    setSpellForm({
+      id: crypto.randomUUID(),
+      name: '',
+      level: 0,
+      school: 'Evocation',
+      castingTime: '1 action',
+      range: '60 ft',
+      duration: 'Instantaneous',
+      description: '',
+      dndBeyondUrl: '',
+    });
+    setEditingSpellIndex(null);
+    setIsAddingSpell(true);
+  };
+
+  const handleStartEditSpell = (idx: number) => {
+    setSpellForm({ ...spells[idx] });
+    setEditingSpellIndex(idx);
+    setIsAddingSpell(true);
+  };
+
+  const handleSaveSpell = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!spellForm.name?.trim()) return;
+    const newSpell: DnDSpell = {
+      id: spellForm.id || crypto.randomUUID(),
+      name: spellForm.name.trim(),
+      level: Number(spellForm.level) || 0,
+      school: spellForm.school?.trim() || 'Evocation',
+      castingTime: spellForm.castingTime?.trim() || '1 action',
+      range: spellForm.range?.trim() || 'Self',
+      duration: spellForm.duration?.trim() || 'Instantaneous',
+      description: spellForm.description?.trim() || '',
+      dndBeyondUrl: spellForm.dndBeyondUrl?.trim() || '',
+    };
+    if (editingSpellIndex !== null) {
+      setSpells((prev) => prev.map((s, i) => (i === editingSpellIndex ? newSpell : s)));
+    } else {
+      setSpells((prev) => [...prev, newSpell]);
+    }
+    setIsAddingSpell(false);
+    setEditingSpellIndex(null);
+  };
+
+  const handleDeleteSpell = (idx: number) => {
+    setSpells((prev) => prev.filter((_, i) => i !== idx));
+    if (editingSpellIndex === idx) {
+      setIsAddingSpell(false);
+      setEditingSpellIndex(null);
+    }
+  };
+
   const handleSave = () => {
+    const updatedCharacter = token.character
+      ? {
+          ...token.character,
+          actions,
+          spells,
+        }
+      : undefined;
+
     onSave({
       name,
       imageUrl,
@@ -367,6 +450,8 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
       locked,
       conditions,
       actions,
+      spells,
+      character: updatedCharacter,
     });
     onClose();
   };
@@ -1275,6 +1360,362 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
                         style={{ width: '26px', height: '26px', padding: 0, color: '#f43f5e' }}
                         onClick={() => handleDeleteAction(idx)}
                         title="Delete Attack"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Spells & Magic Section */}
+        {!isProp && (
+          <div style={{ marginBottom: '1.5rem' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '0.6rem',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  color: 'var(--text-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                }}
+              >
+                <Sparkles size={16} color="#a855f7" />
+                <span>Spells & Magic ({spells.length})</span>
+              </div>
+              {!isAddingSpell && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{
+                    fontSize: '0.75rem',
+                    padding: '0.3rem 0.6rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                  }}
+                  onClick={handleStartAddSpell}
+                >
+                  <Plus size={14} /> Add Spell
+                </button>
+              )}
+            </div>
+
+            {/* Add / Edit Spell Inline Form */}
+            {isAddingSpell && (
+              <div
+                style={{
+                  backgroundColor: 'var(--bg-surface)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '1rem',
+                  border: '1px solid var(--border-subtle)',
+                  marginBottom: '1rem',
+                }}
+              >
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.75rem', color: '#c084fc' }}>
+                  {editingSpellIndex !== null ? 'Edit Spell' : 'Add New Spell'}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Spell Name *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Fireball, Cure Wounds, Misty Step"
+                      value={spellForm.name}
+                      onChange={(e) => setSpellForm((prev) => ({ ...prev, name: e.target.value }))}
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Level
+                    </label>
+                    <select
+                      value={spellForm.level}
+                      onChange={(e) => setSpellForm((prev) => ({ ...prev, level: Number(e.target.value) }))}
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                      }}
+                    >
+                      <option value={0}>Cantrip (0)</option>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((lvl) => (
+                        <option key={lvl} value={lvl}>
+                          Level {lvl}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      School
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Evocation, Abjuration"
+                      value={spellForm.school}
+                      onChange={(e) => setSpellForm((prev) => ({ ...prev, school: e.target.value }))}
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Casting Time
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 1 action, 1 bonus action"
+                      value={spellForm.castingTime}
+                      onChange={(e) => setSpellForm((prev) => ({ ...prev, castingTime: e.target.value }))}
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Range
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 60 ft, Self, Touch"
+                      value={spellForm.range}
+                      onChange={(e) => setSpellForm((prev) => ({ ...prev, range: e.target.value }))}
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Duration
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Instantaneous, 1 minute (Concentration)"
+                      value={spellForm.duration}
+                      onChange={(e) => setSpellForm((prev) => ({ ...prev, duration: e.target.value }))}
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Description / Effect Notes
+                    </label>
+                    <textarea
+                      placeholder="Spell details, damage formula, saving throw notes..."
+                      value={spellForm.description}
+                      onChange={(e) => setSpellForm((prev) => ({ ...prev, description: e.target.value }))}
+                      rows={3}
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                        resize: 'vertical',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ fontSize: '0.75rem', padding: '0.35rem 0.7rem' }}
+                    onClick={() => {
+                      setIsAddingSpell(false);
+                      setEditingSpellIndex(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    style={{ fontSize: '0.75rem', padding: '0.35rem 0.7rem' }}
+                    onClick={handleSaveSpell}
+                    disabled={!spellForm.name?.trim()}
+                  >
+                    <Check size={14} /> {editingSpellIndex !== null ? 'Update Spell' : 'Save Spell'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* List of Spells */}
+            {spells.length === 0 && !isAddingSpell ? (
+              <div
+                style={{
+                  fontSize: '0.75rem',
+                  color: 'var(--text-muted)',
+                  fontStyle: 'italic',
+                  padding: '0.5rem 0',
+                }}
+              >
+                No spells added to this token. Click "+ Add Spell" to assign spells to this token.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                {spells.map((sp, idx) => (
+                  <div
+                    key={`${sp.name}-${idx}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      backgroundColor: 'var(--bg-surface)',
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border-subtle)',
+                      borderLeft: '3px solid #a855f7',
+                    }}
+                  >
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                          {sp.name}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: '0.65rem',
+                            padding: '1px 5px',
+                            borderRadius: '4px',
+                            backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                            color: '#c084fc',
+                            border: '1px solid rgba(168, 85, 247, 0.3)',
+                            fontWeight: 700,
+                          }}
+                        >
+                          {sp.level === 0 ? 'Cantrip' : `Level ${sp.level}`}
+                        </span>
+                        {sp.school && (
+                          <span
+                            style={{
+                              fontSize: '0.65rem',
+                              padding: '1px 5px',
+                              borderRadius: '4px',
+                              backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                              color: 'var(--text-secondary)',
+                            }}
+                          >
+                            {sp.school}
+                          </span>
+                        )}
+                        {sp.castingTime && (
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                            • {sp.castingTime}
+                          </span>
+                        )}
+                        {sp.range && (
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                            • {sp.range}
+                          </span>
+                        )}
+                      </div>
+                      {sp.description && (
+                        <div
+                          style={{
+                            fontSize: '0.7rem',
+                            color: 'var(--text-muted)',
+                            marginTop: '0.15rem',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {sp.description}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginLeft: '0.5rem' }}>
+                      <button
+                        type="button"
+                        className="btn-icon"
+                        style={{ width: '26px', height: '26px', padding: 0 }}
+                        onClick={() => handleStartEditSpell(idx)}
+                        title="Edit Spell"
+                      >
+                        <Edit2 size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-icon"
+                        style={{ width: '26px', height: '26px', padding: 0, color: '#f43f5e' }}
+                        onClick={() => handleDeleteSpell(idx)}
+                        title="Delete Spell"
                       >
                         <Trash2 size={13} />
                       </button>

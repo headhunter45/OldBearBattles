@@ -119,6 +119,7 @@ export interface Token {
   initiativeBonus?: number;
   character?: DnDCharacter;
   actions?: DnDAction[]; // Standalone attacks and actions attached directly to token without requiring a character sheet (OB-200)
+  spells?: DnDSpell[]; // Standalone spells attached directly to token without requiring a character sheet
   propWidth?: number; // custom decimal width in grid units (e.g. 1.5)
   propHeight?: number; // custom decimal height in grid units (e.g. 3.24)
   locked?: boolean; // locked tokens/props can be selected but not moved

@@ -83,13 +83,23 @@ This document provides step-by-step instructions for manually verifying all feat
    - On an action or attack card, click **Add to Token Actions** / **Add to Token**.
    - Verify the attack is added directly to the token without syncing a character sheet.
 
+6. **Add Spells from Chat Statblock Card & Edit Token Modal:**
+   - In chat, inspect a spell (e.g. `/spell? Fireball` or `/spell? Cure Wounds`).
+   - Click **+ Add to Sheet** on the spell card.
+   - Verify:
+     - If you have an active character sheet (e.g. in `CharacterFlyout` or player profile), the spell is immediately added to your character sheet and visible under SPELLS.
+     - If a token is targeted or selected, the spell is attached to the token's standalone spells (`token.spells`).
+     - Open the **Full Token Editor** (`TokenEditorModal` via Settings gear) on the token: verify the **Spells & Magic** section displays the added spell with its level badge, school, casting time, and description, and allows editing, deleting, and adding new spells directly.
+     - In `CharacterFlyout` for an unsynced token: verify the **Token Spells** section displays the spell with a **Cast** button that rolls the spell directly into chat.
+
 #### Expected Result (Pass Criteria):
 
-- Attacks can be added, edited, and deleted directly on tokens in `TokenEditorModal`.
+- Attacks and Spells can be added, edited, and deleted directly on tokens in `TokenEditorModal`.
 - Floating token HUD provides a quick `Swords` popup to view and roll token attacks.
-- `CharacterFlyout` allows viewing, rolling, and adding attacks for unsynced tokens without requiring character sync.
+- `CharacterFlyout` allows viewing, rolling, casting, and adding attacks and spells for unsynced tokens without requiring character sync.
 - Chat commands `/attack` and `/attack?` recognize and roll standalone token attacks.
-- Tokens retain their standalone attacks without creating or forging unnecessary `DnDCharacter` sheets.
+- Adding a spell from chat (`+ Add to Sheet`) updates the active character sheet, target token spells, and appears immediately in both `CharacterFlyout` and `TokenEditorModal`.
+- Tokens retain their standalone attacks and spells without creating or forging unnecessary `DnDCharacter` sheets.
 
 ---
 

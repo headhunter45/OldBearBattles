@@ -1,6 +1,7 @@
 import {
   DnDAction,
   DnDCharacter,
+  DnDSpell,
   Player,
   Token,
   getActivationCategory,
@@ -181,6 +182,57 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
     onSyncToken(targetToken.id, { actions: updatedActions });
   };
 
+  // Standalone Token Spells
+  const [isAddingTokenSpell, setIsAddingTokenSpell] = useState(false);
+  const [expandedTokenSpell, setExpandedTokenSpell] = useState<string | null>(null);
+  const [tokenSpellForm, setTokenSpellForm] = useState<DnDSpell>({
+    id: '',
+    name: '',
+    level: 0,
+    school: 'Evocation',
+    castingTime: '1 action',
+    range: '60 ft',
+    duration: 'Instantaneous',
+    description: '',
+    dndBeyondUrl: '',
+  });
+
+  const handleSaveTokenSpell = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!targetToken || !onSyncToken || !tokenSpellForm.name.trim()) return;
+    const newSpell: DnDSpell = {
+      id: tokenSpellForm.id || crypto.randomUUID(),
+      name: tokenSpellForm.name.trim(),
+      level: Number(tokenSpellForm.level) || 0,
+      school: tokenSpellForm.school?.trim() || 'Evocation',
+      castingTime: tokenSpellForm.castingTime?.trim() || '1 action',
+      range: tokenSpellForm.range?.trim() || 'Self',
+      duration: tokenSpellForm.duration?.trim() || 'Instantaneous',
+      description: tokenSpellForm.description?.trim() || '',
+      dndBeyondUrl: tokenSpellForm.dndBeyondUrl?.trim() || '',
+    };
+    const updatedSpells = [...(targetToken.spells || []), newSpell];
+    onSyncToken(targetToken.id, { spells: updatedSpells });
+    setIsAddingTokenSpell(false);
+    setTokenSpellForm({
+      id: '',
+      name: '',
+      level: 0,
+      school: 'Evocation',
+      castingTime: '1 action',
+      range: '60 ft',
+      duration: 'Instantaneous',
+      description: '',
+      dndBeyondUrl: '',
+    });
+  };
+
+  const handleDeleteTokenSpell = (idx: number) => {
+    if (!targetToken || !onSyncToken) return;
+    const updatedSpells = (targetToken.spells || []).filter((_, i) => i !== idx);
+    onSyncToken(targetToken.id, { spells: updatedSpells });
+  };
+
   const refreshSavedCharacters = () => {
     setSavedCharacters(getSavedCharacters(isGm));
   };
@@ -275,7 +327,7 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
       setExpandedSpell(null);
       setExpandedAction(null);
     }
-  }, [targetToken?.id, targetToken?.character]);
+  }, [targetToken?.id, targetToken?.character, player.dndBeyondCharacter]);
 
   useEffect(() => {
     if (!charInput && character) {
@@ -2490,6 +2542,361 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
                           </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Standalone Token Spells */}
+              {targetToken && (
+                <div style={{ marginTop: '1.25rem' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '0.6rem',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        color: 'var(--text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                      }}
+                    >
+                      <Sparkles size={15} color="#a855f7" />
+                      <span>Token Spells ({(targetToken.spells || []).length})</span>
+                    </div>
+                    {!isAddingTokenSpell && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        style={{
+                          fontSize: '0.72rem',
+                          padding: '0.25rem 0.6rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                        }}
+                        onClick={() => setIsAddingTokenSpell(true)}
+                      >
+                        <Plus size={13} /> Add Spell
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Add Spell Inline Form */}
+                  {isAddingTokenSpell && (
+                    <div
+                      style={{
+                        backgroundColor: 'var(--bg-surface-elevated)',
+                        borderRadius: 'var(--radius-sm)',
+                        padding: '0.85rem',
+                        border: '1px solid var(--border-subtle)',
+                        marginBottom: '0.75rem',
+                      }}
+                    >
+                      <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: '#c084fc' }}>
+                        New Token Spell
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                        <div style={{ gridColumn: 'span 2' }}>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                            Spell Name *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Fireball, Cure Wounds, Misty Step"
+                            value={tokenSpellForm.name}
+                            onChange={(e) => setTokenSpellForm((prev) => ({ ...prev, name: e.target.value }))}
+                            style={{
+                              width: '100%',
+                              padding: '0.4rem',
+                              borderRadius: 'var(--radius-sm)',
+                              background: 'var(--bg-surface)',
+                              border: '1px solid var(--border-subtle)',
+                              color: 'white',
+                              fontSize: '0.8rem',
+                              marginTop: '0.15rem',
+                            }}
+                            autoFocus
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                            Level
+                          </label>
+                          <select
+                            value={tokenSpellForm.level}
+                            onChange={(e) => setTokenSpellForm((prev) => ({ ...prev, level: Number(e.target.value) }))}
+                            style={{
+                              width: '100%',
+                              padding: '0.4rem',
+                              borderRadius: 'var(--radius-sm)',
+                              background: 'var(--bg-surface)',
+                              border: '1px solid var(--border-subtle)',
+                              color: 'white',
+                              fontSize: '0.8rem',
+                              marginTop: '0.15rem',
+                            }}
+                          >
+                            <option value={0}>Cantrip (0)</option>
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((lvl) => (
+                              <option key={lvl} value={lvl}>
+                                Level {lvl}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                            School
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Evocation, Abjuration"
+                            value={tokenSpellForm.school}
+                            onChange={(e) => setTokenSpellForm((prev) => ({ ...prev, school: e.target.value }))}
+                            style={{
+                              width: '100%',
+                              padding: '0.4rem',
+                              borderRadius: 'var(--radius-sm)',
+                              background: 'var(--bg-surface)',
+                              border: '1px solid var(--border-subtle)',
+                              color: 'white',
+                              fontSize: '0.8rem',
+                              marginTop: '0.15rem',
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                            Casting Time
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 1 action"
+                            value={tokenSpellForm.castingTime}
+                            onChange={(e) => setTokenSpellForm((prev) => ({ ...prev, castingTime: e.target.value }))}
+                            style={{
+                              width: '100%',
+                              padding: '0.4rem',
+                              borderRadius: 'var(--radius-sm)',
+                              background: 'var(--bg-surface)',
+                              border: '1px solid var(--border-subtle)',
+                              color: 'white',
+                              fontSize: '0.8rem',
+                              marginTop: '0.15rem',
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                            Range
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 60 ft, Self, Touch"
+                            value={tokenSpellForm.range}
+                            onChange={(e) => setTokenSpellForm((prev) => ({ ...prev, range: e.target.value }))}
+                            style={{
+                              width: '100%',
+                              padding: '0.4rem',
+                              borderRadius: 'var(--radius-sm)',
+                              background: 'var(--bg-surface)',
+                              border: '1px solid var(--border-subtle)',
+                              color: 'white',
+                              fontSize: '0.8rem',
+                              marginTop: '0.15rem',
+                            }}
+                          />
+                        </div>
+                        <div style={{ gridColumn: 'span 2' }}>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                            Description / Effect Notes (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Deals 8d6 fire damage in 20ft sphere"
+                            value={tokenSpellForm.description || ''}
+                            onChange={(e) => setTokenSpellForm((prev) => ({ ...prev, description: e.target.value }))}
+                            style={{
+                              width: '100%',
+                              padding: '0.4rem',
+                              borderRadius: 'var(--radius-sm)',
+                              background: 'var(--bg-surface)',
+                              border: '1px solid var(--border-subtle)',
+                              color: 'white',
+                              fontSize: '0.8rem',
+                              marginTop: '0.15rem',
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.4rem' }}>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          style={{ fontSize: '0.72rem', padding: '0.3rem 0.6rem' }}
+                          onClick={() => setIsAddingTokenSpell(false)}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          style={{ fontSize: '0.72rem', padding: '0.3rem 0.6rem' }}
+                          onClick={handleSaveTokenSpell}
+                          disabled={!tokenSpellForm.name.trim()}
+                        >
+                          Save Spell
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* List of Token Spells */}
+                  {(!targetToken.spells || targetToken.spells.length === 0) && !isAddingTokenSpell ? (
+                    <div
+                      style={{
+                        fontSize: '0.75rem',
+                        color: 'var(--text-muted)',
+                        fontStyle: 'italic',
+                        padding: '0.4rem 0',
+                      }}
+                    >
+                      No spells added to {targetToken.name}. Click "+ Add Spell" to give this token spells directly without needing a character sheet.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      {(targetToken.spells || []).map((spell, idx) => {
+                        const isExpanded = expandedTokenSpell === spell.id;
+                        return (
+                          <div
+                            key={`${spell.name}-${idx}`}
+                            style={{
+                              backgroundColor: 'var(--bg-surface-elevated)',
+                              padding: '0.5rem 0.75rem',
+                              borderRadius: 'var(--radius-sm)',
+                              border: '1px solid var(--border-subtle)',
+                              borderLeft: '3px solid #a855f7',
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                cursor: spell.description ? 'pointer' : 'default',
+                              }}
+                              onClick={() => {
+                                if (spell.description) {
+                                  setExpandedTokenSpell(isExpanded ? null : spell.id);
+                                }
+                              }}
+                            >
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                  <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{spell.name}</span>
+                                  <span
+                                    style={{
+                                      fontSize: '0.65rem',
+                                      padding: '1px 5px',
+                                      borderRadius: '4px',
+                                      backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                                      color: '#c084fc',
+                                      border: '1px solid rgba(168, 85, 247, 0.3)',
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    {spell.level === 0 ? 'Cantrip' : `Level ${spell.level}`}
+                                  </span>
+                                  {spell.school && (
+                                    <span
+                                      style={{
+                                        fontSize: '0.65rem',
+                                        padding: '1px 5px',
+                                        borderRadius: '4px',
+                                        backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                                        color: 'var(--text-secondary)',
+                                      }}
+                                    >
+                                      {spell.school}
+                                    </span>
+                                  )}
+                                  {spell.castingTime && (
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                      • {spell.castingTime}
+                                    </span>
+                                  )}
+                                  {spell.range && (
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                      • {spell.range}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginLeft: '0.5rem' }}>
+                                {onRollAction && (
+                                  <button
+                                    className="btn btn-secondary"
+                                    style={{
+                                      padding: '0.2rem 0.5rem',
+                                      fontSize: '0.72rem',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '0.3rem',
+                                    }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onRollAction({
+                                        name: spell.name,
+                                        type: 'spell',
+                                        description: spell.description,
+                                        range: spell.range,
+                                      });
+                                    }}
+                                    title={`Cast ${spell.name}`}
+                                  >
+                                    <Dices size={13} color="#a855f7" />
+                                    <span>Cast</span>
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  className="btn-icon"
+                                  style={{ width: '24px', height: '24px', padding: 0, color: '#f43f5e' }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteTokenSpell(idx);
+                                  }}
+                                  title="Delete Spell"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
+                            </div>
+                            {isExpanded && spell.description && (
+                              <div
+                                style={{
+                                  marginTop: '0.4rem',
+                                  paddingTop: '0.4rem',
+                                  borderTop: '1px solid var(--border-subtle)',
+                                  fontSize: '0.75rem',
+                                  color: 'var(--text-secondary)',
+                                  lineHeight: 1.4,
+                                }}
+                              >
+                                {spell.description}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
