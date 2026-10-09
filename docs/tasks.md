@@ -332,6 +332,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-209 | There is no settings button next to the active scene name in the top bar.                                                                                                                                                                                                                                                                                                                                                                                                            | Common         | Done     | [Bug](#ob-209)     |
 | OB-210 | Remove references to rodeo and obr to be nice.                                                                                                                                                                                                                                                                                                                                                                                                                                       | Common         | Done     | [Chore](#ob-210)   |
 | OB-211 | Remove excess display form the info commands.                                                                                                                                                                                                                                                                                                                                                                                                                                        | Common         | Testing  | [Feature](#ob-211) |
+| OB-212 | Add a way to request variants like the 2014 vs 2024 srds, between pf1, sf1, pf2+sf2, and between 5e and pf*/sf*.                                                                                                                                                                                                                                                                                                                                                                     | Old Bear VTT   | Ready    | [Feature](#ob-212) |
 
 ---
 
@@ -3370,6 +3371,17 @@ Describe task objectives and implementation requirements here.
 **Description:**
 Make the info responses for commands like /spell? and /monster? show only to the user that executed them and don't wrap them as if that player said them.
 - [x]
+
+<a id="ob-212" class="task" data-project="old-bear-vtt" data-status="ready" data-task-type="feature"></a>
+### Add a way to request variants like the 2014 vs 2024 srds, between pf1, sf1, pf2+sf2, and between 5e and pf*/sf*.
+**ID:** OB-212
+**Project:** Old Bear VTT
+**Status:** Ready
+**Type:** Feature
+
+**Description:**
+Document any missing backends, but assume we will have an api eventually. Stub out the actual requests and fail gracefully. This shouls apply to all info commands. If no system is specified check the character for the named action (attack/spell/item) then check the cached db this may have more item types like monsters and items if characters do not havke them. Plan for adding more commands later like /class? /race? /ability? /feat? etc... when making architectural decisions, but do not worry about implementing them now.
+- [ ]
 
 ---
 
