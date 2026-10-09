@@ -323,7 +323,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-200 | I want to be able to add attacks to a token without syncing it with a character.                                                                                                                                                                                                                                                                                                                                                                                                     | Old Bear VTT   | Done     | [Feature](#ob-200) |
 | OB-201 | When a player spawns a token it should automatically be controlled by them. See [OB-143](#ob-143).                                                                                                                                                                                                                                                                                                                                                                                   | Old Bear VTT   | Done     | [Bug](#ob-201)     |
 | OB-202 | *Make help in chat look better.*                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Common         | Triage   | [Feature](#ob-202) |
-| OB-203 | Make draggable windows resizable on desktop. Especially chat.                                                                                                                                                                                                                                                                                                                                                                                                                        | Common         | Ready    | [Feature](#ob-203) |
+| OB-203 | Make draggable windows resizable on desktop. Especially chat.                                                                                                                                                                                                                                                                                                                                                                                                                        | Common         | Testing  | [Feature](#ob-203) |
 | OB-204 | *Error when trying to import pf2 content with /import*                                                                                                                                                                                                                                                                                                                                                                                                                               | Old Bear VTT   | Triage   | [Bug](#ob-204)     |
 | OB-205 | The add to character sheet button on an inspected spell adds to the currently selected character. Not the as token.                                                                                                                                                                                                                                                                                                                                                                  | Old Bear VTT   | Done     | [Bug](#ob-205)     |
 | OB-206 | Inspecting a spell like /spell? magic missile' shows the spell, but it has the wrong buttons.                                                                                                                                                                                                                                                                                                                                                                                        | Old Bear VTT   | Done     | [Bug](#ob-206)     |
@@ -3253,18 +3253,17 @@ Describe task objectives and implementation requirements here.
 
 - [ ]
 
-<a id="ob-203" class="task" data-project="cmn" data-status="ready" data-task-type="feature"></a>
+<a id="ob-203" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
 ### Make draggable windows resizable on desktop. Especially chat.
 **ID:** OB-203
 **Project:** Common
-**Status:** Ready
+**Status:** Testing
 **Type:** Feature
-
 
 **Description:**
 Describe task objectives and implementation requirements here.
 
-- [ ]
+- [x]
 
 <a id="ob-204" class="task" data-project="vtt" data-status="triage" data-task-type="bug"></a>
 ### Error when trying to import pf2 content with /import

@@ -962,11 +962,42 @@ This document provides step-by-step instructions for manually verifying all feat
 - Circular brush reveal and hide tools are available alongside rectangular tools.
 - Brush size is easily adjustable via hotkeys, the flyout slider, and the draggable left toolbar widget.
 
+---
 
+### OB-203 - Make Draggable Windows Resizable on Desktop (Chat Panel & Floating Windows)
 
+#### Pre-requisites:
+- Run `npm run dev` and open the VTT client in a desktop browser window (viewport width > 768px).
 
+#### Steps:
+1. **Open Table Chat:**
+   - Click the chat icon on the left floating toolbar (or press \` if enabled).
+   - Verify the chat window opens at its initial size (380px wide by 440px high).
 
+2. **Verify Desktop Corner Resize Handle:**
+   - Look at the bottom-right corner of the Chat & Dice window.
+   - Confirm a subtle 3-stripe diagonal grip handle is visible.
+   - Hover over the corner handle: verify the cursor changes to `nwse-resize` and the handle brightens.
 
+3. **Drag-to-Resize Chat Window:**
+   - Click and drag the corner resize handle diagonally outward.
+   - Verify the window width and height expand fluidly without lag.
+   - Verify minimum size clamping: drag inward to the minimum (width 280px, height 220px) and verify the window does not collapse smaller than the minimum dimensions.
+   - Verify maximum boundary clamping: drag outward beyond the browser viewport and verify it stays bounded within the viewport.
+
+4. **Verify Native CSS Resize & Persistence:**
+   - Drag to resize the chat window to a distinctive custom dimension (e.g., ~500px wide, 550px high).
+   - Refresh the browser tab or close and reopen the chat panel.
+   - Verify the chat panel remembers and restores the custom width and height from localStorage.
+
+5. **Verify Minimize Behavior:**
+   - Click the minimize chevron in the title bar.
+   - Verify the window collapses cleanly to the title bar height without overflowing or breaking layout.
+   - Re-expand: verify it restores to the previously resized dimensions.
+
+#### Expected Result (Pass Criteria):
+- Floating draggable windows, especially chat, can be resized via the bottom-right handle and desktop CSS resize.
+- Window size constraints (min/max) are respected and persisted in localStorage across page reloads.
 
 
 

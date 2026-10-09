@@ -53,6 +53,13 @@ export interface UseDraggableOptions {
   initialY?: number;
   storageKey?: string;
   defaultZIndex?: number;
+  initialWidth?: number;
+  initialHeight?: number;
+  sizeStorageKey?: string;
+  minWidth?: number;
+  minHeight?: number;
+  maxWidth?: number;
+  maxHeight?: number;
 }
 
 export function useDraggableWindow(options: UseDraggableOptions = {}) {
@@ -69,9 +76,25 @@ export function useDraggableWindow(options: UseDraggableOptions = {}) {
     return null;
   });
 
+  const [size, setSize] = useState<{ width: number; height: number } | null>(() => {
+    const key = options.sizeStorageKey || (options.storageKey ? `${options.storageKey}_size` : undefined);
+    if (key && typeof localStorage !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(key);
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    if (options.initialWidth !== undefined && options.initialHeight !== undefined) {
+      return { width: options.initialWidth, height: options.initialHeight };
+    }
+    return null;
+  });
+
   const [zIndex, setZIndex] = useState<number>(options.defaultZIndex ?? BASE_WINDOW_Z_INDEX);
   const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
   const dragStartRef = useRef<{ mouseX: number; mouseY: number; startX: number; startY: number } | null>(null);
+  const resizeStartRef = useRef<{ mouseX: number; mouseY: number; startWidth: number; startHeight: number } | null>(null);
   const windowRef = useRef<HTMLDivElement | null>(null);
 
   const bringToFront = useCallback(() => {
@@ -110,7 +133,7 @@ export function useDraggableWindow(options: UseDraggableOptions = {}) {
     if (typeof window !== 'undefined' && window.innerWidth <= 768) return;
 
     // Don't drag if clicking buttons, inputs, links, or elements with no-drag class
-    if ((e.target as HTMLElement).closest('button, input, select, textarea, a, .no-drag')) {
+    if ((e.target as HTMLElement).closest('button, input, select, textarea, a, .no-drag, .draggable-window-resize-handle')) {
       return;
     }
 
@@ -164,12 +187,77 @@ export function useDraggableWindow(options: UseDraggableOptions = {}) {
     };
   }, [isDragging, options.storageKey]);
 
+  // Window resize mouse down handler (OB-203)
+  const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    bringToFront();
+
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) return;
+
+    const rect = windowRef.current?.getBoundingClientRect();
+    const currentW = rect?.width ?? size?.width ?? options.initialWidth ?? 360;
+    const currentH = rect?.height ?? size?.height ?? options.initialHeight ?? 400;
+
+    resizeStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      startWidth: currentW,
+      startHeight: currentH,
+    };
+    setIsResizing(true);
+  }, [size, bringToFront, options.initialWidth, options.initialHeight]);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleResizeMouseMove = (e: MouseEvent) => {
+      if (!resizeStartRef.current) return;
+      const dx = e.clientX - resizeStartRef.current.mouseX;
+      const dy = e.clientY - resizeStartRef.current.mouseY;
+
+      const minW = options.minWidth ?? 260;
+      const maxW = options.maxWidth ?? (typeof window !== 'undefined' ? window.innerWidth - 40 : 1200);
+      const minH = options.minHeight ?? 180;
+      const maxH = options.maxHeight ?? (typeof window !== 'undefined' ? window.innerHeight - 40 : 1000);
+
+      const newW = Math.max(minW, Math.min(maxW, resizeStartRef.current.startWidth + dx));
+      const newH = Math.max(minH, Math.min(maxH, resizeStartRef.current.startHeight + dy));
+
+      const newSize = { width: Math.round(newW), height: Math.round(newH) };
+      setSize(newSize);
+
+      const key = options.sizeStorageKey || (options.storageKey ? `${options.storageKey}_size` : undefined);
+      if (key && typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem(key, JSON.stringify(newSize));
+        } catch {}
+      }
+    };
+
+    const handleResizeMouseUp = () => {
+      setIsResizing(false);
+      resizeStartRef.current = null;
+    };
+
+    window.addEventListener('mousemove', handleResizeMouseMove);
+    window.addEventListener('mouseup', handleResizeMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleResizeMouseMove);
+      window.removeEventListener('mouseup', handleResizeMouseUp);
+    };
+  }, [isResizing, options.minWidth, options.maxWidth, options.minHeight, options.maxHeight, options.sizeStorageKey, options.storageKey]);
+
   return {
     windowRef,
     position,
     setPosition,
+    size,
+    setSize,
     isDragging,
+    isResizing,
     handleMouseDown,
+    handleResizeMouseDown,
     zIndex,
     bringToFront,
   };

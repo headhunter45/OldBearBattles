@@ -127,6 +127,46 @@ export const DraggableWindowTitleBar: React.FC<DraggableWindowTitleBarProps> = (
   );
 };
 
+export interface WindowResizeHandleProps {
+  onMouseDown: (e: React.MouseEvent) => void;
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+export const WindowResizeHandle: React.FC<WindowResizeHandleProps> = ({
+  onMouseDown,
+  className = '',
+  style,
+}) => {
+  return (
+    <div
+      className={`draggable-window-resize-handle ${className}`}
+      onMouseDown={onMouseDown}
+      style={{
+        position: 'absolute',
+        right: 0,
+        bottom: 0,
+        width: '18px',
+        height: '18px',
+        cursor: 'nwse-resize',
+        display: 'flex',
+        alignItems: 'flex-end',
+        justifyContent: 'flex-end',
+        padding: '3px',
+        zIndex: 15,
+        userSelect: 'none',
+        touchAction: 'none',
+        ...style,
+      }}
+      title="Resize window"
+    >
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L2 8M9 5L5 9M9 8L8 9" stroke="var(--text-muted, #94a3b8)" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+      </svg>
+    </div>
+  );
+};
+
 export interface DraggableWindowProps {
   windowRef?: React.Ref<HTMLDivElement>;
   position?: { x: number; y: number } | null;
@@ -139,6 +179,8 @@ export interface DraggableWindowProps {
   maxWidth?: string | number;
   height?: string | number;
   maxHeight?: string | number;
+  resizable?: boolean;
+  onResizeMouseDown?: (e: React.MouseEvent) => void;
   className?: string;
   style?: React.CSSProperties;
   children: React.ReactNode;
@@ -157,6 +199,8 @@ export const DraggableWindow: React.FC<DraggableWindowProps> = ({
   maxWidth = 'calc(100vw - 1.5rem)',
   height = 'auto',
   maxHeight = 'calc(100vh - 6rem)',
+  resizable = false,
+  onResizeMouseDown,
   className = '',
   style,
   children,
@@ -206,6 +250,7 @@ export const DraggableWindow: React.FC<DraggableWindowProps> = ({
         maxWidth,
         height: computedHeight,
         maxHeight: computedMaxHeight,
+        resize: resizable && !isMinimized ? 'both' : 'none',
         zIndex,
         borderRadius: 'var(--radius-lg, 12px)',
         display: 'flex',
@@ -220,6 +265,9 @@ export const DraggableWindow: React.FC<DraggableWindowProps> = ({
       }}
     >
       {children}
+      {resizable && !isMinimized && onResizeMouseDown && (
+        <WindowResizeHandle onMouseDown={onResizeMouseDown} />
+      )}
     </div>
   );
 };

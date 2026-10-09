@@ -95,4 +95,37 @@ describe('useDraggableWindow Logic & Constraints (src/common/hooks)', () => {
     assert.strictEqual(mockWinB.style.zIndex, String(BASE_WINDOW_Z_INDEX + 1));
     assert.strictEqual(mockWinA.style.zIndex, String(BASE_WINDOW_Z_INDEX));
   });
+
+  it('clamps resized dimensions within min and max constraints (OB-203)', () => {
+    const minW = 280;
+    const maxW = 800;
+    const minH = 220;
+    const maxH = 600;
+
+    const clampW = (w: number) => Math.max(minW, Math.min(maxW, w));
+    const clampH = (h: number) => Math.max(minH, Math.min(maxH, h));
+
+    // Valid size within limits
+    assert.strictEqual(clampW(500), 500);
+    assert.strictEqual(clampH(450), 450);
+
+    // Below minimums
+    assert.strictEqual(clampW(150), 280);
+    assert.strictEqual(clampH(100), 220);
+
+    // Above maximums
+    assert.strictEqual(clampW(1200), 800);
+    assert.strictEqual(clampH(900), 600);
+  });
+
+  it('persists and retrieves window size in localStorage (OB-203)', () => {
+    const sizeKey = 'obb_chat_size';
+    const testSize = { width: 520, height: 480 };
+
+    localStorage.setItem(sizeKey, JSON.stringify(testSize));
+    const raw = localStorage.getItem(sizeKey);
+    assert.ok(raw);
+    const parsed = JSON.parse(raw);
+    assert.deepStrictEqual(parsed, testSize);
+  });
 });

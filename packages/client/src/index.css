@@ -418,3 +418,33 @@ html, body, #root {
   padding: 0 !important;
 }
 
+.draggable-window-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  cursor: nwse-resize;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 3px;
+  z-index: 15;
+  user-select: none;
+  touch-action: none;
+  opacity: 0.6;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.draggable-window-resize-handle:hover,
+.draggable-window-resize-handle:active {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+@media (max-width: 768px) {
+  .draggable-window-resize-handle {
+    display: none !important;
+  }
+}
+

@@ -38,7 +38,7 @@ import {
   fetchPF2eReference,
   parseFoundryPF2eJson,
 } from '../utils/pf2eFetcher.js';
-import { DraggableWindowTitleBar } from './DraggableWindow.js';
+import { DraggableWindowTitleBar, WindowResizeHandle } from './DraggableWindow.js';
 import { StatBlockCard } from './StatBlockCard.js';
 import { useChatHistory } from './useChatHistory.js';
 
@@ -1946,8 +1946,22 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     navigateDown,
     resetNavigation,
   } = useChatHistory();
-  const { windowRef, position, isDragging, handleMouseDown, zIndex } = useDraggableWindow({
+  const {
+    windowRef,
+    position,
+    isDragging,
+    handleMouseDown,
+    zIndex,
+    size,
+    isResizing,
+    handleResizeMouseDown,
+  } = useDraggableWindow({
     storageKey: 'obb_chat_pos',
+    sizeStorageKey: 'obb_chat_size',
+    initialWidth: 380,
+    initialHeight: 440,
+    minWidth: 280,
+    minHeight: 220,
     defaultZIndex: 50,
   });
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -2054,18 +2068,22 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             left: position ? `${position.x}px` : '1.25rem',
             top: position ? `${position.y}px` : undefined,
             bottom: position ? undefined : '1.25rem',
-            width: '360px',
-            maxHeight: isMinimized ? '46px' : '440px',
-            height: isMinimized ? '46px' : '420px',
+            width: size ? `${size.width}px` : '380px',
+            minWidth: '280px',
+            maxWidth: 'calc(100vw - 2rem)',
+            height: isMinimized ? '46px' : (size ? `${size.height}px` : '440px'),
+            minHeight: isMinimized ? undefined : '220px',
+            maxHeight: isMinimized ? '46px' : 'calc(100vh - 3rem)',
+            resize: isMinimized ? 'none' : 'both',
             zIndex: zIndex ?? 50,
             borderRadius: 'var(--radius-lg)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            boxShadow: isDragging ? '0 24px 48px rgba(0,0,0,0.8)' : '0 20px 40px rgba(0,0,0,0.7)',
+            boxShadow: (isDragging || isResizing) ? '0 24px 48px rgba(0,0,0,0.8)' : '0 20px 40px rgba(0,0,0,0.7)',
             border: '1px solid var(--border-subtle)',
             color: '#ffffff',
-            transition: isDragging ? 'none' : 'max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            transition: (isDragging || isResizing) ? 'none' : 'max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
           {/* Header */}
@@ -2471,6 +2489,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             </button>
           </form>
           </div>
+          {!isMinimized && (
+            <WindowResizeHandle onMouseDown={handleResizeMouseDown} />
+          )}
         </div>
       )}
     </>
