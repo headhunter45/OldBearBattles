@@ -8,10 +8,12 @@ import {
   AlertCircle,
   Layers,
   Plus,
+  Sparkles,
 } from 'lucide-react';
 import { createSubmapPreset } from '../engine/SubmapManager.js';
 import { SubmapEditorDrawer } from './SubmapEditorDrawer.js';
 import { getAssetsByType, StoredAsset } from '../storage/db.js';
+import { CustomStatusModal } from './CustomStatusModal.js';
 
 interface MapSettingsModalProps {
   map: GameMap;
@@ -58,6 +60,7 @@ export const MapSettingsModal: React.FC<MapSettingsModalProps> = ({
   );
   const [submaps, setSubmaps] = useState<SubmapConfig[]>(map.submaps || []);
   const [expandedSubmapId, setExpandedSubmapId] = useState<string | null>(null);
+  const [showCustomStatusModal, setShowCustomStatusModal] = useState(false);
   const [savedMapAssets, setSavedMapAssets] = useState<StoredAsset[]>([]);
 
   // String state for inputs to allow smooth backspacing without auto-snapping to 1
@@ -216,7 +219,8 @@ export const MapSettingsModal: React.FC<MapSettingsModalProps> = ({
   };
 
   return (
-    <div
+    <>
+      <div
       style={{
         position: 'fixed',
         inset: 0,
@@ -810,6 +814,32 @@ export const MapSettingsModal: React.FC<MapSettingsModalProps> = ({
               </div>
             </div>
 
+            {/* Custom Statuses Section */}
+            <div
+              style={{
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                color: 'var(--accent-primary)',
+                borderBottom: '1px solid var(--border-subtle)',
+                paddingBottom: '0.35rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <span>Custom Statuses & Conditions</span>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowCustomStatusModal(true)}
+                style={{ fontSize: '0.7rem', padding: '0.25rem 0.5rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                <Sparkles size={12} color="var(--accent-primary)" /> Manage Statuses ({Object.keys(map.customStatuses || {}).length} overrides)
+              </button>
+            </div>
+
             {/* Secondary Submaps & Layout Areas */}
             <div
               style={{
@@ -1039,5 +1069,14 @@ export const MapSettingsModal: React.FC<MapSettingsModalProps> = ({
         </form>
       </div>
     </div>
+    {showCustomStatusModal && (
+      <CustomStatusModal
+        isOpen={showCustomStatusModal}
+        onClose={() => setShowCustomStatusModal(false)}
+        activeMap={map}
+        onUpdateMap={(mapId, updates) => onSave(updates)}
+      />
+    )}
+    </>
   );
 };

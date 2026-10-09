@@ -312,7 +312,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-189 | Add a way to edit tiles after they have been uploaded.                                                                                                                                                                                                                                                                                                                                                                                                                               | Common         | Testing  | [Feature](#ob-189) |
 | OB-190 | When tiles is selected the tab bar in the asset manager is positioned up underneath the header.                                                                                                                                                                                                                                                                                                                                                                                      | Common         | Done     | [Bug](#ob-190)     |
 | OB-191 | Make no ring color be the default for props and tiles.                                                                                                                                                                                                                                                                                                                                                                                                                               | Common         | Testing  | [Feature](#ob-191) |
-| OB-192 | Custom statuses can't be created.'                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Common         | Ready    | [Bug](#ob-192)     |
+| OB-192 | Custom statuses can't be created.'                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Common         | Testing  | [Bug](#ob-192)     |
 | OB-193 | Add a way to change token images to existing images.                                                                                                                                                                                                                                                                                                                                                                                                                                 | Common         | Ready    | [Feature](#ob-193) |
 | OB-194 | The hitbox for tapping a token should be anywhere within it's ring or rectangle border.                                                                                                                                                                                                                                                                                                                                                                                              | Common         | Done     | [Bug](#ob-194)     |
 | OB-195 | Add zoom and offset to the PRESET_TOKENS in TokenPickerModal.                                                                                                                                                                                                                                                                                                                                                                                                                        | Common         | Ready    | [Feature](#ob-195) |
@@ -3109,18 +3109,17 @@ Describe task objectives and implementation requirements here.
 
 - [x]
 
-<a id="ob-192" class="task" data-project="cmn" data-status="ready" data-task-type="bug"></a>
+<a id="ob-192" class="task" data-project="cmn" data-status="testing" data-task-type="bug"></a>
 ### Custom statuses can't be created.'
 **ID:** OB-192
 **Project:** Common
-**Status:** Ready
+**Status:** Testing
 **Type:** Bug
-
 
 **Description:**
 Custom statuses are saved and loaded at the global and scene levels, but they don't appear to be available in the add status dropdown on the token bar. There also does not appear to be any way to add/edit/remove them so there just aren't any. Even our 'DEFAULT_STATUS_DEFINITIONS' are only checked by the initiative tracker they are not displayed anywhere. See [OB-130](#ob-130).
 
-- [ ]
+- [x]
 
 <a id="ob-193" class="task" data-project="cmn" data-status="ready" data-task-type="feature"></a>
 ### Add a way to change token images to existing images.

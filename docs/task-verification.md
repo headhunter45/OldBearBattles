@@ -34,6 +34,7 @@ This document provides step-by-step instructions for manually verifying all feat
 | **[OB-188](#ob-188---relative-dragging-for-tokens-modular-tiles-and-props)** | Relative Dragging for Tokens, Modular Tiles, and Props | VTT & Brawl / Canvas | Testing |
 | **[OB-189](#ob-189---edit-modular-tiles-and-center-on-random-draw)** | Edit Modular Tiles & Center on Random Draw | Common / Assets | Testing |
 | **[OB-191](#ob-191---no-ring-color-default-for-props-and-tiles)** | No Ring Color as Default for Props & Tiles | Common / Canvas | Testing |
+| **[OB-192](#ob-192---custom-status-creation-editing-and-token-controls-integration)** | Custom Status Creation, Editing, & Token Controls Integration | Common / Statuses | Testing |
 
 ---
 
@@ -736,6 +737,67 @@ This document provides step-by-step instructions for manually verifying all feat
 #### Expected Result (Pass Criteria):
 - Newly spawned modular tiles, room tiles, and props default to `transparent` (no ring outline).
 - Existing custom rings remain configurable in the Token/Tile Editor modal with full toggle support.
+
+---
+
+### OB-192 - Custom Status Creation, Editing, & Token Controls Integration
+
+- **Reference in tasks.md:** [tasks.md: OB-192](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-192)
+- **Primary Source Code:** [StatusManager.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/status/StatusManager.ts), [CustomStatusModal.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/CustomStatusModal.tsx), [TokenControls.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/TokenControls.tsx), [TokenEditorModal.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/TokenEditorModal.tsx), [MapSettingsModal.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/MapSettingsModal.tsx)
+- **Where to find it:** Floating Token HUD (`+ Add Status...` dropdown & Sparkles icon), Full Token Settings (`Conditions & Statuses` section), and Scene Settings (`Custom Statuses & Conditions` section).
+
+#### Step-by-Step Instructions:
+
+1. **Verify Complete Built-in Status List:**
+   - Select any token on the canvas to open the floating Token Controls HUD.
+   - Click the **+ Add Status...** dropdown.
+   - Verify all standard conditions (Blinded, Charmed, Deafened, Frightened, Grappled, Incapacitated, Invisible, Paralyzed, Petrified, Poisoned, Prone, Restrained, Stunned, Unconscious, Concentrating, Exhaustion, Dying, Bleeding) are present and sorted alphabetically.
+   - Select **Bleeding** or **Dying**: verify the condition is added to the token with its initial counter value (e.g. `Bleeding:3` or `Dying:1`) and rendered in its designated status color badge.
+
+2. **Open Custom Status Manager via Token HUD:**
+   - Click the **Sparkles** icon button next to the `+ Add Status...` dropdown (or select `✨ Create / Manage Custom Statuses...` from the dropdown).
+   - Verify the **Status & Condition Definitions** modal opens.
+   - Verify it shows the list of all active statuses with color badges, descriptions, counters, and scope tags ("Built-in", "Global Custom", "Scene Overrides").
+
+3. **Create a Global Custom Status:**
+   - In the modal, click **+ New Status**.
+   - Enter:
+     - Label: `Blessed`
+     - Color: Pick yellow / gold swatch (`#eab308`)
+     - Description: `Grants +1d4 to attack rolls and saves`
+     - Storage Scope: `Global (All scenes)`
+   - Click **Save Status Definition**.
+   - Verify `Blessed` now appears in the status list with a "Global Custom" tag and a delete button.
+   - Close the modal and inspect the Token HUD `+ Add Status...` dropdown: verify `Blessed` is now available in the dropdown!
+   - Apply `Blessed` to the token: verify it renders a gold badge on the token controls and on the canvas token badge.
+
+4. **Create a Scene-Specific Custom Status:**
+   - Open the **Status & Condition Definitions** modal again.
+   - Click **+ New Status**.
+   - Enter:
+     - Label: `Burning`
+     - Color: Orange / Red (`#f97316`)
+     - Check **Has Numeric Counter / Stacks**: Start `3`, Step per Turn `-1`, Min `0`
+     - Turn Triggers: Auto-Clear `Start of Turn`, Counter Update `Start of Turn`
+     - Storage Scope: `Scene Specific (<Scene Name>)`
+   - Click **Save Status Definition**.
+   - Verify `Burning` displays with a "Scene: <Scene Name>" tag.
+   - Apply to token: verify it applies as `Burning:3`.
+
+5. **Verify Scene Settings Modal Integration:**
+   - Open Scene Settings (via Map Manager or scene controls).
+   - Verify the **Custom Statuses & Conditions** section is present with a **Manage Statuses (<count> overrides)** button.
+   - Click the button: verify the same manager modal opens scoped to the current scene.
+
+6. **Delete a Custom Status:**
+   - In the modal, locate `Blessed` or `Burning` and click the red trash can icon.
+   - Verify the custom status is cleanly deleted and removed from the active status list and token dropdowns.
+
+#### Expected Result (Pass Criteria):
+- Token controls and token editor dynamically load all built-in, global, and scene-level custom statuses.
+- Users can create, customize, and delete custom statuses with custom colors, descriptions, numeric counters, and turn lifecycle triggers.
+- Custom statuses are cleanly persisted and immediately usable on tokens across the canvas.
+
 
 
 

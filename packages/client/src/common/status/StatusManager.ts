@@ -4,7 +4,7 @@ export const DEFAULT_STATUS_DEFINITIONS: Record<
     string, CustomStatusDefinition> = {
   Dying: {
     label: 'Dying',
-    description: 'The unit is dying',
+    description: 'The unit is dying and making death saving throws',
     color: '#ef4444',
     counter: {start: 1, update: 1, max: 3},
     showOnToken: true,
@@ -40,16 +40,71 @@ export const DEFAULT_STATUS_DEFINITIONS: Record<
     color: '#ec4899',
     showOnToken: true,
   },
+  Concentrating: {
+    label: 'Concentrating',
+    description: 'Maintaining focus on an active spell',
+    color: '#3b82f6',
+    showOnToken: true,
+  },
+  Deafened: {
+    label: 'Deafened',
+    description: 'Cannot hear and automatically fails hearing-based ability checks',
+    color: '#7c3aed',
+    showOnToken: true,
+  },
+  Exhaustion: {
+    label: 'Exhaustion',
+    description: 'Cumulative penalties to rolls, speed, and health',
+    color: '#475569',
+    counter: {start: 1, update: 1, max: 6},
+    showOnToken: true,
+  },
+  Frightened: {
+    label: 'Frightened',
+    description: 'Disadvantage on ability checks and attack rolls while source of fear is in line of sight',
+    color: '#e11d48',
+    showOnToken: true,
+  },
+  Grappled: {
+    label: 'Grappled',
+    description: 'Speed is 0 and cannot benefit from bonuses to speed',
+    color: '#c2410c',
+    showOnToken: true,
+  },
+  Incapacitated: {
+    label: 'Incapacitated',
+    description: 'Cannot take actions or reactions',
+    color: '#991b1b',
+    showOnToken: true,
+  },
+  Invisible: {
+    label: 'Invisible',
+    description: 'Impossible to see without magic or special senses',
+    color: '#06b6d4',
+    showOnToken: true,
+  },
+  Paralyzed: {
+    label: 'Paralyzed',
+    description: 'Incapacitated and cannot move or speak. Attacks within 5ft are critical hits',
+    color: '#f97316',
+    showOnToken: true,
+  },
+  Petrified: {
+    label: 'Petrified',
+    description: 'Transformed into solid inanimate substance with resistance to all damage',
+    color: '#52525b',
+    showOnToken: true,
+  },
   Poisoned: {
     label: 'Poisoned',
     description: 'Disadvantage on attack rolls and ability checks',
     color: '#10b981',
     showOnToken: true,
   },
-  Paralyzed: {
-    label: 'Paralyzed',
-    description: 'Incapacitated and cannot move or speak',
-    color: '#f97316',
+  Prone: {
+    label: 'Prone',
+    description: 'Can only crawl. Disadvantage on attack rolls; melee attacks against have advantage',
+    color: '#ea580c',
     showOnToken: true,
   },
   Restrained: {
@@ -59,16 +114,10 @@ export const DEFAULT_STATUS_DEFINITIONS: Record<
     color: '#a855f7',
     showOnToken: true,
   },
-  Invisible: {
-    label: 'Invisible',
-    description: 'Impossible to see without magic or special senses',
-    color: '#06b6d4',
-    showOnToken: true,
-  },
-  Concentrating: {
-    label: 'Concentrating',
-    description: 'Maintaining focus on an active spell',
-    color: '#3b82f6',
+  Unconscious: {
+    label: 'Unconscious',
+    description: 'Incapacitated, drops held items, falls prone, automatically fails Str and Dex saves',
+    color: '#7f1d1d',
     showOnToken: true,
   },
 };
@@ -115,6 +164,26 @@ export function deleteGlobalStatusDefinition(label: string): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
   } catch {
   }
+}
+
+/**
+ * Saves or updates a custom status definition on a scene (GameMap).
+ */
+export function saveSceneStatusDefinition(
+    scene: GameMap, status: CustomStatusDefinition): Record<string, CustomStatusDefinition> {
+  const current = { ...(scene.customStatuses || {}) };
+  current[status.label] = status;
+  return current;
+}
+
+/**
+ * Removes a custom status definition from a scene (GameMap).
+ */
+export function deleteSceneStatusDefinition(
+    scene: GameMap, label: string): Record<string, CustomStatusDefinition> {
+  const current = { ...(scene.customStatuses || {}) };
+  delete current[label];
+  return current;
 }
 
 /**

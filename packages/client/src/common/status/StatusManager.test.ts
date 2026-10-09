@@ -2,7 +2,17 @@ import {GameMap, Token} from '@oldbear/shared';
 import assert from 'node:assert';
 import {afterEach, beforeEach, describe, it} from 'node:test';
 
-import {DEFAULT_STATUS_DEFINITIONS, formatCondition, parseCondition, processTurnTransition, resolveStatusDefinitions,} from './StatusManager.js';
+import {
+  DEFAULT_STATUS_DEFINITIONS,
+  formatCondition,
+  parseCondition,
+  processTurnTransition,
+  resolveStatusDefinitions,
+  saveGlobalStatusDefinition,
+  deleteGlobalStatusDefinition,
+  saveSceneStatusDefinition,
+  deleteSceneStatusDefinition,
+} from './StatusManager.js';
 
 describe('Custom Configurable Statuses & Turn Lifecycles (OB-131)', () => {
   let mockStore: Record<string, string> = {};
@@ -156,4 +166,64 @@ describe('Custom Configurable Statuses & Turn Lifecycles (OB-131)', () => {
        assert.ok(result1.auditMessages.some(
            (m) => m.includes('Bleeding') && m.includes('updated to **2**')));
      });
+
+  it('provides complete standard condition definitions in DEFAULT_STATUS_DEFINITIONS (OB-192)', () => {
+    const defs = DEFAULT_STATUS_DEFINITIONS;
+    const requiredStatuses = [
+      'Blinded', 'Charmed', 'Deafened', 'Frightened', 'Grappled', 'Incapacitated',
+      'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained',
+      'Stunned', 'Unconscious', 'Concentrating', 'Exhaustion', 'Dying', 'Bleeding',
+    ];
+    for (const status of requiredStatuses) {
+      assert.ok(defs[status], `Missing status definition for ${status}`);
+      assert.strictEqual(defs[status].label, status);
+      assert.ok(defs[status].color, `Status ${status} must have a color`);
+      assert.ok(defs[status].description, `Status ${status} must have a description`);
+    }
+  });
+
+  it('creates, saves, and deletes global and scene custom statuses (OB-192)', () => {
+    // 1. Create global custom status
+    saveGlobalStatusDefinition({
+      label: 'Blessed',
+      description: 'Grants +1d4 to attack rolls and saves',
+      color: '#eab308',
+      showOnToken: true,
+    });
+
+    let resolved = resolveStatusDefinitions();
+    assert.ok(resolved.Blessed, 'Blessed should be present in resolved definitions');
+    assert.strictEqual(resolved.Blessed.color, '#eab308');
+
+    // 2. Create scene custom status
+    const mockMap = {
+      id: 'map-arena',
+      name: 'Arena of Blood',
+      customStatuses: {},
+    } as unknown as GameMap;
+
+    const updatedMapStatuses = saveSceneStatusDefinition(mockMap, {
+      label: 'ArenaHaste',
+      description: 'Double movement in the arena',
+      color: '#06b6d4',
+      counter: { start: 5, update: -1, min: 0 },
+      clearWhen: 'beginning_of_turn',
+    });
+
+    const mockMapWithStatuses = { ...mockMap, customStatuses: updatedMapStatuses };
+    resolved = resolveStatusDefinitions(mockMapWithStatuses);
+    assert.ok(resolved.ArenaHaste, 'ArenaHaste should be resolved for the scene');
+    assert.strictEqual(resolved.ArenaHaste.counter?.start, 5);
+
+    // 3. Delete scene status
+    const removedSceneStatuses = deleteSceneStatusDefinition(mockMapWithStatuses, 'ArenaHaste');
+    const mockMapAfterRemoval = { ...mockMap, customStatuses: removedSceneStatuses };
+    resolved = resolveStatusDefinitions(mockMapAfterRemoval);
+    assert.strictEqual(resolved.ArenaHaste, undefined, 'ArenaHaste should be removed from scene');
+
+    // 4. Delete global status
+    deleteGlobalStatusDefinition('Blessed');
+    resolved = resolveStatusDefinitions();
+    assert.strictEqual(resolved.Blessed, undefined, 'Blessed should be removed from global');
+  });
 });

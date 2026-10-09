@@ -2,6 +2,9 @@ import React, { useRef, useState } from 'react';
 import { Token, Player, GameMap, DnDAction } from '@oldbear/shared';
 import { Heart, Shield, Plus, Minus, Settings, Trash2, ArrowRightLeft, Copy, UserCheck, Swords, RotateCw, Lock, Unlock, Sparkles, Dices } from 'lucide-react';
 
+import { resolveStatusDefinitions, formatCondition } from '../status/StatusManager.js';
+import { CustomStatusModal } from './CustomStatusModal.js';
+
 interface TokenControlsProps {
   token: Token;
   selectedTokens?: Token[];
@@ -18,13 +21,8 @@ interface TokenControlsProps {
   isGm: boolean;
   maps: GameMap[];
   players?: Player[];
+  onUpdateMap?: (mapId: string, updates: Partial<GameMap>) => void;
 }
-
-const ALL_CONDITIONS = [
-  'Blinded', 'Charmed', 'Deafened', 'Frightened', 'Grappled', 'Incapacitated',
-  'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained',
-  'Stunned', 'Unconscious', 'Concentrating', 'Exhaustion'
-];
 
 export const RotationCompass: React.FC<{
   rotation: number;
@@ -139,8 +137,14 @@ export const TokenControls: React.FC<TokenControlsProps> = ({
   isGm,
   maps,
   players = [],
+  onUpdateMap,
 }) => {
   if (!canControl && !isGm) return null;
+
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const activeMap = maps.find((m) => m.id === token.mapId) || maps[0];
+  const statusDefs = resolveStatusDefinitions(activeMap);
+  const allAvailableStatuses = Object.keys(statusDefs).sort();
 
   const [showAttacksMenu, setShowAttacksMenu] = useState(false);
   const availableAttacks: DnDAction[] =
@@ -155,14 +159,23 @@ export const TokenControls: React.FC<TokenControlsProps> = ({
 
   const toggleCondition = (cond: string) => {
     const existing = token.conditions || [];
-    const updated = existing.includes(cond)
-      ? existing.filter((c) => c !== cond)
-      : [...existing, cond];
+    const baseLabel = cond.split(':')[0];
+    const isPresent = existing.some((c) => c.split(':')[0] === baseLabel);
+    let updated: string[];
+    if (isPresent) {
+      updated = existing.filter((c) => c.split(':')[0] !== baseLabel);
+    } else {
+      const def = statusDefs[baseLabel];
+      const conditionFormatted =
+        def?.counter?.start !== undefined ? formatCondition(baseLabel, def.counter.start) : cond;
+      updated = [...existing, conditionFormatted];
+    }
     onUpdateToken(token.id, { conditions: updated });
   };
 
   return (
-    <div
+    <>
+      <div
       style={{
         position: 'absolute',
         bottom: '1.5rem',
@@ -464,41 +477,46 @@ export const TokenControls: React.FC<TokenControlsProps> = ({
         <>
           <div style={{ width: '1px', height: '32px', background: 'var(--border-subtle)' }} />
           <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            {(token.conditions || []).map((cond) => (
-              <span
-                key={cond}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  fontSize: '0.72rem',
-                  fontWeight: 600,
-                  padding: '2px 7px',
-                  borderRadius: '9999px',
-                  border: '1px solid #f43f5e',
-                  backgroundColor: 'rgba(244, 63, 94, 0.2)',
-                  color: '#f43f5e',
-                }}
-              >
-                {cond}
-                <button
-                  onClick={() => toggleCondition(cond)}
+            {(token.conditions || []).map((cond) => {
+              const baseLabel = cond.split(':')[0];
+              const def = statusDefs[baseLabel];
+              const badgeColor = def?.color || '#f43f5e';
+              return (
+                <span
+                  key={cond}
                   style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#f43f5e',
-                    cursor: 'pointer',
-                    fontSize: '11px',
-                    padding: '0 2px',
                     display: 'inline-flex',
                     alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
+                    padding: '2px 7px',
+                    borderRadius: '9999px',
+                    border: `1px solid ${badgeColor}`,
+                    backgroundColor: `${badgeColor}22`,
+                    color: badgeColor,
                   }}
-                  title={`Remove ${cond}`}
                 >
-                  ✕
-                </button>
-              </span>
-            ))}
+                  {cond}
+                  <button
+                    onClick={() => toggleCondition(cond)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: badgeColor,
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                      padding: '0 2px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                    }}
+                    title={`Remove ${cond}`}
+                  >
+                    ✕
+                  </button>
+                </span>
+              );
+            })}
             <select
               style={{
                 background: 'transparent',
@@ -510,20 +528,42 @@ export const TokenControls: React.FC<TokenControlsProps> = ({
               }}
               value=""
               onChange={(e) => {
-                if (e.target.value) {
-                  toggleCondition(e.target.value);
+                const val = e.target.value;
+                if (val === '__manage__') {
+                  setShowStatusModal(true);
+                } else if (val) {
+                  toggleCondition(val);
                 }
               }}
             >
               <option value="" disabled>
                 + Add Status...
               </option>
-              {ALL_CONDITIONS.filter((c) => !(token.conditions || []).includes(c)).map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
+              {allAvailableStatuses
+                .filter((label) => !(token.conditions || []).some((c) => c.split(':')[0] === label))
+                .map((label) => (
+                  <option key={label} value={label}>
+                    {label}{statusDefs[label]?.counter ? ` (Count: ${statusDefs[label].counter?.start})` : ''}
+                  </option>
+                ))}
+              <option value="__manage__">✨ Create / Manage Custom Statuses...</option>
             </select>
+            <button
+              type="button"
+              onClick={() => setShowStatusModal(true)}
+              title="Create or manage custom statuses"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--accent-primary)',
+                cursor: 'pointer',
+                padding: '2px',
+                display: 'inline-flex',
+                alignItems: 'center',
+              }}
+            >
+              <Sparkles size={14} />
+            </button>
           </div>
         </>
       )}
@@ -682,5 +722,21 @@ export const TokenControls: React.FC<TokenControlsProps> = ({
       </div>
     </div>
   </div>
+  {showStatusModal && (
+    <CustomStatusModal
+      isOpen={showStatusModal}
+      onClose={() => setShowStatusModal(false)}
+      activeMap={activeMap}
+      onUpdateMap={onUpdateMap}
+      onApplyStatusToToken={(conditionStr) => {
+        const existing = token.conditions || [];
+        const base = conditionStr.split(':')[0];
+        if (!existing.some((c) => c.split(':')[0] === base)) {
+          onUpdateToken(token.id, { conditions: [...existing, conditionStr] });
+        }
+      }}
+    />
+  )}
+  </>
 );
 };

@@ -2399,6 +2399,7 @@ export const AppVtt: React.FC = () => {
           isGm={isGm}
           maps={session.maps}
           players={Object.values(session.players)}
+          onUpdateMap={handleUpdateMap}
         />
       )}
 
@@ -2508,6 +2509,8 @@ export const AppVtt: React.FC = () => {
           onSave={(updates) => handleUpdateToken(tokenToEdit.id, updates)}
           players={Object.values(session.players)}
           isGm={isGm}
+          activeMap={session.maps.find((m) => m.id === tokenToEdit.mapId) || session.maps[0]}
+          onUpdateMap={handleUpdateMap}
         />
       )}
 

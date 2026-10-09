@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Token, Player, DnDAction, DnDSpell } from '@oldbear/shared';
+import { Token, Player, GameMap, DnDAction, DnDSpell } from '@oldbear/shared';
 import { X, Upload, Check, ZoomIn, ZoomOut, RotateCcw, Move, Swords, Sparkles, Plus, Trash2, Edit2 } from 'lucide-react';
 import { saveAsset } from '../storage/db.js';
 import { traceTokenShape } from '../engine/TokenRenderer.js';
+import { resolveStatusDefinitions, formatCondition } from '../status/StatusManager.js';
+import { CustomStatusModal } from './CustomStatusModal.js';
 
 interface TokenEditorModalProps {
   token: Token;
@@ -10,16 +12,12 @@ interface TokenEditorModalProps {
   onSave: (updates: Partial<Token>) => void;
   players: Player[];
   isGm: boolean;
+  activeMap?: GameMap;
+  onUpdateMap?: (mapId: string, updates: Partial<GameMap>) => void;
 }
 
 const RING_COLORS = ['transparent', '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#64748b', '#ffffff'];
 const FILL_COLORS = ['#0f172a', '#1e293b', '#1e3a8a', '#7f1d1d', '#064e3b', '#78350f', '#581c87', '#000000'];
-
-const ALL_CONDITIONS = [
-  'Blinded', 'Charmed', 'Deafened', 'Frightened', 'Grappled', 'Incapacitated',
-  'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained',
-  'Stunned', 'Unconscious', 'Concentrating', 'Exhaustion'
-];
 
 export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
   token,
@@ -27,7 +25,12 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
   onSave,
   players,
   isGm,
+  activeMap,
+  onUpdateMap,
 }) => {
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const statusDefs = resolveStatusDefinitions(activeMap);
+  const allAvailableStatuses = Object.keys(statusDefs).sort();
   const [name, setName] = useState(token.name);
   const [imageUrl, setImageUrl] = useState(token.imageUrl || '');
   const [size, setSize] = useState(token.size);
@@ -303,10 +306,16 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
     reader.readAsDataURL(file);
   };
 
-  const toggleCondition = (c: string) => {
-    setConditions((prev) =>
-      prev.includes(c) ? prev.filter((item) => item !== c) : [...prev, c]
-    );
+  const toggleCondition = (label: string) => {
+    const isPresent = conditions.some((c) => c.split(':')[0] === label);
+    if (isPresent) {
+      setConditions((prev) => prev.filter((item) => item.split(':')[0] !== label));
+    } else {
+      const def = statusDefs[label];
+      const conditionFormatted =
+        def?.counter?.start !== undefined ? formatCondition(label, def.counter.start) : label;
+      setConditions((prev) => [...prev, conditionFormatted]);
+    }
   };
 
   const handleStartAddAction = () => {
@@ -461,7 +470,8 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
   };
 
   return (
-    <div
+    <>
+      <div
       style={{
         position: 'fixed',
         inset: 0,
@@ -1733,29 +1743,45 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
 
         {/* Conditions Selector */}
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>
-            Conditions & Statuses
-          </label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              Conditions & Statuses
+            </label>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setShowStatusModal(true)}
+              style={{ fontSize: '0.72rem', padding: '2px 8px', display: 'flex', alignItems: 'center', gap: '4px' }}
+            >
+              <Sparkles size={12} color="var(--accent-primary)" /> Manage Custom Statuses...
+            </button>
+          </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-            {ALL_CONDITIONS.map((c) => {
-              const active = conditions.includes(c);
+            {allAvailableStatuses.map((label) => {
+              const active = conditions.some((c) => c.split(':')[0] === label);
+              const def = statusDefs[label];
+              const badgeColor = def?.color || '#f43f5e';
               return (
                 <button
-                  key={c}
+                  key={label}
                   type="button"
-                  onClick={() => toggleCondition(c)}
+                  onClick={() => toggleCondition(label)}
                   style={{
                     fontSize: '0.75rem',
                     padding: '4px 8px',
                     borderRadius: 'var(--radius-sm)',
                     border: '1px solid',
-                    borderColor: active ? '#f43f5e' : 'var(--border-subtle)',
-                    backgroundColor: active ? 'rgba(244, 63, 94, 0.2)' : 'var(--bg-surface)',
-                    color: active ? '#f43f5e' : 'var(--text-secondary)',
+                    borderColor: active ? badgeColor : 'var(--border-subtle)',
+                    backgroundColor: active ? `${badgeColor}25` : 'var(--bg-surface)',
+                    color: active ? badgeColor : 'var(--text-secondary)',
                     cursor: 'pointer',
+                    fontWeight: active ? 700 : 500,
                   }}
                 >
-                  {c}
+                  {label}
+                  {def?.counter && active && (
+                    <span> ({conditions.find((c) => c.startsWith(`${label}:`))?.split(':')[1] || def.counter.start})</span>
+                  )}
                 </button>
               );
             })}
@@ -1792,5 +1818,20 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
         </div>
       </div>
     </div>
+    {showStatusModal && (
+      <CustomStatusModal
+        isOpen={showStatusModal}
+        onClose={() => setShowStatusModal(false)}
+        activeMap={activeMap}
+        onUpdateMap={onUpdateMap}
+        onApplyStatusToToken={(conditionStr) => {
+          const base = conditionStr.split(':')[0];
+          if (!conditions.some((c) => c.split(':')[0] === base)) {
+            setConditions((prev) => [...prev, conditionStr]);
+          }
+        }}
+      />
+    )}
+    </>
   );
 };
