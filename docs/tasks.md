@@ -304,7 +304,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-181 | Statblock Inspection Syntax (`?`) for Chat Commands                                                                                                                                                                                                                                                                                                                                                                                                                                  | Old Bear VTT   | Done     | [Feature](#ob-181) |
 | OB-182 | Associate Controllable Token with Chat Panel                                                                                                                                                                                                                                                                                                                                                                                                                                         | Old Bear VTT   | Done     | [Feature](#ob-182) |
 | OB-183 | Codebase Simplification & Refactoring Plan (docs/refactor-1.md)                                                                                                                                                                                                                                                                                                                                                                                                                      | Old Bear VTT   | Done     | [Chore](#ob-183)   |
-| OB-184 | HelpTip Component & Placement Guide (docs/helptip-locations.md)                                                                                                                                                                                                                                                                                                                                                                                                                      | Old Bear VTT   | Testing  | [Feature](#ob-184) |
+| OB-184 | HelpTip Component & Placement Guide (docs/helptip-locations.md)                                                                                                                                                                                                                                                                                                                                                                                                                      | Old Bear VTT   | Done     | [Feature](#ob-184) |
 | OB-185 | Backlog Research & Implementation Guide (docs/backlog-implementation-guide.md)                                                                                                                                                                                                                                                                                                                                                                                                       | Old Bear VTT   | Testing  | [Feature](#ob-185) |
 | OB-186 | Unable to create new maps or duplicate existing ones.                                                                                                                                                                                                                                                                                                                                                                                                                                | Shared         | Done     | [Bug](#ob-186)     |
 | OB-187 | Submap & Deployment Zone Customization UI (Position, Dimensions, Colors, Background Images)                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Ready    | [Feature](#ob-187) |
@@ -317,10 +317,10 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-194 | The hitbox for tapping a token should be anywhere within it's ring or rectangle border.                                                                                                                                                                                                                                                                                                                                                                                              | Common         | Done     | [Bug](#ob-194)     |
 | OB-195 | *Add zoom and offset to the PRESET_TOKENS in TokenPickerModal.*                                                                                                                                                                                                                                                                                                                                                                                                                      | Common         | Triage   | [Feature](#ob-195) |
 | OB-196 | Move chat back to the left sidebar. Put it below the measuring tape icon.                                                                                                                                                                                                                                                                                                                                                                                                            | Common         | Ready    | [Feature](#ob-196) |
-| OB-197 | Brawl mode does not have a top bar so I cannot switch back. See [OB-154](#ob-154).                                                                                                                                                                                                                                                                                                                                                                                                   | Common         | Ready    | [Bug](#ob-197)     |
-| OB-198 | Reveal fog should be 'shift-f' instead of 'r' for the shortcut key.                                                                                                                                                                                                                                                                                                                                                                                                                  | Vtt            | Testing  | [Feature](#ob-198) |
+| OB-197 | Brawl mode does not have a top bar so I cannot switch back. See [OB-154](#ob-154).                                                                                                                                                                                                                                                                                                                                                                                                   | Common         | Done     | [Bug](#ob-197)     |
+| OB-198 | Reveal fog should be 'shift-f' instead of 'r' for the shortcut key.                                                                                                                                                                                                                                                                                                                                                                                                                  | Vtt            | Done     | [Feature](#ob-198) |
 | OB-199 | Make fog be a single layer.                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Vtt            | Ready    | [Feature](#ob-199) |
-| OB-200 | I want to be able to add attacks to a token without syncing it with a character.                                                                                                                                                                                                                                                                                                                                                                                                     | Vtt            | Testing  | [Feature](#ob-200) |
+| OB-200 | I want to be able to add attacks to a token without syncing it with a character.                                                                                                                                                                                                                                                                                                                                                                                                     | Vtt            | Done     | [Feature](#ob-200) |
 | OB-201 | When a player spawns a token it should automatically be controlled by them. See [OB-143](#ob-143).                                                                                                                                                                                                                                                                                                                                                                                   | Vtt            | Done     | [Bug](#ob-201)     |
 | OB-202 | *Make help in chat look better.*                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Common         | Triage   | [Feature](#ob-202) |
 | OB-203 | *Make draggable windows resizable on desktop. Especially chat.*                                                                                                                                                                                                                                                                                                                                                                                                                      | Common         | Triage   | [Feature](#ob-203) |
@@ -331,15 +331,17 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-208 | Update the Open5EFetcher to use the v2 api.                                                                                                                                                                                                                                                                                                                                                                                                                                          | Vtt            | Ready    | [Feature](#ob-208) |
 | OB-209 | There is no settings button next to the active scene name in the top bar.                                                                                                                                                                                                                                                                                                                                                                                                            | Common         | Done     | [Bug](#ob-209)     |
 | OB-210 | Remove references to rodeo and obr to be nice.                                                                                                                                                                                                                                                                                                                                                                                                                                       | Common         | Done     | [Chore](#ob-210)   |
-| OB-211 | Remove excess display form the info commands.                                                                                                                                                                                                                                                                                                                                                                                                                                        | Common         | Testing  | [Feature](#ob-211) |
+| OB-211 | Remove excess display from the info commands.                                                                                                                                                                                                                                                                                                                                                                                                                                        | Common         | Done     | [Feature](#ob-211) |
 | OB-212 | Add a way to request variants like the 2014 vs 2024 srds, between pf1, sf1, pf2+sf2, and between 5e and pf*/sf*.                                                                                                                                                                                                                                                                                                                                                                     | Old Bear VTT   | Ready    | [Feature](#ob-212) |
-| OB-213 | *when creating a token and then checking its character sheet I see some kind of id in the dndbeyond url block. That should be empty.*                                                                                                                                                                                                                                                                                                                                                | Old Bear VTT   | Triage   | [Feature](#ob-213) |
+| OB-213 | when creating a token and then checking its character sheet I see some kind of id in the dndbeyond url block. That should be empty.                                                                                                                                                                                                                                                                                                                                                  | Old Bear VTT   | Ready    | [Feature](#ob-213) |
 | OB-214 | Allow saving custom characters.                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Old Bear VTT   | Ready    | [Feature](#ob-214) |
 | OB-215 | *Find a source for icons and images.*                                                                                                                                                                                                                                                                                                                                                                                                                                                | Old Bear VTT   | Planning | [Feature](#ob-215) |
 | OB-216 | Add to character on an item card does nothing. It should add the attack/ability to the character sheet,                                                                                                                                                                                                                                                                                                                                                                              | Old Bear VTT   | Ready    | [Bug](#ob-216)     |
 | OB-217 | Allow /attack? to query compendium weapons and attacks from Open5e and PF2e                                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Ready    | [Feature](#ob-217) |
 | OB-218 | Chat textbox does not lose focus when we click something else. I clicked a token and the box still had the cursor in it. I wasn't able to use hotkeys until I had selected some text elsewhere.                                                                                                                                                                                                                                                                                      | Common         | Ready    | [Bug](#ob-218)     |
 | OB-219 | Don't favor 3nd on the character sheet.                                                                                                                                                                                                                                                                                                                                                                                                                                              | Common         | Ready    | [Feature](#ob-219) |
+| OB-220 | Pinch zoom doesn't work right on token portraits.                                                                                                                                                                                                                                                                                                                                                                                                                                    | Common         | Ready    | [Bug](#ob-220)     |
+| OB-221 | Make the ` or ~ key toggle the chat display like c togles the character sheet.                                                                                                                                                                                                                                                                                                                                                                                                       | Common         | Ready    | [Feature](#ob-221) |
 
 ---
 
@@ -2981,16 +2983,14 @@ Perform an architectural review of the codebase and create [docs/refactor-1.md](
 - **REF-007**: Strategy Pattern for Canvas Interaction Tools (`CanvasEngine.ts` and `PointerSystem.ts` decoupling).
 - **REF-008**: Unified Storage Repository & Key Registry (centralizing `localStorage` and `IndexedDB` access).
 
-<a id="ob-184" class="task" data-project="old-bear-vtt" data-status="testing" data-task-type="feature"></a>
+<a id="ob-184" class="task" data-project="old-bear-vtt" data-status="done" data-task-type="feature"></a>
 ### HelpTip Component & Placement Guide (docs/helptip-locations.md)
 **ID:** OB-184
 **Project:** Old Bear VTT
-**Status:** Testing
+**Status:** Done
 **Type:** Feature
 
-
 **Description:**
-
 **Depends On:** [OB-176](#ob-176)
 
 Audit the user interface across all modals, panels, and toolbars and create [docs/helptip-locations.md](docs/helptip-locations.md) detailing exact integration points for `<HelpTip />`:
@@ -3174,24 +3174,23 @@ Describe task objectives and implementation requirements here.
 
 - [ ]
 
-<a id="ob-197" class="task" data-project="cmn" data-status="ready" data-task-type="bug"></a>
+<a id="ob-197" class="task" data-project="cmn" data-status="done" data-task-type="bug"></a>
 ### Brawl mode does not have a top bar so I cannot switch back. See [OB-154](#ob-154).
 **ID:** OB-197
 **Project:** Common
-**Status:** Ready
+**Status:** Done
 **Type:** Bug
-
 
 **Description:**
 Describe task objectives and implementation requirements here.
 
-- [ ]
+- [x]
 
-<a id="ob-198" class="task" data-project="vtt" data-status="testing" data-task-type="feature"></a>
+<a id="ob-198" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
 ### Reveal fog should be 'shift-f' instead of 'r' for the shortcut key.
 **ID:** OB-198
 **Project:** Vtt
-**Status:** Testing
+**Status:** Done
 **Type:** Feature
 
 **Description:**
@@ -3209,11 +3208,11 @@ Describe task objectives and implementation requirements here.
 **Description:**
 The Reveal fog tool only removes from the topmost layer of fog it encounters. We should only have 1 layer at a time and track it as an svg preferably or a raster image so we can brush it on and off later with a circular brush or a rectangle selection. The size of the brush should be adjustable somehow maybe the , and . keys, the [ ] keys, the - = keys, or preferably someting you can click on and drag up or down, it would how up either before or after the tool to switch your color.
 
-<a id="ob-200" class="task" data-project="vtt" data-status="testing" data-task-type="feature"></a>
+<a id="ob-200" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
 ### I want to be able to add attacks to a token without syncing it with a character.
 **ID:** OB-200
 **Project:** Vtt
-**Status:** Testing
+**Status:** Done
 **Type:** Feature
 
 **Description:**
@@ -3368,11 +3367,11 @@ Describe task objectives and implementation requirements here.
 
 - [ ]
 
-<a id="ob-211" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
-### Remove excess display form the info commands.
+<a id="ob-211" class="task" data-project="cmn" data-status="done" data-task-type="feature"></a>
+### Remove excess display from the info commands.
 **ID:** OB-211
 **Project:** Common
-**Status:** Testing
+**Status:** Done
 **Type:** Feature
 
 **Description:**
@@ -3390,11 +3389,11 @@ Make the info responses for commands like /spell? and /monster? show only to the
 Document any missing backends, but assume we will have an api eventually. Stub out the actual requests and fail gracefully. This shouls apply to all info commands. If no system is specified check the character for the named action (attack/spell/item) then check the cached db this may have more item types like monsters and items if characters do not havke them. Plan for adding more commands later like /class? /race? /ability? /feat? etc... when making architectural decisions, but do not worry about implementing them now.
 - [ ]
 
-<a id="ob-213" class="task" data-project="old-bear-vtt" data-status="triage" data-task-type="feature"></a>
+<a id="ob-213" class="task" data-project="old-bear-vtt" data-status="ready" data-task-type="feature"></a>
 ### when creating a token and then checking its character sheet I see some kind of id in the dndbeyond url block. That should be empty.
 **ID:** OB-213
 **Project:** Old Bear VTT
-**Status:** Triage
+**Status:** Ready
 **Type:** Feature
 
 **Description:**
@@ -3465,6 +3464,28 @@ Describe task objectives and implementation requirements here.
 
 **Description:**
 We should not favor a specific ruleset. Currently the character sheet starts with dndbeyod selected. I think we should have a third option that is just our local character that everything imports to.
+- [ ]
+
+<a id="ob-220" class="task" data-project="cmn" data-status="ready" data-task-type="bug"></a>
+### Pinch zoom doesn't work right on token portraits.
+**ID:** OB-220
+**Project:** Common
+**Status:** Ready
+**Type:** Bug
+
+**Description:**
+pinch zooming on things like the face image when editing a token keep trying to zoom the whole page instead.
+- [ ]
+
+<a id="ob-221" class="task" data-project="cmn" data-status="ready" data-task-type="feature"></a>
+### Make the ` or ~ key toggle the chat display like c togles the character sheet.
+**ID:** OB-221
+**Project:** Common
+**Status:** Ready
+**Type:** Feature
+
+**Description:**
+Ideally this would combine with esc to make the textbox lose focus.
 - [ ]
 
 ---

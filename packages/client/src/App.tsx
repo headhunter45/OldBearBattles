@@ -70,8 +70,22 @@ export function detectGameMode(
     requestedMode = params.get('mode') || params.get('gamemode');
   }
 
-  if (requestedMode === 'brawl' && config.allowedModes.includes('brawl')) return 'brawl';
-  if (requestedMode === 'vtt' && config.allowedModes.includes('vtt')) return 'vtt';
+  if (requestedMode === 'brawl' && config.allowedModes.includes('brawl')) {
+    if (typeof localStorage !== 'undefined' && storedMode === undefined) {
+      try {
+        localStorage.setItem('oldbear_mode', 'brawl');
+      } catch {}
+    }
+    return 'brawl';
+  }
+  if (requestedMode === 'vtt' && config.allowedModes.includes('vtt')) {
+    if (typeof localStorage !== 'undefined' && storedMode === undefined) {
+      try {
+        localStorage.setItem('oldbear_mode', 'vtt');
+      } catch {}
+    }
+    return 'vtt';
+  }
 
   const stored = storedMode !== undefined
     ? storedMode
@@ -85,7 +99,9 @@ export function detectGameMode(
 export function switchGameMode(targetMode: GameMode): void {
   if (typeof window !== 'undefined') {
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('oldbear_mode', targetMode);
+      try {
+        localStorage.setItem('oldbear_mode', targetMode);
+      } catch {}
     }
     const url = new URL(window.location.href);
     url.searchParams.set('mode', targetMode);
@@ -108,9 +124,18 @@ export function isSingleGameModeEnforced(envMode?: string, envAllowedModes?: str
 export const App: React.FC = () => {
   const mode = useMemo(() => detectGameMode(), []);
 
+  React.useEffect(() => {
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem('oldbear_mode', mode);
+      } catch {}
+    }
+  }, [mode]);
+
   if (mode === 'brawl') {
     return <AppBrawl />;
   }
 
   return <AppVtt />;
 };
+

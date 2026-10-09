@@ -274,7 +274,7 @@ export const AppBrawl: React.FC = () => {
         timestamp: Date.now(),
         isCommand: true,
       };
-      networkRef.current.send({ type: 'chat-message', message: auditMsg });
+      networkRef.current.send({ type: 'chat-send', message: auditMsg });
     }
   };
 
@@ -300,7 +300,7 @@ export const AppBrawl: React.FC = () => {
         timestamp: audit.timestamp,
         isCommand: true,
       };
-      networkRef.current.send({ type: 'chat-message', message: auditMsg });
+      networkRef.current.send({ type: 'chat-send', message: auditMsg });
     }
   };
 
@@ -390,7 +390,7 @@ export const AppBrawl: React.FC = () => {
         timestamp: Date.now(),
         isCommand: true,
       };
-      networkRef.current.send({ type: 'chat-message', message: auditMsg });
+      networkRef.current.send({ type: 'chat-send', message: auditMsg });
     }
   };
 
@@ -398,8 +398,8 @@ export const AppBrawl: React.FC = () => {
   useEffect(() => {
     if (!engineRef.current) return;
     if (session) {
-      const tokenList = Array.isArray(session.tokens)
-        ? session.tokens
+      const tokenList: Token[] = Array.isArray(session.tokens)
+        ? (session.tokens as Token[])
         : Object.values(session.tokens || {});
       const visibleTokens = brawlRole === 'spectator'
         ? filterTokensForSpectator(tokenList, matchPrivacy, currentMap?.submaps)
@@ -433,14 +433,14 @@ export const AppBrawl: React.FC = () => {
       onTokenSelect: (token) => {
         setSelectedTokens(token ? [token] : []);
       },
-      onTokenMove: (token) => {
+      onTokenMove: (id, x, y) => {
         if (brawlRoleRef.current === 'spectator') return; // Spectators cannot move tokens
         setSession((prev) => {
           if (!prev) return prev;
-          const currentTokens = Array.isArray(prev.tokens)
-            ? prev.tokens
+          const currentTokens: Token[] = Array.isArray(prev.tokens)
+            ? (prev.tokens as Token[])
             : Object.values(prev.tokens || {});
-          const nextTokens = currentTokens.map((t) => (t.id === token.id ? { ...t, x: token.x, y: token.y } : t));
+          const nextTokens = currentTokens.map((t) => (t.id === id ? { ...t, x, y } : t));
           const coherentTokens = updateTokensCoherency(nextTokens);
           const coherentRecord: Record<string, Token> = coherentTokens.reduce((acc, t) => {
             acc[t.id] = t;
@@ -448,7 +448,7 @@ export const AppBrawl: React.FC = () => {
           }, {} as Record<string, Token>);
           return { ...prev, tokens: coherentRecord };
         });
-        networkRef.current?.send({ type: 'token-update', id: token.id, updates: { x: token.x, y: token.y } });
+        networkRef.current?.send({ type: 'token-update', id, updates: { x, y } });
       },
       onMarkerSelect: (marker) => {
         setSelectedMarker(marker);
@@ -773,7 +773,7 @@ export const AppBrawl: React.FC = () => {
         <DeploymentStagingModal
           map={currentMap}
           tokens={Array.isArray(session?.tokens) ? session.tokens : Object.values(session?.tokens || {})}
-          selectedTokenIds={selectedTokenId ? [selectedTokenId] : []}
+          selectedTokenIds={selectedTokens.map((t) => t.id)}
           onClose={() => setShowDeploymentModal(false)}
           onUpdateMap={(updatedMap) => {
             setSession((prev) => {
@@ -805,7 +805,7 @@ export const AppBrawl: React.FC = () => {
             });
           }}
           onRecordCasualties={(player, count, reason) => {
-            handleUpdateScoreResource(player, 'casualties', count, reason);
+            handleUpdateScoreResource(player, 'casualtiesCount', count, reason);
           }}
           onShowToast={showToast}
         />
@@ -865,29 +865,22 @@ export const AppBrawl: React.FC = () => {
       {/* Soundboard Modal */}
       {showSoundboard && session && (
         <SoundboardModal
-          soundtracks={session.soundtracks || []}
-          onClose={() => setShowSoundboard(false)}
-          onPlayAudio={(trackId) => {
-            networkRef.current?.send({ type: 'audio-action', trackId, action: 'play' });
-          }}
-          onPauseAudio={(trackId) => {
-            networkRef.current?.send({ type: 'audio-action', trackId, action: 'pause' });
-          }}
-          onStopAudio={(trackId) => {
-            networkRef.current?.send({ type: 'audio-action', trackId, action: 'stop' });
-          }}
-          onVolumeChange={(trackId, volume) => {
-            networkRef.current?.send({ type: 'audio-action', trackId, action: 'volume', volume });
-          }}
           isGm={isOrganizer}
+          onClose={() => setShowSoundboard(false)}
+          onBroadcastAudioAction={(trackId, action, volume) => {
+            networkRef.current?.send({ type: 'audio-action', trackId, action, volume });
+          }}
         />
       )}
 
       {/* Voice Settings Modal */}
-      {showVoiceSettings && (
+      {showVoiceSettings && voiceManagerRef.current && (
         <VoiceSettingsModal
           voiceState={voiceState}
           voiceManager={voiceManagerRef.current}
+          players={session ? Object.values(session.players) : []}
+          localPlayer={localPlayer}
+          isGm={isOrganizer}
           onClose={() => setShowVoiceSettings(false)}
         />
       )}
@@ -897,7 +890,7 @@ export const AppBrawl: React.FC = () => {
         <TournamentOrganizerModal
           currentRole={brawlRole}
           scoreboard={scoreboard}
-          battleRound={battleRound}
+          battleRound={currentRound}
           p1ClockSeconds={p1ClockSeconds}
           p2ClockSeconds={p2ClockSeconds}
           isClockRunning={isClockRunning}
@@ -919,7 +912,7 @@ export const AppBrawl: React.FC = () => {
                 timestamp: Date.now(),
                 isCommand: true,
               };
-              networkRef.current.send({ type: 'chat-message', message: chatMsg });
+              networkRef.current.send({ type: 'chat-send', message: chatMsg });
             }
           }}
           onAdjustClock={(player, delta) => {
@@ -935,7 +928,7 @@ export const AppBrawl: React.FC = () => {
             setRulings((prev) => [...prev, ruling]);
             const chatMsg = formatOfficialRulingMessage(ruling);
             if (networkRef.current && session) {
-              networkRef.current.send({ type: 'chat-message', message: chatMsg });
+              networkRef.current.send({ type: 'chat-send', message: chatMsg });
             }
             showToast(`Official Ruling broadcast by ${ruling.toName}`);
           }}
@@ -944,6 +937,33 @@ export const AppBrawl: React.FC = () => {
           onShowToast={showToast}
         />
       )}
+
+      {/* Mobile Navigation Drawer */}
+      <MobileDrawer
+        isOpen={isMobileDrawerOpen}
+        onClose={() => setIsMobileDrawerOpen(false)}
+        localPlayer={localPlayer}
+        players={session ? Object.values(session.players).filter((p) => p.connected !== false) : []}
+        onUpdatePlayerName={(name, color) => {
+          if (localPlayer) {
+            const updated = { ...localPlayer, name, color };
+            setLocalPlayer(updated);
+            networkRef.current?.send({ type: 'player-update', updates: { name, color } });
+          }
+        }}
+        onAddNewToken={() => setShowTokenPickerModal(true)}
+        onOpenDice={() => setShowDiceRoller(true)}
+        onOpenInitiative={() => {}}
+        onOpenCharacter={() => {}}
+        onOpenMaps={() => setShowMapManager(true)}
+        onOpenSoundboard={() => setShowSoundboard(true)}
+        onOpenBackup={() => setShowBackupModal(true)}
+        onToggleChat={() => setIsChatOpen((v) => !v)}
+        isChatOpen={isChatOpen}
+        unreadChatCount={unreadChatCount}
+        voiceState={voiceState}
+        isGm={isOrganizer}
+      />
 
       {/* Toast Notification */}
       {toastMessage && (

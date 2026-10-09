@@ -61,5 +61,27 @@ describe('Application Game Mode Dispatcher (OB-136)', () => {
       const mode = detectGameMode('?mode=vtt', null, undefined, 'brawl');
       assert.strictEqual(mode, 'brawl');
     });
+
+    it('persists mode to localStorage when explicitly requested via URL query (OB-197)', () => {
+      const storage: Record<string, string> = { oldbear_mode: 'brawl' };
+      const originalLocalStorage = globalThis.localStorage;
+      (globalThis as any).localStorage = {
+        getItem: (k: string) => storage[k] || null,
+        setItem: (k: string, v: string) => { storage[k] = v; },
+        removeItem: (k: string) => { delete storage[k]; },
+      };
+
+      try {
+        const mode = detectGameMode('?mode=vtt');
+        assert.strictEqual(mode, 'vtt');
+        assert.strictEqual(storage['oldbear_mode'], 'vtt');
+
+        // Subsequent call without URL query now resolves to persisted 'vtt'
+        const nextMode = detectGameMode('', storage['oldbear_mode']);
+        assert.strictEqual(nextMode, 'vtt');
+      } finally {
+        (globalThis as any).localStorage = originalLocalStorage;
+      }
+    });
   });
 });

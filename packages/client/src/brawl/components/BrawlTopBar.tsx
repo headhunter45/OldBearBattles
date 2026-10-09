@@ -104,8 +104,21 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
   };
 
   return (
-    <header className="top-bar">
-      <div className="top-bar-left">
+    <header
+      className="floating-hud glass-panel top-bar"
+      style={{
+        top: '0.75rem',
+        left: '0.75rem',
+        right: '0.75rem',
+        padding: '0.5rem 1rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '0.75rem',
+        zIndex: 30,
+      }}
+    >
+      <div className="top-bar-left" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
         <button
           className="btn-icon"
           onClick={onToggleMobileDrawer}
@@ -311,7 +324,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
         })()}
       </div>
 
-      <div className="top-bar-right">
+      <div className="top-bar-right" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
         {/* Scoreboard Button (OB-159) */}
         {onOpenScoreboard && (
           <button

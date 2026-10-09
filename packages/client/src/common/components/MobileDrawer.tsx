@@ -23,6 +23,7 @@ import { FULL_VERSION_STRING } from '../config/version.js';
 import { VoiceState } from '../network/VoiceManager.js';
 
 import { COLOR_VALUES } from '../config/colors.js';
+import { isSingleGameModeEnforced, switchGameMode, detectGameMode } from '../../App.js';
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -517,6 +518,39 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
             </div>
           );
         })()}
+
+        {/* Mode Switcher Toggle for Multi-mode instances */}
+        {!isSingleGameModeEnforced() && (
+          <div style={{ marginTop: '0.75rem', marginBottom: '0.5rem' }}>
+            <button
+              className="btn btn-secondary"
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                border: '1px solid rgba(245, 158, 11, 0.4)',
+                background: 'rgba(245, 158, 11, 0.1)',
+                color: '#f59e0b',
+                padding: '0.6rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+              }}
+              onClick={() => {
+                const currentMode = detectGameMode();
+                switchGameMode(currentMode === 'brawl' ? 'vtt' : 'brawl');
+              }}
+            >
+              <Swords size={16} />
+              <span>
+                {detectGameMode() === 'brawl' ? 'Switch to VTT Mode 🐻' : 'Switch to Brawl Mode ⚔️'}
+              </span>
+            </button>
+          </div>
+        )}
 
         {/* Footer: Share invite & Community Links */}
         <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

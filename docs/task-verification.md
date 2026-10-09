@@ -16,6 +16,7 @@ This document provides step-by-step instructions for manually verifying all feat
 | **[OB-211](#ob-211---remove-excess-display-from-info-commands)** | Remove Excess Display from Info Commands | Common / Chat | Testing |
 | **[OB-207](#ob-207---unbound-token-resets-character-sheet-form-state)** | Unbound Token Resets Character Sheet Form State | VTT / Character Sheet | Testing |
 | **[OB-182](#ob-182---associate-controllable-token-with-chat-panel)** | Associate Controllable Token with Chat Panel | VTT / Chat | Testing |
+| **[OB-197](#ob-197---brawl-mode-top-bar-and-bidirectional-mode-switching)** | Brawl Mode Top Bar & Bidirectional Mode Switching | Platform / Brawl | Testing |
 | **[OB-154](#ob-154---game_mode-environment-configuration--deployment-toggles)** | `GAME_MODE` Environment Configuration & Deployment Toggles | Platform / Brawl | Testing |
 | **[OB-155](#ob-155---army-unit-and-model-domain-hierarchy--disambiguation)** | Army, Unit, and Model Domain Hierarchy & Disambiguation | Wargaming / Brawl | Testing |
 | **[OB-156](#ob-156---unit-coherency-graph-engine--real-time-warning-halos)** | Unit Coherency Graph Engine & Real-Time Warning Halos | Wargaming / Brawl | Testing |
@@ -513,3 +514,52 @@ This document provides step-by-step instructions for manually verifying all feat
 #### Expected Result (Pass Criteria):
 
 - Document exists and provides complete architectural blueprints, code snippets, schemas, and risk analyses for all 7 major technical research tracks.
+
+---
+
+### OB-197 - Brawl Mode Top Bar and Bidirectional Mode Switching
+
+- **Reference in tasks.md:** [tasks.md: OB-197](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-197)
+- **Primary Source Code:** [App.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/App.tsx), [AppBrawl.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/brawl/AppBrawl.tsx), [BrawlTopBar.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/brawl/components/BrawlTopBar.tsx), [MobileDrawer.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/MobileDrawer.tsx), [index.css](file:///Users/tom/Projects/OldBearBattles/packages/client/src/index.css)
+- **Where to find it:** Top navigation bar in both VTT and Brawl modes, mobile drawer navigation menu, and URL query parameters (`?mode=vtt` / `?mode=brawl`).
+
+#### Step-by-Step Instructions:
+
+1. **Verify Switching to Brawl Mode:**
+   - Open the web application (e.g. `http://localhost:3101` or `http://localhost:5173`).
+   - In VTT mode, look at the top navigation bar.
+   - Click the **Brawl** switch button (with swords icon).
+   - Observe that the page transitions into Brawl mode (`?mode=brawl`).
+
+2. **Verify Brawl Top Bar Visibility & Controls:**
+   - Verify that the **Old Bear Brawl** top bar is clearly visible, floating cleanly at the top of the screen (`floating-hud glass-panel`).
+   - Verify that the top bar displays:
+     - Hamburger menu button.
+     - Brand title: `Old Bear Brawl` with `WARGAME` badge.
+     - Switch button: **🐻 VTT**.
+     - Scene info: `Scene: Default Table` (or current map name).
+     - Round & Phase Stepper (e.g. `Round 1 | Command >`).
+     - Chess Clock Indicator (e.g. `P1: 90:00 / P2: 90:00`).
+     - Right-side action buttons: `VP: 0 - 0`, `Objectives`, `Deployment`, `TO / Admin`, `Army`, and player avatars.
+
+3. **Verify Switching Back to VTT Mode via Top Bar:**
+   - While in Brawl mode, click the **🐻 VTT** button in the top bar.
+   - Verify that the page reloads back into VTT mode.
+   - Reload the page without any query parameter (`http://localhost:3101/`).
+   - Verify that it stays in VTT mode because `localStorage.getItem('oldbear_mode')` was properly updated to `'vtt'`.
+
+4. **Verify Manual URL Query Mode Persistence:**
+   - In the browser URL bar, type `?mode=brawl` and hit enter.
+   - Verify Brawl mode loads and the top bar is displayed.
+   - In the URL bar, remove the query parameter (or change to `?mode=vtt`) and hit enter.
+   - Verify VTT mode loads and stays persisted in `localStorage`.
+
+5. **Verify Mobile Drawer Mode Switch:**
+   - Click the menu / hamburger button in either mode to open the drawer.
+   - Verify there is a full-width switch mode button (`Switch to Brawl Mode ⚔️` / `Switch to VTT Mode 🐻`) near the bottom of the drawer.
+   - Click it and verify seamless mode switching.
+
+#### Expected Result (Pass Criteria):
+- The Brawl mode top bar is prominently visible and completely styled as a floating HUD above the canvas.
+- Mode switching works bidirectionally (VTT to Brawl and Brawl to VTT).
+- The selected mode correctly persists in `localStorage` so users are never trapped in a mode.
