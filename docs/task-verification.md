@@ -1241,6 +1241,35 @@ This document provides step-by-step instructions for manually verifying all feat
 - Sheet defaults to the system-agnostic Local Character option rather than favoring D&D Beyond.
 - Third-party imports integrate directly into the unified local character data model.
 
+---
+
+### OB-220 - Touch Pinch-to-Zoom on Token Portrait Preview
+
+- **Reference in tasks.md:** [tasks.md: OB-220](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-220)
+- **Primary Source Code:** [TokenEditorModal.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/TokenEditorModal.tsx)
+- **Where to find it:** Token Editor modal portrait canvas preview (double click a token or click Edit Token).
+
+#### Step-by-Step Instructions:
+
+1. **Open Token Editor:**
+   - Double click a token on the battlemap or click "Edit Token" in the token controls HUD.
+   - Choose or upload an image portrait.
+2. **Test Touch Pinch-to-Zoom (Touch Device / DevTools Touch Emulation):**
+   - Open browser DevTools, switch to Device Mode / Touch Emulation (or open on a touch tablet/mobile).
+   - Pinch with two fingers over the circular/square portrait preview canvas.
+   - Verify that pinching zooms the portrait in/out smoothly between 0.5x and 4.0x.
+   - Verify that the browser page itself does NOT zoom or pan.
+3. **Test One-Finger Drag:**
+   - Drag with one finger on the canvas.
+   - Verify that the image pans smoothly inside the token frame without scrolling the modal or page.
+4. **Test Mouse Interaction:**
+   - On desktop, verify that mouse drag pans and mouse wheel zooms the portrait preview.
+
+#### Expected Result (Pass Criteria):
+- Two-finger pinch gestures zoom only the token portrait image, with browser page zoom gestures prevented.
+- One-finger drags pan the token portrait.
+
+
 
 
 

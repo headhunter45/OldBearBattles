@@ -242,49 +242,97 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
     setClipZoom((prev) => Math.max(0.5, Math.min(4.0, Number((prev + delta).toFixed(2)))));
   };
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
-    if (e.touches.length === 1) {
-      setIsDragging(true);
-      dragStartRef.current = {
-        x: e.touches[0].clientX,
-        y: e.touches[0].clientY,
-        panX: clipPanX,
-        panY: clipPanY,
-      };
-    } else if (e.touches.length === 2) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      touchDistRef.current = dist;
-      touchStartZoomRef.current = clipZoom;
-    }
-  };
+  const clipPanRef = useRef({ x: clipPanX, y: clipPanY });
+  const clipZoomRef = useRef(clipZoom);
+  useEffect(() => {
+    clipPanRef.current = { x: clipPanX, y: clipPanY };
+    clipZoomRef.current = clipZoom;
+  }, [clipPanX, clipPanY, clipZoom]);
 
-  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
-    if (e.touches.length === 1 && isDragging && dragStartRef.current) {
-      const r = (180 - 20) / 2;
-      const dx = e.touches[0].clientX - dragStartRef.current.x;
-      const dy = e.touches[0].clientY - dragStartRef.current.y;
-      const nextPanX = Math.round(Math.max(-100, Math.min(100, dragStartRef.current.panX + (dx / r) * 100)));
-      const nextPanY = Math.round(Math.max(-100, Math.min(100, dragStartRef.current.panY + (dy / r) * 100)));
-      setClipPanX(nextPanX);
-      setClipPanY(nextPanY);
-    } else if (e.touches.length === 2 && touchDistRef.current) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      const scale = dist / touchDistRef.current;
-      setClipZoom(Math.max(0.5, Math.min(4.0, Number((touchStartZoomRef.current * scale).toFixed(2)))));
-    }
-  };
+  // Touch and Pinch-Zoom handling with non-passive listeners to prevent browser page zoom (OB-220)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-    dragStartRef.current = null;
-    touchDistRef.current = null;
-  };
+    const onTouchStart = (e: TouchEvent) => {
+      e.preventDefault();
+      if (e.touches.length === 1) {
+        setIsDragging(true);
+        dragStartRef.current = {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY,
+          panX: clipPanRef.current.x,
+          panY: clipPanRef.current.y,
+        };
+      } else if (e.touches.length === 2) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        touchDistRef.current = dist;
+        touchStartZoomRef.current = clipZoomRef.current;
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+      if (e.touches.length === 1 && dragStartRef.current) {
+        const r = (180 - 20) / 2;
+        const dx = e.touches[0].clientX - dragStartRef.current.x;
+        const dy = e.touches[0].clientY - dragStartRef.current.y;
+        const nextPanX = Math.round(Math.max(-100, Math.min(100, dragStartRef.current.panX + (dx / r) * 100)));
+        const nextPanY = Math.round(Math.max(-100, Math.min(100, dragStartRef.current.panY + (dy / r) * 100)));
+        setClipPanX(nextPanX);
+        setClipPanY(nextPanY);
+      } else if (e.touches.length === 2 && touchDistRef.current) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        const scale = dist / touchDistRef.current;
+        setClipZoom(Math.max(0.5, Math.min(4.0, Number((touchStartZoomRef.current * scale).toFixed(2)))));
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      e.preventDefault();
+      if (e.touches.length === 0) {
+        setIsDragging(false);
+        dragStartRef.current = null;
+        touchDistRef.current = null;
+      } else if (e.touches.length === 1) {
+        touchDistRef.current = null;
+        dragStartRef.current = {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY,
+          panX: clipPanRef.current.x,
+          panY: clipPanRef.current.y,
+        };
+      }
+    };
+
+    const onGesture = (e: Event) => {
+      e.preventDefault();
+    };
+
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+    canvas.addEventListener('touchend', onTouchEnd, { passive: false });
+    canvas.addEventListener('touchcancel', onTouchEnd, { passive: false });
+    canvas.addEventListener('gesturestart', onGesture);
+    canvas.addEventListener('gesturechange', onGesture);
+    canvas.addEventListener('gestureend', onGesture);
+
+    return () => {
+      canvas.removeEventListener('touchstart', onTouchStart);
+      canvas.removeEventListener('touchmove', onTouchMove);
+      canvas.removeEventListener('touchend', onTouchEnd);
+      canvas.removeEventListener('touchcancel', onTouchEnd);
+      canvas.removeEventListener('gesturestart', onGesture);
+      canvas.removeEventListener('gesturechange', onGesture);
+      canvas.removeEventListener('gestureend', onGesture);
+    };
+  }, []);
 
   const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -570,15 +618,17 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
                 ref={canvasRef}
                 width={180}
                 height={180}
-                style={{ width: '100%', height: '100%', display: 'block' }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'block',
+                  touchAction: 'none',
+                }}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
                 onWheel={handleWheel}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
               />
               <div
                 style={{
