@@ -70,4 +70,36 @@ describe('BrawlTopBar Active Scene Settings (OB-209)', () => {
     assert.ok(markup.includes('Wargame Ruins'), 'Displays active scene name in Brawl');
     assert.ok(!markup.includes('title="Scene Settings"'), 'Does not render settings button for non-organizer');
   });
+
+  it('renders hamburger menu button with accent-primary background matching VTT (OB-223)', () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(BrawlTopBar, {
+        roomName: 'Test Room',
+        activeMapName: 'Wargame Ruins',
+        isOrganizer: true,
+        players: [],
+        localPlayer: null,
+        activePlayerIndex: 1,
+        currentRound: 1,
+        currentPhase: 'Command',
+        p1ClockSeconds: 300,
+        p2ClockSeconds: 300,
+        isClockRunning: false,
+        onToggleClock: () => {},
+        onNextPhase: () => {},
+        onSwitchActivePlayer: () => {},
+        onOpenArmyRoster: () => {},
+        onOpenDice: () => {},
+        onOpenMaps: () => {},
+        onOpenSceneSettings: () => {},
+        onOpenSoundboard: () => {},
+        onOpenBackup: () => {},
+        onAddNewModel: () => {},
+        onToggleMobileDrawer: () => {},
+      })
+    );
+
+    assert.ok(markup.includes('background-color:var(--accent-primary)'), 'Hamburger menu has accent-primary background');
+  });
 });
+

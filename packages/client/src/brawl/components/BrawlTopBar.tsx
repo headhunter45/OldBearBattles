@@ -124,8 +124,9 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
           onClick={onToggleMobileDrawer}
           title="Open Menu"
           aria-label="Open Menu"
+          style={{ backgroundColor: 'var(--accent-primary)', color: '#ffffff', flexShrink: 0 }}
         >
-          <Menu size={20} />
+          <Menu size={18} />
         </button>
 
         <div className="room-info" style={{ display: 'flex', flexDirection: 'column' }}>

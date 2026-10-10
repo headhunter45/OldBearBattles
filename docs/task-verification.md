@@ -1326,6 +1326,31 @@ This document provides step-by-step instructions for manually verifying all feat
 - Canvas rendering is razor-sharp with no blurriness or incorrect zoom stretch.
 - Ratio of tiles to pixels matches VTT mode.
 
+---
+
+### OB-223 - Hamburger Menu Styling Consistency (Brawl vs VTT)
+
+- **Reference in tasks.md:** [tasks.md: OB-223](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-223)
+- **Primary Source Code:** [BrawlTopBar.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/brawl/components/BrawlTopBar.tsx), [TopBar.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/TopBar.tsx)
+- **Where to find it:** Top navigation bar (far-left hamburger menu icon) in both VTT and Brawl modes.
+
+#### Step-by-Step Instructions:
+
+1. **Check Hamburger Menu Button in VTT Mode:**
+   - Navigate to `http://localhost:3000/?mode=vtt`.
+   - Inspect the hamburger menu button in the top left corner.
+   - Note the styling: bright accent purple background (`var(--accent-primary)`) with a crisp white icon.
+2. **Check Hamburger Menu Button in Brawl Mode:**
+   - Navigate to `http://localhost:3000/?mode=brawl`.
+   - Inspect the hamburger menu button in the top left corner.
+   - Verify that it now shares the identical bright accent purple background (`var(--accent-primary)`) and crisp white icon instead of blending dark into the background.
+3. **Verify Functionality:**
+   - Click the hamburger button in Brawl mode: verify it opens the mobile drawer menu normally.
+
+#### Expected Result (Pass Criteria):
+- Hamburger menu button in Brawl mode has consistent primary accent background and white icon styling matching VTT mode.
+
+
 
 
 

@@ -343,7 +343,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-220 | Pinch zoom doesn't work right on token portraits.                                                                                                                                                                                                                                                                                                                                                                                                                                    | Common         | Testing  | [Bug](#ob-220)     |
 | OB-221 | Make the ` or ~ key toggle the chat display like c togles the character sheet.                                                                                                                                                                                                                                                                                                                                                                                                       | Common         | Testing  | [Feature](#ob-221) |
 | OB-222 | The brawl map is very zoomed in and blury.                                                                                                                                                                                                                                                                                                                                                                                                                                           | Old Bear Brawl | Testing  | [Bug](#ob-222)     |
-| OB-223 | The hamburger menu is bright purple in vtt and dark like the backgournd color in brawl.                                                                                                                                                                                                                                                                                                                                                                                              | Old Bear Brawl | Ready    | [Bug](#ob-223)     |
+| OB-223 | The hamburger menu is bright purple in vtt and dark like the backgournd color in brawl.                                                                                                                                                                                                                                                                                                                                                                                              | Old Bear Brawl | Testing  | [Bug](#ob-223)     |
 
 ---
 
@@ -3514,18 +3514,17 @@ It should be at the same zoom level. i.e. the same ratio of tiels to pixels as v
 
 - [x]
 
-<a id="ob-223" class="task" data-project="brawl" data-status="ready" data-task-type="bug"></a>
+<a id="ob-223" class="task" data-project="brawl" data-status="testing" data-task-type="bug"></a>
 ### The hamburger menu is bright purple in vtt and dark like the backgournd color in brawl.
 **ID:** OB-223
 **Project:** Old Bear Brawl
-**Status:** Ready
+**Status:** Testing
 **Type:** Bug
-
 
 **Description:**
 Describe task objectives and implementation requirements here.
 
-- [ ]
+- [x]
 
 ---
 
