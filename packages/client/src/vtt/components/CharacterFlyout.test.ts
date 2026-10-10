@@ -204,4 +204,34 @@ describe('CharacterFlyout Unbound Token Reset (OB-207)', () => {
       'Displays full D&D Beyond URL for genuine numeric D&D Beyond ID'
     );
   });
+
+  it('renders Save to Database button when character is loaded and Save as Custom Character when unbound (OB-214)', () => {
+    // When character is loaded
+    const withCharMarkup = renderToStaticMarkup(
+      React.createElement(CharacterFlyout, {
+        player: mockPlayer,
+        targetToken: tokenWithCharacter,
+        onClose: () => {},
+      })
+    );
+
+    assert.ok(
+      withCharMarkup.includes('Save to Database'),
+      'Renders Save to Database button when character is loaded'
+    );
+
+    // When unbound token
+    const unboundMarkup = renderToStaticMarkup(
+      React.createElement(CharacterFlyout, {
+        player: mockPlayer,
+        targetToken: unboundToken,
+        onClose: () => {},
+      })
+    );
+
+    assert.ok(
+      unboundMarkup.includes('Save as Custom Character'),
+      'Renders Save as Custom Character button when viewing unbound token'
+    );
+  });
 });

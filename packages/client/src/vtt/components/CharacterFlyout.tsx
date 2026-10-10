@@ -25,7 +25,9 @@ import {
   Edit2,
   Upload,
   User,
-  Zap
+  Zap,
+  Save,
+  Check
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { DraggableWindowTitleBar } from '../../common/components/DraggableWindow.js';
@@ -250,6 +252,60 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
 
   const refreshSavedCharacters = () => {
     setSavedCharacters(getSavedCharacters(isGm));
+  };
+
+  const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
+
+  const handleSaveCurrentCharacter = () => {
+    if (!character) return;
+    saveCharacterToStorage(character, isGm);
+    refreshSavedCharacters();
+    onUpdatePlayerChar?.(character);
+    if (targetToken && onSyncToken) {
+      onSyncToken(targetToken.id, {
+        character,
+        name: character.name,
+        currentHp: character.currentHp,
+        maxHp: character.maxHp,
+      });
+    }
+    setSaveFeedback(`Saved ${character.name} to database!`);
+    setTimeout(() => setSaveFeedback(null), 3000);
+  };
+
+  const handleSaveCustomCharacter = () => {
+    const name = targetToken?.name || 'Custom Character';
+    const customChar: DnDCharacter = {
+      id: `custom_${Date.now()}`,
+      name,
+      currentHp: localHp,
+      maxHp: localMaxHp,
+      tempHp: 0,
+      armorClass: targetToken?.ac ?? 10,
+      speed: targetToken?.speed ?? 30,
+      avatarUrl: targetToken?.imageUrl || '',
+      race: 'Custom',
+      classes: 'Custom',
+      level: 1,
+      stats: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+      actions: targetToken?.actions || [],
+      spells: targetToken?.spells || [],
+      spellSlots: {},
+    };
+    setCharacter(customChar);
+    saveCharacterToStorage(customChar, isGm);
+    refreshSavedCharacters();
+    onUpdatePlayerChar?.(customChar);
+    if (targetToken && onSyncToken) {
+      onSyncToken(targetToken.id, {
+        character: customChar,
+        name: customChar.name,
+        currentHp: customChar.currentHp,
+        maxHp: customChar.maxHp,
+      });
+    }
+    setSaveFeedback(`Saved ${name} to database!`);
+    setTimeout(() => setSaveFeedback(null), 3000);
   };
 
   const syncToToken = (char: DnDCharacter, tokenId?: string) => {
@@ -867,6 +923,25 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
               {error}
             </div>
           )}
+
+          {saveFeedback && (
+            <div
+              style={{
+                backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                border: '1px solid #22c55e',
+                color: '#22c55e',
+                padding: '0.4rem 0.6rem',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.75rem',
+                marginTop: '0.4rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <Check size={14} /> {saveFeedback}
+            </div>
+          )}
         </div>
 
         {/* Sheet Content */}
@@ -1016,6 +1091,24 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
                     {character.race} • {character.classes}
                   </div>
                 </div>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleSaveCurrentCharacter}
+                  style={{
+                    fontSize: '0.75rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    padding: '0.4rem 0.65rem',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                  }}
+                  title="Save character to local database"
+                >
+                  <Save size={13} />
+                  <span>Save to Database</span>
+                </button>
               </div>
 
               {/* Currency Bar (Bug #51) */}
@@ -2218,6 +2311,27 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
                 </div>
               </div>
 
+              <div style={{ marginTop: '0.75rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleSaveCustomCharacter}
+                  style={{
+                    fontSize: '0.75rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    width: '100%',
+                    padding: '0.45rem 0.85rem',
+                  }}
+                  title="Save this token as a custom character to your database"
+                >
+                  <Save size={14} />
+                  <span>Save as Custom Character</span>
+                </button>
+              </div>
+
               {/* Standalone Token Attacks (OB-200) */}
               {targetToken && (
                 <div style={{ marginTop: '1.25rem' }}>
@@ -2924,13 +3038,23 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
               borderTop: '1px solid var(--border-subtle)',
             }}
           >
-            <button
-              className="btn btn-primary"
-              style={{ width: '100%' }}
-              onClick={handleSyncToToken}
-            >
-              <RefreshCw size={14} /> Sync with Token ({targetToken.name})
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                className="btn btn-primary"
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                onClick={handleSyncToToken}
+              >
+                <RefreshCw size={14} /> Sync with Token ({targetToken.name})
+              </button>
+              <button
+                className="btn btn-secondary"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                onClick={character ? handleSaveCurrentCharacter : handleSaveCustomCharacter}
+                title="Save character to database"
+              >
+                <Save size={14} /> Save
+              </button>
+            </div>
             <div
               style={{
                 fontSize: '0.7rem',
@@ -2948,11 +3072,30 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
               padding: '0.75rem 1rem',
               borderTop: '1px solid var(--border-subtle)',
               fontSize: '0.75rem',
-              color: 'var(--text-muted)',
-              textAlign: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.5rem',
             }}
           >
-            Select a token on the map to sync this character to it.
+            <span style={{ color: 'var(--text-muted)' }}>
+              Select a token on the map to sync this character to it.
+            </span>
+            {character && (
+              <button
+                className="btn btn-secondary"
+                style={{
+                  fontSize: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  whiteSpace: 'nowrap',
+                }}
+                onClick={handleSaveCurrentCharacter}
+              >
+                <Save size={13} /> Save to Database
+              </button>
+            )}
           </div>
         )}
       </div>

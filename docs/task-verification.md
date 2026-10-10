@@ -1094,4 +1094,34 @@ This document provides step-by-step instructions for manually verifying all feat
 - Creating a token and inspecting its character sheet leaves the D&D Beyond URL input field clean and empty.
 - Internal token IDs and non-D&D Beyond identifiers never leak into the online character URL field.
 
+---
+
+### OB-214 - Save Custom Characters and Tokens to Local Database
+
+- **Reference in tasks.md:** [tasks.md: OB-214](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-214)
+- **Primary Source Code:** [CharacterFlyout.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/vtt/components/CharacterFlyout.tsx), [characterStorage.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/vtt/storage/characterStorage.ts)
+- **Where to find it:** Character Sheet Flyout / Draggable Window (`c` key or Character icon on toolbar).
+
+#### Step-by-Step Instructions:
+
+1. **Save Loaded Character to Database:**
+   - Open the Character Sheet (`c` key or Character icon on the toolbar).
+   - Load or import a character (e.g. click "Click here to test with Demo Character").
+   - In the Profile Overview header (next to the character name and class), verify the **Save to Database** button is present with a disk/save icon.
+   - Click **Save to Database**: verify a green feedback badge appears reading `Saved [Character Name] to database!`.
+   - Also check the bottom footer of the Character Sheet window: verify a **Save** button is present next to the **Sync with Token** button.
+   - Close and re-open the character sheet with no token selected: verify the saved character appears in the **SELECT FROM SAVED CHARACTERS** list.
+
+2. **Save Unbound / Custom Token as Custom Character:**
+   - On the battlemap, spawn or select an unbound token that does not have a linked character sheet (e.g. a placed monster or generic fighter token).
+   - Open the Character Sheet (`c` key).
+   - In the manual HP tracking card, verify the **Save as Custom Character** button is present.
+   - Click **Save as Custom Character**: verify a success alert appears, the token's HP, AC, speed, and any standalone attacks are saved into a new `DnDCharacter` in the local database.
+   - Verify the Character Sheet immediately switches to the full character view displaying the newly saved character.
+
+#### Expected Result (Pass Criteria):
+- Characters currently opened in the character sheet can be saved directly to the database via explicit **Save to Database** buttons in both the header and footer.
+- Unbound tokens with HP and actions can be converted and saved directly as custom characters in the database via **Save as Custom Character**.
+
+
 
