@@ -1026,3 +1026,42 @@ This document provides step-by-step instructions for manually verifying all feat
 #### Expected Result (Pass Criteria):
 - Open5EFetcher queries `https://api.open5e.com/v2/` endpoints (`spells`, `creatures`, `magicitems`, `items`, `weapons`, `armor`) with graceful v1 fallback.
 - Reference statblocks parse nested v2 object shapes correctly.
+
+---
+
+### OB-212 - Compendium Source Filter & System Variants (2014 vs 2024, PF2, SF2, PF1, SF1)
+
+#### Pre-requisites:
+- Run `npm run dev` and open the VTT client in a browser tab.
+
+#### Steps:
+1. **Open Table Chat:**
+   - Click the chat icon on the left floating toolbar.
+
+2. **Query 2024 vs 2014 Ruleset Variants:**
+   - In chat, type `/spell? 2024 magic missile` and press Enter.
+   - Verify the spell card appears with the `• 2024 Rules` tag or description.
+   - In chat, type `/spell? 2014 magic missile` (or `/spell? [2014] magic missile`).
+   - Verify the card appears with the `• 2014 Rules` tag or description.
+
+3. **Query Pathfinder 2e Variant:**
+   - In chat, type `/spell? pf2 heal` (or `/spell? [pf2] heal`).
+   - Verify the spell card loads from the PF2e compendium with 3-action economy glyphs (`[1A]`, `[2A]`, `[3A]`).
+
+4. **Verify Stubbed Backends Graceful Notice (PF1, SF1, SF2):**
+   - In chat, type `/spell? pf1 magic missile`.
+   - Verify an informational notice appears: `ℹ️ Pathfinder 1e (OGL 3.5) backend compendium API is currently in development...` without throwing errors or crashing.
+   - In chat, type `/item? sf1 laser rifle`.
+   - Verify an informational notice appears explaining Starfinder 1e compendium is in development.
+   - In chat, type `/attack? sf2 plasma cannon`.
+   - Verify an informational notice appears explaining Starfinder 2e compendium is in development.
+
+5. **Verify Default Resolution (No System Specified):**
+   - In chat, type `/spell? fireball`.
+   - Verify it checks the active character sheet first, then queries the general compendium database (5e), with PF2e fallback.
+
+#### Expected Result (Pass Criteria):
+- Info commands (`/spell?`, `/item?`, `/monster?`, `/attack?`) support prefix tags (`[2024]`, `pf2:`, `-s 2024`, `2024 fireball`).
+- 2014 vs 2024 SRD documents are correctly targeted.
+- Stubbed backends (PF1, SF1, SF2) fail gracefully with informative notifications.
+

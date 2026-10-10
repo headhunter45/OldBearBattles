@@ -41,6 +41,10 @@ import {
 import { DraggableWindowTitleBar, WindowResizeHandle } from './DraggableWindow.js';
 import { StatBlockCard } from './StatBlockCard.js';
 import { useChatHistory } from './useChatHistory.js';
+import {
+  parseCompendiumQuery,
+  fetchCompendiumEntry,
+} from '../utils/compendiumResolver.js';
 
 export interface ChatPanelProps {
   player: Player;
@@ -463,7 +467,7 @@ export function processSlashCommand(
         return true;
       }
 
-      // 3a. /attack? [name or index] - Inspection mode (OB-180, OB-181)
+      // 3a. /attack? [name or index] - Inspection mode (OB-180, OB-181, OB-212)
       if (cmd === 'attack?' || (cmd === 'attack' && args[0] === '?')) {
         const queryArgs = cmd === 'attack?' ? args : args.slice(1);
         const attackQuery = queryArgs.join(' ').trim();
@@ -490,30 +494,49 @@ export function processSlashCommand(
           return true;
         }
 
+        const parsed = parseCompendiumQuery(attackQuery);
         let found: DnDAction | undefined;
-        const numIdx = parseInt(attackQuery, 10);
-        if (!isNaN(numIdx) && String(numIdx) === attackQuery && numIdx >= 1 && numIdx <= availableAttacks.length) {
-          found = availableAttacks[numIdx - 1];
-        } else {
-          found = availableAttacks.find((a) =>
-            a.name.toLowerCase().includes(attackQuery.toLowerCase())
-          );
+
+        if (!parsed.system) {
+          const numIdx = parseInt(attackQuery, 10);
+          if (!isNaN(numIdx) && String(numIdx) === attackQuery && numIdx >= 1 && numIdx <= availableAttacks.length) {
+            found = availableAttacks[numIdx - 1];
+          } else {
+            found = availableAttacks.find((a) =>
+              a.name.toLowerCase().includes(attackQuery.toLowerCase())
+            );
+          }
         }
 
-        if (!found) {
-          sendPrivateSystemMessage(
-            `Could not find attack matching "${attackQuery}".`,
-            'System',
-            '#f43f5e'
-          );
+        if (found) {
+          const statBlock = convertDnDActionToEntityAction(found, '5e');
+          sendPrivateInfoMessage(statBlock, {
+            tokenId: associatedToken?.id,
+            tokenName: associatedToken?.name,
+            tokenImageUrl: associatedToken?.imageUrl,
+          });
           return true;
         }
 
-        const statBlock = convertDnDActionToEntityAction(found, '5e');
-        sendPrivateInfoMessage(statBlock, {
-          tokenId: associatedToken?.id,
-          tokenName: associatedToken?.name,
-          tokenImageUrl: associatedToken?.imageUrl,
+        // Compendium lookup fallback for weapon/attack reference (OB-212, OB-217)
+        fetchCompendiumEntry('attack', parsed.cleanQuery, parsed.system).then((res) => {
+          if (res.systemNotice) {
+            sendPrivateSystemMessage(res.systemNotice, 'Compendium Variant', '#8b5cf6');
+            return;
+          }
+          if (res.block) {
+            sendPrivateInfoMessage(res.block, {
+              tokenId: associatedToken?.id,
+              tokenName: associatedToken?.name,
+              tokenImageUrl: associatedToken?.imageUrl,
+            });
+            return;
+          }
+          sendPrivateSystemMessage(
+            `Could not find attack matching "${attackQuery}"${parsed.system ? ` in ${parsed.system}` : ''}.`,
+            'System',
+            '#f43f5e'
+          );
         });
         return true;
       }
@@ -625,7 +648,7 @@ export function processSlashCommand(
         return true;
       }
 
-      // 4a. /spell? [name or index] - Inspection mode (OB-180, OB-181, OB-141)
+      // 4a. /spell? [name or index] - Inspection mode (OB-180, OB-181, OB-141, OB-212)
       if (cmd === 'spell?' || (cmd === 'spell' && args[0] === '?')) {
         const queryArgs = cmd === 'spell?' ? args : args.slice(1);
         const spellQuery = queryArgs.join(' ').trim();
@@ -634,7 +657,7 @@ export function processSlashCommand(
         if (!spellQuery) {
           if (availableSpells.length === 0) {
             sendPrivateSystemMessage(
-              'Usage: `/spell? <name>`\nInspects a spell from your sheet or reference database (e.g. `/spell? magic-missile`, `/spell? fireball`).',
+              'Usage: `/spell? <name>`\nInspects a spell from your sheet or reference database (e.g. `/spell? magic-missile`, `/spell? 2024 fireball`, `/spell? pf2 heal`).',
               'Spell Inspection'
             );
             return true;
@@ -648,51 +671,47 @@ export function processSlashCommand(
           return true;
         }
 
-        // 1. Check character sheet
-        let found: DnDSpell | undefined;
-        const numIdx = parseInt(spellQuery, 10);
-        if (!isNaN(numIdx) && String(numIdx) === spellQuery && numIdx >= 1 && numIdx <= availableSpells.length) {
-          found = availableSpells[numIdx - 1];
-        } else {
-          found = availableSpells.find((s) =>
-            s.name.toLowerCase().includes(spellQuery.toLowerCase())
-          );
+        const parsed = parseCompendiumQuery(spellQuery);
+
+        // 1. Check character sheet if no specific external system requested
+        if (!parsed.system) {
+          let found: DnDSpell | undefined;
+          const numIdx = parseInt(spellQuery, 10);
+          if (!isNaN(numIdx) && String(numIdx) === spellQuery && numIdx >= 1 && numIdx <= availableSpells.length) {
+            found = availableSpells[numIdx - 1];
+          } else {
+            found = availableSpells.find((s) =>
+              s.name.toLowerCase().includes(spellQuery.toLowerCase())
+            );
+          }
+
+          if (found) {
+            const statBlock = convertDnDSpellToEntityAction(found, '5e');
+            sendPrivateInfoMessage(statBlock, {
+              tokenId: associatedToken?.id,
+              tokenName: associatedToken?.name,
+              tokenImageUrl: associatedToken?.imageUrl,
+            });
+            return true;
+          }
         }
 
-        if (found) {
-          const statBlock = convertDnDSpellToEntityAction(found, '5e');
-          sendPrivateInfoMessage(statBlock, {
-            tokenId: associatedToken?.id,
-            tokenName: associatedToken?.name,
-            tokenImageUrl: associatedToken?.imageUrl,
-          });
-          return true;
-        }
-
-        // 2. Fetch from Open5e reference, with PF2e fallback
-        fetchOpen5eSpell(spellQuery).then(async (open5eBlock) => {
-          if (open5eBlock) {
-            sendPrivateInfoMessage(open5eBlock, {
+        // 2. Fetch from compendium entry resolver with variant support
+        fetchCompendiumEntry('spell', parsed.cleanQuery, parsed.system).then((res) => {
+          if (res.systemNotice) {
+            sendPrivateSystemMessage(res.systemNotice, 'Compendium Variant', '#8b5cf6');
+            return;
+          }
+          if (res.block) {
+            sendPrivateInfoMessage(res.block, {
               tokenId: associatedToken?.id,
               tokenName: associatedToken?.name,
               tokenImageUrl: associatedToken?.imageUrl,
             });
             return;
           }
-
-          // Fallback to PF2e reference
-          const pf2eBlock = await fetchPF2eReference('spell', spellQuery);
-          if (pf2eBlock) {
-            sendPrivateInfoMessage(pf2eBlock, {
-              tokenId: associatedToken?.id,
-              tokenName: associatedToken?.name,
-              tokenImageUrl: associatedToken?.imageUrl,
-            });
-            return;
-          }
-
           sendPrivateSystemMessage(
-            `Could not find spell matching "${spellQuery}" on sheet, Open5e, or PF2e database.`,
+            `Could not find spell matching "${parsed.cleanQuery}"${parsed.system ? ` in ${parsed.system}` : ' on sheet, Open5e, or PF2e database'}.`,
             'System',
             '#f43f5e'
           );
@@ -930,51 +949,47 @@ export function processSlashCommand(
           return true;
         }
 
-        // 1. Check character inventory
-        let found: typeof availableItems[0] | undefined;
-        const numIdx = parseInt(itemQuery, 10);
-        if (!isNaN(numIdx) && String(numIdx) === itemQuery && numIdx >= 1 && numIdx <= availableItems.length) {
-          found = availableItems[numIdx - 1];
-        } else {
-          found = availableItems.find((it) =>
-            it.name.toLowerCase().includes(itemQuery.toLowerCase())
-          );
+        const parsed = parseCompendiumQuery(itemQuery);
+
+        // 1. Check character inventory if no specific external system requested
+        if (!parsed.system) {
+          let found: typeof availableItems[0] | undefined;
+          const numIdx = parseInt(itemQuery, 10);
+          if (!isNaN(numIdx) && String(numIdx) === itemQuery && numIdx >= 1 && numIdx <= availableItems.length) {
+            found = availableItems[numIdx - 1];
+          } else {
+            found = availableItems.find((it) =>
+              it.name.toLowerCase().includes(itemQuery.toLowerCase())
+            );
+          }
+
+          if (found) {
+            const statBlock = convertDnDItemToEntityAction(found, '5e');
+            sendPrivateInfoMessage(statBlock, {
+              tokenId: associatedToken?.id,
+              tokenName: associatedToken?.name,
+              tokenImageUrl: associatedToken?.imageUrl,
+            });
+            return true;
+          }
         }
 
-        if (found) {
-          const statBlock = convertDnDItemToEntityAction(found, '5e');
-          sendPrivateInfoMessage(statBlock, {
-            tokenId: associatedToken?.id,
-            tokenName: associatedToken?.name,
-            tokenImageUrl: associatedToken?.imageUrl,
-          });
-          return true;
-        }
-
-        // 2. Fetch from Open5e reference, with PF2e fallback
-        fetchOpen5eItem(itemQuery).then(async (open5eBlock) => {
-          if (open5eBlock) {
-            sendPrivateInfoMessage(open5eBlock, {
+        // 2. Fetch from compendium resolver with variant support
+        fetchCompendiumEntry('item', parsed.cleanQuery, parsed.system).then((res) => {
+          if (res.systemNotice) {
+            sendPrivateSystemMessage(res.systemNotice, 'Compendium Variant', '#8b5cf6');
+            return;
+          }
+          if (res.block) {
+            sendPrivateInfoMessage(res.block, {
               tokenId: associatedToken?.id,
               tokenName: associatedToken?.name,
               tokenImageUrl: associatedToken?.imageUrl,
             });
             return;
           }
-
-          // Fallback to PF2e reference
-          const pf2eBlock = await fetchPF2eReference('item', itemQuery);
-          if (pf2eBlock) {
-            sendPrivateInfoMessage(pf2eBlock, {
-              tokenId: associatedToken?.id,
-              tokenName: associatedToken?.name,
-              tokenImageUrl: associatedToken?.imageUrl,
-            });
-            return;
-          }
-
           sendPrivateSystemMessage(
-            `Could not find item matching "${itemQuery}" in inventory, Open5e, or PF2e database.`,
+            `Could not find item matching "${parsed.cleanQuery}"${parsed.system ? ` in ${parsed.system}` : ' in inventory, Open5e, or PF2e database'}.`,
             'System',
             '#f43f5e'
           );
@@ -1107,35 +1122,36 @@ export function processSlashCommand(
           return true;
         }
 
-        // 1. Check scene tokens
-        const matchedToken = (context.tokens || []).find((t) =>
-          t.name.toLowerCase().includes(monsterQuery.toLowerCase())
-        );
-        if (matchedToken) {
-          const char = (matchedToken as any).customProps?.character || matchedToken.character;
-          if (char) {
-            const statBlock = convertCharacterToMonsterStatBlock(char, '5e');
-            statBlock.name = matchedToken.name;
-            sendPrivateInfoMessage(statBlock);
-            return true;
+        const parsed = parseCompendiumQuery(monsterQuery);
+
+        // 1. Check scene tokens if no specific external system requested
+        if (!parsed.system) {
+          const matchedToken = (context.tokens || []).find((t) =>
+            t.name.toLowerCase().includes(monsterQuery.toLowerCase())
+          );
+          if (matchedToken) {
+            const char = (matchedToken as any).customProps?.character || matchedToken.character;
+            if (char) {
+              const statBlock = convertCharacterToMonsterStatBlock(char, '5e');
+              statBlock.name = matchedToken.name;
+              sendPrivateInfoMessage(statBlock);
+              return true;
+            }
           }
         }
 
-        // 2. Query Open5e monsters, with PF2e fallback
-        fetchOpen5eMonster(monsterQuery).then(async (open5eBlock) => {
-          if (open5eBlock) {
-            sendPrivateInfoMessage(open5eBlock);
+        // 2. Query compendium resolver with variant support
+        fetchCompendiumEntry('monster', parsed.cleanQuery, parsed.system).then((res) => {
+          if (res.systemNotice) {
+            sendPrivateSystemMessage(res.systemNotice, 'Compendium Variant', '#8b5cf6');
             return;
           }
-
-          const pf2eBlock = await fetchPF2eReference('monster', monsterQuery);
-          if (pf2eBlock) {
-            sendPrivateInfoMessage(pf2eBlock);
+          if (res.block) {
+            sendPrivateInfoMessage(res.block);
             return;
           }
-
           sendPrivateSystemMessage(
-            `Could not find monster matching "${monsterQuery}" on canvas, Open5e, or PF2e database.`,
+            `Could not find monster matching "${parsed.cleanQuery}"${parsed.system ? ` in ${parsed.system}` : ' on canvas, Open5e, or PF2e database'}.`,
             'System',
             '#f43f5e'
           );

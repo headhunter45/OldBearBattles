@@ -224,10 +224,37 @@ To avoid taking on too much at once, tasks are structured into sequential, self-
 
 ---
 
-## 7. Next Steps for Next Session
-
-When starting the next session:
+## 7. Next Steps & Active Implementation
 
 1. Read this document (`docs/system-agnostic-import.md`) to load full context.
 2. Review the updated task list in `Tasks.md`.
-3. Begin with **OB-179** (Chat history cycle) and **OB-140** (Universal drag-and-drop with confirmation modal).
+
+---
+
+## 8. Multi-System Variant Filtering & Compendium Backends (OB-212)
+
+Tabletop campaigns often operate with specific rule systems or revisions (such as D&D 5e 2014 vs D&D 5e 2024, Pathfinder 2e, Starfinder 2e, Pathfinder 1e, or Starfinder 1e). All info inspection commands (`/spell?`, `/attack?`, `/item?`, `/monster?`, `/ability?`) support targeted variant prefixes and flags:
+
+- **Bracket / Paren Syntax:** `/spell? [2024] fireball`, `/item? (pf2) healing potion`
+- **Colon Syntax:** `/spell? 2024:fireball`, `/item? pf2:healing-potion`
+- **Flag Syntax:** `/spell? -s 2024 fireball`, `/spell? --system pf2 heal`
+- **Leading Keyword:** `/spell? 2024 fireball`, `/spell? 2014 magic missile`, `/item? pf2 greatsword`
+
+### 8.1 Backend Status Matrix
+
+| System Identifier | Ruleset | Status | Backend Provider |
+| :--- | :--- | :--- | :--- |
+| `5e-2014` / `2014` / `5e` | D&D 5e 2014 SRD 5.1 | **Active** | Open5e v2 API (`srd-2014`) |
+| `5e-2024` / `2024` | D&D 5e 2024 SRD 5.2 | **Active** | Open5e v2 API (`srd-2024`) |
+| `pf2` / `pf2e` | Pathfinder 2nd Edition | **Active** | Foundry VTT PF2e Compendium Packs |
+| `a5e` | Level Up: Advanced 5e | **Active** | Open5e v2 API (`a5e-ag`) |
+| `sf2` / `sf2e` | Starfinder 2nd Edition | **Stubbed** | Paizo / Foundry SF2e pack API (stubbed graceful notice) |
+| `pf1` / `pf1e` | Pathfinder 1st Edition | **Stubbed** | OGL 3.5 / d20pfsrd compendium API (stubbed graceful notice) |
+| `sf1` / `sf1e` | Starfinder 1st Edition | **Stubbed** | SF1 compendium API (stubbed graceful notice) |
+
+### 8.2 Fallback Resolution Priority
+When no system variant is explicitly passed:
+1. Check active controllable token or linked character sheet for matching action/spell/item.
+2. Query Open5e API v2 (standard 5e database).
+3. Fallback to Pathfinder 2e compendium database.
+4. If not found or if a stubbed backend was requested, display a clean informational notice.
