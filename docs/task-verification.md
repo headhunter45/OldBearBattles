@@ -1299,6 +1299,34 @@ This document provides step-by-step instructions for manually verifying all feat
 - Pressing ` or ~ toggles the chat panel open or closed.
 - Pressing Escape while in the chat textbox blurs the textbox, allowing subsequent hotkeys to close the chat.
 
+---
+
+### OB-222 - Fix Brawl Map Canvas Scaling and Blur (Same Zoom Ratio as VTT)
+
+- **Reference in tasks.md:** [tasks.md: OB-222](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-222)
+- **Primary Source Code:** [AppBrawl.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/brawl/AppBrawl.tsx)
+- **Where to find it:** Old Bear Brawl game mode (`?mode=brawl`).
+
+#### Step-by-Step Instructions:
+
+1. **Open Brawl Mode:**
+   - In browser, navigate to `http://localhost:3000/?mode=brawl`.
+2. **Verify Canvas Sharpness and Pixel Density:**
+   - Observe the battlemap grid and terrain lines.
+   - Verify that the battlemap is crisp and high-resolution, not blurry or upscaled from 300x150.
+3. **Verify Zoom Ratio Matching VTT:**
+   - Switch back and forth between VTT mode (`?mode=vtt`) and Brawl mode (`?mode=brawl`).
+   - Verify that the ratio of tiles to screen pixels is consistent, and the map camera frames the battlefield correctly on load.
+4. **Resize Browser Window:**
+   - Resize the browser window.
+   - Verify the canvas buffer updates to match viewport dimensions immediately without stretching or distorting.
+
+#### Expected Result (Pass Criteria):
+- Brawl mode canvas matches full browser window resolution.
+- Canvas rendering is razor-sharp with no blurriness or incorrect zoom stretch.
+- Ratio of tiles to pixels matches VTT mode.
+
+
 
 
 

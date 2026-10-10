@@ -427,7 +427,17 @@ export const AppBrawl: React.FC = () => {
   // Initialize CanvasEngine & Network
   useEffect(() => {
     if (!canvasRef.current) return;
-    const engine = new CanvasEngine(canvasRef.current);
+    const canvas = canvasRef.current;
+
+    // Resize to fit viewport matching VTT mode (OB-222)
+    const handleResize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    const engine = new CanvasEngine(canvas);
     engineRef.current = engine;
 
     engine.callbacks = {
@@ -556,6 +566,7 @@ export const AppBrawl: React.FC = () => {
     network.connect(currentRoomId, initialPlayerName, '#f59e0b', '');
 
     return () => {
+      window.removeEventListener('resize', handleResize);
       engine.destroy();
       network.disconnect();
     };
