@@ -121,6 +121,10 @@ export class CanvasEngine {
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
+    if (this.canvas.tabIndex === undefined || this.canvas.tabIndex < 0) {
+      this.canvas.tabIndex = 0;
+      this.canvas.style.outline = 'none';
+    }
     this.ctx = canvas.getContext('2d', { alpha: false })!;
     this.viewport = new Viewport(100, 100, 1.0);
     this.fogRenderer = new FogRenderer();
@@ -720,6 +724,23 @@ export class CanvasEngine {
   // --- Pointer & Touch Interaction ---
 
   private onPointerDown = (e: PointerEvent) => {
+    // Blur any active input/textarea when clicking the canvas so hotkeys work immediately (OB-218)
+    if (
+      typeof document !== 'undefined' &&
+      document.activeElement &&
+      document.activeElement !== (this.canvas as any)
+    ) {
+      const el = document.activeElement as any;
+      if (
+        el.tagName === 'INPUT' ||
+        el.tagName === 'TEXTAREA' ||
+        el.isContentEditable
+      ) {
+        el.blur?.();
+      }
+    }
+    this.canvas.focus?.({ preventScroll: true });
+
     e.preventDefault();
     this.canvas.setPointerCapture(e.pointerId);
 

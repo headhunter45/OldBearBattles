@@ -6,6 +6,7 @@ import {
   TRACKPAD_ZOOM_SENSITIVITY,
   MOUSE_WHEEL_ZOOM_SENSITIVITY,
   computeRelativeDragPosition,
+  CanvasEngine,
 } from './CanvasEngine.js';
 
 describe('CanvasEngine', () => {
@@ -192,5 +193,75 @@ describe('CanvasEngine', () => {
       assert.strictEqual(movedB.x - newPosA.x, tokenB.x - tokenA.x);
       assert.strictEqual(movedC.y - newPosA.y, tokenC.y - tokenA.y);
     });
+  });
+
+  it('blurs active input elements and focuses canvas on pointerdown (OB-218)', () => {
+    let blurred = false;
+    let canvasFocused = false;
+    const mockInput: any = {
+      tagName: 'INPUT',
+      blur: () => {
+        blurred = true;
+      },
+    };
+    // Make instanceof HTMLElement work in Node test env
+    Object.setPrototypeOf(mockInput, (globalThis as any).HTMLElement?.prototype || Object.prototype);
+
+    const mockCanvas: any = {
+      getContext: () => ({}),
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      setPointerCapture: () => {},
+      focus: () => {
+        canvasFocused = true;
+      },
+      style: {},
+    };
+    Object.setPrototypeOf(mockCanvas, (globalThis as any).HTMLElement?.prototype || Object.prototype);
+
+    const prevDoc = (globalThis as any).document;
+    const prevWin = (globalThis as any).window;
+    const prevRaf = (globalThis as any).requestAnimationFrame;
+    const prevCaf = (globalThis as any).cancelAnimationFrame;
+
+    (globalThis as any).requestAnimationFrame = (cb: any) => 0;
+    (globalThis as any).cancelAnimationFrame = () => {};
+
+    (globalThis as any).document = {
+      activeElement: mockInput,
+      createElement: () => ({
+        getContext: () => ({}),
+        width: 100,
+        height: 100,
+      }),
+    };
+    (globalThis as any).window = {
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      innerWidth: 1920,
+      innerHeight: 1080,
+    };
+
+    const engine = new CanvasEngine(mockCanvas);
+    assert.strictEqual(mockCanvas.tabIndex, 0, 'Canvas has tabIndex 0 to be focusable');
+
+    let prevented = false;
+    (engine as any).onPointerDown({
+      preventDefault: () => {
+        prevented = true;
+      },
+      pointerId: 1,
+      clientX: 100,
+      clientY: 100,
+    });
+
+    (globalThis as any).document = prevDoc;
+    (globalThis as any).window = prevWin;
+    (globalThis as any).requestAnimationFrame = prevRaf;
+    (globalThis as any).cancelAnimationFrame = prevCaf;
+
+    assert.strictEqual(blurred, true, 'Active input is blurred on canvas click');
+    assert.strictEqual(canvasFocused, true, 'Canvas is focused on click');
+    assert.strictEqual(prevented, true, 'Pointerdown prevents default browser drag');
   });
 });

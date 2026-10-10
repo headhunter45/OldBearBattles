@@ -2182,6 +2182,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         e.preventDefault();
         setInputText(draft);
         resetNavigation();
+      } else {
+        e.currentTarget.blur();
       }
     }
   };

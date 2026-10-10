@@ -1183,6 +1183,35 @@ This document provides step-by-step instructions for manually verifying all feat
 - Using `/attack? <weapon>` when the attack is not present on the character or token queries the Open5e and PF2e compendiums.
 - Weapon stat block displays damage formula, damage type, reach/range, and allows adding to sheet/attacks.
 
+---
+
+### OB-218 - Chat Textbox Loses Focus on Outside Click / Canvas Selection
+
+- **Reference in tasks.md:** [tasks.md: OB-218](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-218)
+- **Primary Source Code:** [CanvasEngine.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/engine/CanvasEngine.ts), [ChatPanel.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/ChatPanel.tsx)
+- **Where to find it:** Chat Panel message input and battlemap canvas.
+
+#### Step-by-Step Instructions:
+
+1. **Focus Chat Textbox:**
+   - Open Chat Panel and click inside the text input box so the cursor is blinking in it.
+2. **Click Canvas / Token:**
+   - Click directly onto the battlemap canvas or click on any token on the board.
+   - Verify that the chat text input immediately blurs (cursor disappears).
+3. **Verify Canvas Focus and Hotkeys:**
+   - Press canvas hotkeys such as `w`, `a`, `s`, `d` (or arrow keys) to pan, `[` / `]` to change fog brush size (if GM in fog tool), or token movement keys.
+   - Verify hotkeys execute immediately without characters being typed into the chat input.
+4. **Escape Key in Chat Input:**
+   - Click back into the chat text input.
+   - Press `Escape`.
+   - Verify that pressing `Escape` blurs the chat input without needing mouse interaction.
+
+#### Expected Result (Pass Criteria):
+- Clicking any token or canvas area immediately blurs active text inputs and focuses the canvas.
+- Canvas hotkeys work immediately upon clicking the board without requiring selecting text elsewhere.
+- Pressing `Escape` in the chat input blurs the input.
+
+
 
 
 

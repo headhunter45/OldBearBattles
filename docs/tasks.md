@@ -338,7 +338,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-215 | *Find a source for icons and images.*                                                                                                                                                                                                                                                                                                                                                                                                                                                | Old Bear VTT   | Planning | [Feature](#ob-215) |
 | OB-216 | Add to character on an item card does nothing. It should add the attack/ability to the character sheet,                                                                                                                                                                                                                                                                                                                                                                              | Old Bear VTT   | Testing  | [Bug](#ob-216)     |
 | OB-217 | Allow /attack? to query compendium weapons and attacks from Open5e and PF2e                                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Testing  | [Feature](#ob-217) |
-| OB-218 | Chat textbox does not lose focus when we click something else. I clicked a token and the box still had the cursor in it. I wasn't able to use hotkeys until I had selected some text elsewhere.                                                                                                                                                                                                                                                                                      | Common         | Ready    | [Bug](#ob-218)     |
+| OB-218 | Chat textbox does not lose focus when we click something else. I clicked a token and the box still had the cursor in it. I wasn't able to use hotkeys until I had selected some text elsewhere.                                                                                                                                                                                                                                                                                      | Common         | Testing  | [Bug](#ob-218)     |
 | OB-219 | Don't favor dnd on the character sheet.                                                                                                                                                                                                                                                                                                                                                                                                                                              | Common         | Ready    | [Feature](#ob-219) |
 | OB-220 | Pinch zoom doesn't work right on token portraits.                                                                                                                                                                                                                                                                                                                                                                                                                                    | Common         | Ready    | [Bug](#ob-220)     |
 | OB-221 | Make the ` or ~ key toggle the chat display like c togles the character sheet.                                                                                                                                                                                                                                                                                                                                                                                                       | Common         | Ready    | [Feature](#ob-221) |
@@ -3454,18 +3454,17 @@ When using /attack? <name> in chat, if the attack is not found in the active cha
 
 - [x]
 
-<a id="ob-218" class="task" data-project="cmn" data-status="ready" data-task-type="bug"></a>
+<a id="ob-218" class="task" data-project="cmn" data-status="testing" data-task-type="bug"></a>
 ### Chat textbox does not lose focus when we click something else. I clicked a token and the box still had the cursor in it. I wasn't able to use hotkeys until I had selected some text elsewhere.
 **ID:** OB-218
 **Project:** Common
-**Status:** Ready
+**Status:** Testing
 **Type:** Bug
-
 
 **Description:**
 Describe task objectives and implementation requirements here.
 
-- [ ]
+- [x]
 
 <a id="ob-219" class="task" data-project="cmn" data-status="ready" data-task-type="feature"></a>
 ### Don't favor dnd on the character sheet.
