@@ -26,6 +26,7 @@ describe('Reusable Help & Tooltip Component (OB-139)', () => {
     assert.ok(keys.includes('Shift + F'), 'Must include Shift + F for fog reveal');
     assert.ok(keys.includes('F'), 'Must include F for fog hide');
     assert.ok(keys.includes('C'), 'Must include C for character sheet');
+    assert.ok(keys.some((k) => k.includes('`') || k.includes('~')), 'Must include ` / ~ for chat toggle (OB-221)');
     assert.ok(keys.includes('Esc'), 'Must include Esc for deselect/close');
   });
 

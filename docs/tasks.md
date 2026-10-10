@@ -341,7 +341,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-218 | Chat textbox does not lose focus when we click something else. I clicked a token and the box still had the cursor in it. I wasn't able to use hotkeys until I had selected some text elsewhere.                                                                                                                                                                                                                                                                                      | Common         | Testing  | [Bug](#ob-218)     |
 | OB-219 | Don't favor dnd on the character sheet.                                                                                                                                                                                                                                                                                                                                                                                                                                              | Common         | Testing  | [Feature](#ob-219) |
 | OB-220 | Pinch zoom doesn't work right on token portraits.                                                                                                                                                                                                                                                                                                                                                                                                                                    | Common         | Testing  | [Bug](#ob-220)     |
-| OB-221 | Make the ` or ~ key toggle the chat display like c togles the character sheet.                                                                                                                                                                                                                                                                                                                                                                                                       | Common         | Ready    | [Feature](#ob-221) |
+| OB-221 | Make the ` or ~ key toggle the chat display like c togles the character sheet.                                                                                                                                                                                                                                                                                                                                                                                                       | Common         | Testing  | [Feature](#ob-221) |
 | OB-222 | The brawl map is very zoomed in and blury.                                                                                                                                                                                                                                                                                                                                                                                                                                           | Old Bear Brawl | Ready    | [Bug](#ob-222)     |
 | OB-223 | The hamburger menu is bright purple in vtt and dark like the backgournd color in brawl.                                                                                                                                                                                                                                                                                                                                                                                              | Old Bear Brawl | Ready    | [Bug](#ob-223)     |
 
@@ -3490,18 +3490,17 @@ pinch zooming on things like the face image when editing a token keep trying to 
 
 - [x]
 
-<a id="ob-221" class="task" data-project="cmn" data-status="ready" data-task-type="feature"></a>
+<a id="ob-221" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
 ### Make the ` or ~ key toggle the chat display like c togles the character sheet.
 **ID:** OB-221
 **Project:** Common
-**Status:** Ready
+**Status:** Testing
 **Type:** Feature
-
 
 **Description:**
 Ideally this would combine with esc to make the textbox lose focus.
 
-- [ ]
+- [x]
 
 <a id="ob-222" class="task" data-project="brawl" data-status="ready" data-task-type="bug"></a>
 ### The brawl map is very zoomed in and blury.

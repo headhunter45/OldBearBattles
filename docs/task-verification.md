@@ -1269,6 +1269,37 @@ This document provides step-by-step instructions for manually verifying all feat
 - Two-finger pinch gestures zoom only the token portrait image, with browser page zoom gestures prevented.
 - One-finger drags pan the token portrait.
 
+---
+
+### OB-221 - Toggle Chat Display with ` or ~ Hotkey and Escape Unfocus
+
+- **Reference in tasks.md:** [tasks.md: OB-221](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-221)
+- **Primary Source Code:** [AppVtt.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/vtt/AppVtt.tsx), [AppBrawl.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/brawl/AppBrawl.tsx), [ChatPanel.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/ChatPanel.tsx)
+- **Where to find it:** Entire application keyboard shortcuts in both VTT and Brawl modes.
+
+#### Step-by-Step Instructions:
+
+1. **Toggle Chat Open/Closed via ` / ~:**
+   - In either VTT or Brawl mode, ensure no input box is focused.
+   - Press the \` key (or `~` / `Backquote`).
+   - Verify the Chat Panel toggles open.
+   - Press \` or `~` again.
+   - Verify the Chat Panel toggles closed.
+2. **Combine with Escape to Unfocus:**
+   - Open the Chat Panel and click into the chat text input box.
+   - Press `Escape`.
+   - Verify the chat text input box loses focus (blurs).
+   - Press \` (or `~` or `Escape` again).
+   - Verify the Chat Panel closes.
+3. **Verify Typing Backticks inside Input:**
+   - Click into the chat input and type a backtick (\`):
+   - Verify typing characters while focused inside the input types normally without toggling the window.
+
+#### Expected Result (Pass Criteria):
+- Pressing ` or ~ toggles the chat panel open or closed.
+- Pressing Escape while in the chat textbox blurs the textbox, allowing subsequent hotkeys to close the chat.
+
+
 
 
 

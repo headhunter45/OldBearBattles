@@ -1867,6 +1867,16 @@ export const AppVtt: React.FC = () => {
         return;
       }
 
+      // Toggle Chat (` or ~) (OB-221)
+      if ((e.key === '`' || e.key === '~' || e.code === 'Backquote') && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setIsChatOpen((v) => {
+          if (!v) setUnreadChatCount(0);
+          return !v;
+        });
+        return;
+      }
+
       // Help & Hotkeys Cheat Sheet (?)
       if (e.key === '?' || (e.shiftKey && e.key === '/')) {
         e.preventDefault();
@@ -2030,6 +2040,10 @@ export const AppVtt: React.FC = () => {
       }
 
       if (e.key === 'Escape') {
+        if (isChatOpen) {
+          setIsChatOpen(false);
+          return;
+        }
         setSelectedToken(null);
         setSelectedTokens([]);
         setSelectedMarker(null);
@@ -2067,7 +2081,7 @@ export const AppVtt: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedToken, selectedTokens, selectedMarker, session, localPlayer, currentMap, isGm]);
+  }, [selectedToken, selectedTokens, selectedMarker, session, localPlayer, currentMap, isGm, isChatOpen]);
 
   const handleRecordRoll = (roll: DiceRollResult) => {
     setSession((prev) => {

@@ -139,6 +139,7 @@ export const AppBrawl: React.FC = () => {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [gmPreviewMapId, setGmPreviewMapId] = useState<string>('');
   const [voiceState, setVoiceState] = useState<VoiceState>({
     isInitialized: false,
@@ -546,6 +547,9 @@ export const AppBrawl: React.FC = () => {
         });
         setGmPreviewMapId(msg.mapId);
         engine.setActiveMap(msg.mapId, true);
+      } else if (msg.type === 'chat-msg') {
+        setChatMessages((prev) => [...prev, msg.message]);
+        setUnreadChatCount((prev) => prev + 1);
       }
     });
 
@@ -556,6 +560,34 @@ export const AppBrawl: React.FC = () => {
       network.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || (e.target as HTMLElement)?.isContentEditable) {
+        return;
+      }
+
+      // Toggle Chat (` or ~) (OB-221)
+      if ((e.key === '`' || e.key === '~' || e.code === 'Backquote') && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setIsChatOpen((v) => {
+          if (!v) setUnreadChatCount(0);
+          return !v;
+        });
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        if (isChatOpen) {
+          setIsChatOpen(false);
+          return;
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isChatOpen]);
 
   return (
     <div className="app-root" style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
@@ -968,6 +1000,38 @@ export const AppBrawl: React.FC = () => {
         voiceState={voiceState}
         isGm={isOrganizer}
       />
+
+      {/* Chat & Commands Panel (OB-221) */}
+      {localPlayer && (
+        <ChatPanel
+          player={localPlayer}
+          tokens={
+            (() => {
+              const owned = Object.values(session?.tokens || {}).filter(
+                (t) => t.ownerId === localPlayer.id || localPlayer.assignedTokenIds?.includes(t.id)
+              );
+              const list = owned.length > 0 ? owned : (isOrganizer ? Object.values(session?.tokens || {}) : []);
+              return [...list].sort((a, b) => a.name.localeCompare(b.name));
+            })()
+          }
+          selectedToken={selectedToken}
+          messages={chatMessages}
+          onSendMessage={(m) => {
+            if (m.isEphemeral) {
+              setChatMessages((prev) => [...prev, m]);
+            } else {
+              networkRef.current?.send({ type: 'chat-send', message: m });
+            }
+          }}
+          isOpen={isChatOpen}
+          onToggleOpen={() => {
+            setIsChatOpen((v) => {
+              if (!v) setUnreadChatCount(0);
+              return !v;
+            });
+          }}
+        />
+      )}
 
       {/* Toast Notification */}
       {toastMessage && (
