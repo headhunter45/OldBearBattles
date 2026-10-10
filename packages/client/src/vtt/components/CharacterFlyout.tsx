@@ -27,7 +27,8 @@ import {
   User,
   Zap,
   Save,
-  Check
+  Check,
+  Download,
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { DraggableWindowTitleBar } from '../../common/components/DraggableWindow.js';
@@ -126,14 +127,21 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
   >(() => getSavedCharacters(isGm));
   const [isMinimized, setIsMinimized] = useState(false);
 
-  // Pathbuilder 2e state (OB-144)
-  const [importSource, setImportSource] = useState<'dndbeyond' | 'pathbuilder'>(
-    'dndbeyond',
-  );
+  // Character Source / Ruleset state (OB-219)
+  const [importSource, setImportSource] = useState<
+    'local' | 'dndbeyond' | 'pathbuilder'
+  >(() => {
+    const cid = targetToken?.character?.id;
+    if (cid && isDndBeyondSource(cid)) {
+      return 'dndbeyond';
+    }
+    return 'local';
+  });
   const [pathbuilderInput, setPathbuilderInput] = useState('');
   const [pathbuilderPasteOpen, setPathbuilderPasteOpen] = useState(false);
   const [pathbuilderPasteText, setPathbuilderPasteText] = useState('');
   const pathbuilderFileRef = useRef<HTMLInputElement>(null);
+  const localFileRef = useRef<HTMLInputElement>(null);
 
   const { windowRef, position, isDragging, handleMouseDown, zIndex } =
     useDraggableWindow({
@@ -308,6 +316,75 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
     setTimeout(() => setSaveFeedback(null), 3000);
   };
 
+  const handleExportLocalCharacter = () => {
+    if (!character) return;
+    const blob = new Blob([JSON.stringify(character, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${character.name.toLowerCase().replace(/\s+/g, '_')}_sheet.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleLocalCharacterUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const text = evt.target?.result as string;
+        const json = JSON.parse(text);
+        let char: DnDCharacter;
+        if (isPathbuilderExport(json)) {
+          char = parsePathbuilderExport(json);
+        } else if (json.stats && json.name) {
+          char = {
+            id: json.id || `char_${Date.now()}`,
+            name: json.name || 'Imported Character',
+            currentHp: json.currentHp ?? json.hp ?? localHp,
+            maxHp: json.maxHp ?? json.hp ?? localMaxHp,
+            tempHp: json.tempHp ?? 0,
+            armorClass: json.armorClass ?? json.ac ?? 10,
+            speed: json.speed ?? 30,
+            avatarUrl: json.avatarUrl ?? json.imageUrl ?? '',
+            race: json.race || 'Custom',
+            classes: json.classes || json.class || 'Custom',
+            level: json.level ?? 1,
+            stats: json.stats || {
+              str: 10,
+              dex: 10,
+              con: 10,
+              int: 10,
+              wis: 10,
+              cha: 10,
+            },
+            actions: json.actions || [],
+            spells: json.spells || [],
+            spellSlots: json.spellSlots || {},
+          };
+        } else {
+          throw new Error('Unrecognized character JSON format');
+        }
+        setCharacter(char);
+        onUpdatePlayerChar?.(char);
+        saveCharacterToStorage(char, isGm);
+        refreshSavedCharacters();
+        applyCharacterToBoard(char);
+        setSaveFeedback(`Loaded ${char.name} successfully!`);
+        setTimeout(() => setSaveFeedback(null), 3000);
+      } catch (err: any) {
+        setError(`Failed to parse character JSON: ${err.message}`);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
   const syncToToken = (char: DnDCharacter, tokenId?: string) => {
     const id = tokenId || targetToken?.id;
     if (!id || !onSyncToken) return;
@@ -373,13 +450,16 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
         const cid = targetToken.character.id;
         if (cid && isDndBeyondSource(cid)) {
           setCharInput(formatDndBeyondUrl(cid));
+          setImportSource('dndbeyond');
         } else {
           setCharInput('');
+          setImportSource('local');
         }
       } else {
         // Reset to default state for unbound token (OB-207)
         setCharacter(null);
         setCharInput('');
+        setImportSource('local');
       }
     } else {
       const fallbackChar = player.dndBeyondCharacter || null;
@@ -625,10 +705,23 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
             </div>
           )}
 
-          {/* Import Source Tabs (OB-144) */}
+          {/* Character Source / Ruleset Tabs (OB-219) */}
           <div
             style={{ display: 'flex', gap: '0.35rem', marginBottom: '0.6rem' }}
           >
+            <button
+              type="button"
+              className={`btn ${importSource === 'local' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{
+                flex: 1,
+                padding: '0.35rem 0.5rem',
+                fontSize: '0.75rem',
+                justifyContent: 'center',
+              }}
+              onClick={() => setImportSource('local')}
+            >
+              Local Character
+            </button>
             <button
               type="button"
               className={`btn ${importSource === 'dndbeyond' ? 'btn-primary' : 'btn-secondary'}`}
@@ -657,7 +750,75 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
             </button>
           </div>
 
-          {importSource === 'dndbeyond' ? (
+          {importSource === 'local' ? (
+            <>
+              <div
+                style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  color: 'var(--text-secondary)',
+                  marginBottom: '0.4rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <span>LOCAL SYSTEM-AGNOSTIC CHARACTER</span>{' '}
+                <HelpTip text="Native standalone character stored in your browser. All imports from D&D Beyond or Pathbuilder unify into this local sheet." />
+              </div>
+              <div style={{ display: 'flex', gap: '0.4rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{
+                    flex: 1,
+                    padding: '0.45rem 0.6rem',
+                    fontSize: '0.75rem',
+                    justifyContent: 'center',
+                  }}
+                  onClick={handleSaveCustomCharacter}
+                >
+                  <Plus size={14} />{' '}
+                  {character ? 'New Local Sheet' : 'Create Blank Sheet'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{
+                    padding: '0.45rem 0.6rem',
+                    fontSize: '0.75rem',
+                    justifyContent: 'center',
+                  }}
+                  onClick={() => localFileRef.current?.click()}
+                  title="Import Character JSON"
+                >
+                  <Upload size={13} /> Import JSON
+                </button>
+                <input
+                  type="file"
+                  ref={localFileRef}
+                  accept=".json,application/json"
+                  style={{ display: 'none' }}
+                  onChange={handleLocalCharacterUpload}
+                />
+                {character && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{
+                      padding: '0.45rem 0.6rem',
+                      fontSize: '0.75rem',
+                      justifyContent: 'center',
+                    }}
+                    onClick={handleExportLocalCharacter}
+                    title="Export Current Character as JSON"
+                  >
+                    <Download size={13} /> Export JSON
+                  </button>
+                )}
+              </div>
+            </>
+          ) : importSource === 'dndbeyond' ? (
             <>
               <div
                 style={{
@@ -899,16 +1060,20 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
                   saveCharacterToStorage(char, isGm);
                   refreshSavedCharacters();
                   applyCharacterToBoard(char);
-                } else {
+                } else if (importSource === 'dndbeyond') {
                   setCharInput('demo');
                   fetchCharacter('demo');
+                } else {
+                  handleSaveCustomCharacter();
                 }
               }}
             >
               <Sparkles size={12} />{' '}
               {importSource === 'pathbuilder'
                 ? 'Click here to test with Valeros (PF2e Fighter Lvl 5)'
-                : 'Click here to test with Demo Character'}
+                : importSource === 'dndbeyond'
+                  ? 'Click here to test with Demo Character (D&D 5e)'
+                  : 'Click here to create a demo Local Character'}
             </button>
           )}
 

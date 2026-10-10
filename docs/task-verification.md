@@ -1211,6 +1211,37 @@ This document provides step-by-step instructions for manually verifying all feat
 - Canvas hotkeys work immediately upon clicking the board without requiring selecting text elsewhere.
 - Pressing `Escape` in the chat input blurs the input.
 
+---
+
+### OB-219 - System-Agnostic Ruleset Options on Character Sheet (Local Character Default)
+
+- **Reference in tasks.md:** [tasks.md: OB-219](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-219)
+- **Primary Source Code:** [CharacterFlyout.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/vtt/components/CharacterFlyout.tsx)
+- **Where to find it:** Character Sheet (`c` hotkey or Character button in top bar).
+
+#### Step-by-Step Instructions:
+
+1. **Verify Default Tab:**
+   - Open Character Sheet (`c` key).
+   - Verify that the ruleset tabs at the top of the sheet display three choices: **Local Character**, **D&D Beyond (5e)**, and **Pathbuilder 2e (PF2e)**.
+   - Verify that for a fresh or unbound character, **Local Character** is selected by default (neither D&D nor Pathfinder is favored).
+2. **Test Local Character Creation & Management:**
+   - In the Local Character panel, verify the title reads `LOCAL SYSTEM-AGNOSTIC CHARACTER`.
+   - Click **Create Blank Sheet** (or **New Local Sheet**).
+   - Verify a clean local character sheet is created and can be edited, with abilities, attacks, spells, and HP.
+   - Click **Export JSON** and confirm downloading the JSON representation.
+   - Click **Import JSON** to load a saved character JSON file.
+3. **Verify Third-Party Import Integration:**
+   - Switch to **D&D Beyond (5e)** or **Pathbuilder 2e (PF2e)** tabs.
+   - Import a character (or click the demo test character button).
+   - Verify that the imported data populates into the unified local sheet and is stored locally in the database.
+
+#### Expected Result (Pass Criteria):
+- Character sheet has three options: Local Character, D&D Beyond (5e), and Pathbuilder 2e (PF2e).
+- Sheet defaults to the system-agnostic Local Character option rather than favoring D&D Beyond.
+- Third-party imports integrate directly into the unified local character data model.
+
+
 
 
 

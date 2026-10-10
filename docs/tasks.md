@@ -339,7 +339,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-216 | Add to character on an item card does nothing. It should add the attack/ability to the character sheet,                                                                                                                                                                                                                                                                                                                                                                              | Old Bear VTT   | Testing  | [Bug](#ob-216)     |
 | OB-217 | Allow /attack? to query compendium weapons and attacks from Open5e and PF2e                                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Testing  | [Feature](#ob-217) |
 | OB-218 | Chat textbox does not lose focus when we click something else. I clicked a token and the box still had the cursor in it. I wasn't able to use hotkeys until I had selected some text elsewhere.                                                                                                                                                                                                                                                                                      | Common         | Testing  | [Bug](#ob-218)     |
-| OB-219 | Don't favor dnd on the character sheet.                                                                                                                                                                                                                                                                                                                                                                                                                                              | Common         | Ready    | [Feature](#ob-219) |
+| OB-219 | Don't favor dnd on the character sheet.                                                                                                                                                                                                                                                                                                                                                                                                                                              | Common         | Testing  | [Feature](#ob-219) |
 | OB-220 | Pinch zoom doesn't work right on token portraits.                                                                                                                                                                                                                                                                                                                                                                                                                                    | Common         | Ready    | [Bug](#ob-220)     |
 | OB-221 | Make the ` or ~ key toggle the chat display like c togles the character sheet.                                                                                                                                                                                                                                                                                                                                                                                                       | Common         | Ready    | [Feature](#ob-221) |
 | OB-222 | The brawl map is very zoomed in and blury.                                                                                                                                                                                                                                                                                                                                                                                                                                           | Old Bear Brawl | Ready    | [Bug](#ob-222)     |
@@ -3466,17 +3466,17 @@ Describe task objectives and implementation requirements here.
 
 - [x]
 
-<a id="ob-219" class="task" data-project="cmn" data-status="ready" data-task-type="feature"></a>
+<a id="ob-219" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
 ### Don't favor dnd on the character sheet.
 **ID:** OB-219
 **Project:** Common
-**Status:** Ready
+**Status:** Testing
 **Type:** Feature
 
 **Description:**
 We should not favor a specific ruleset. Currently the character sheet starts with dndbeyod selected. I think we should have a third option that is just our local character that everything imports to.
 
-- [ ]
+- [x]
 
 <a id="ob-220" class="task" data-project="cmn" data-status="ready" data-task-type="bug"></a>
 ### Pinch zoom doesn't work right on token portraits.

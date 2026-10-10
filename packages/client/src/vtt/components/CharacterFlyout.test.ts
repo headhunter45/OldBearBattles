@@ -234,4 +234,36 @@ describe('CharacterFlyout Unbound Token Reset (OB-207)', () => {
       'Renders Save as Custom Character button when viewing unbound token'
     );
   });
+
+  it('does not favor D&D and defaults to Local Character ruleset tab (OB-219)', () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(CharacterFlyout, {
+        player: mockPlayer,
+        targetToken: unboundToken,
+        onClose: () => {},
+      })
+    );
+
+    // Should render all three options: Local Character, D&D Beyond (5e), and Pathbuilder 2e (PF2e)
+    assert.ok(markup.includes('Local Character'), 'Renders Local Character tab');
+    assert.ok(
+      markup.includes('D&amp;D Beyond (5e)') || markup.includes('D&D Beyond (5e)'),
+      'Renders D&D Beyond tab'
+    );
+    assert.ok(markup.includes('Pathbuilder 2e (PF2e)'), 'Renders Pathbuilder tab');
+
+    // Local Character should be active by default
+    assert.ok(
+      markup.includes('LOCAL SYSTEM-AGNOSTIC CHARACTER'),
+      'Displays Local System-Agnostic Character header by default'
+    );
+    assert.ok(
+      markup.includes('Create Blank Sheet') || markup.includes('New Local Sheet'),
+      'Displays Local Character action button'
+    );
+    assert.ok(
+      markup.includes('Import JSON'),
+      'Displays Local Character Import JSON button'
+    );
+  });
 });
