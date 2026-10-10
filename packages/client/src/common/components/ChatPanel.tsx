@@ -1614,6 +1614,50 @@ export interface AddBlockTargetOptions {
   onSetAssociatedToken?: (token: Token | null) => void;
 }
 
+export function createActionFromItemBlock(block: EntityAction | EntityStatBlock): DnDAction {
+  let damageDice = block.damageFormula || block.rollFormula || '';
+  if (!damageDice && block.description) {
+    const dmgMatch =
+      block.description.match(/(\d+d\d+(?:\s*[+-]\s*\d+)?)\s*(?:[a-zA-Z]+)?\s*damage/i) ||
+      block.description.match(/(?:damage:\s*)(\d+d\d+(?:\s*[+-]\s*\d+)?)/i) ||
+      block.description.match(/(\d+d\d+(?:\s*[+-]\s*\d+)?)/i);
+    if (dmgMatch) {
+      damageDice = dmgMatch[1].trim();
+    }
+  }
+
+  let actionType: 'melee' | 'ranged' | 'action' = 'action';
+  const lowerDesc = (block.description || '').toLowerCase();
+  const lowerSub = ((block as EntityStatBlock).subtitle || '').toLowerCase();
+  if (
+    lowerDesc.includes('melee') ||
+    lowerSub.includes('melee') ||
+    lowerDesc.includes('sword') ||
+    lowerDesc.includes('dagger') ||
+    lowerDesc.includes('axe') ||
+    lowerDesc.includes('hammer') ||
+    lowerDesc.includes('spear')
+  ) {
+    actionType = 'melee';
+  } else if (
+    lowerDesc.includes('ranged') ||
+    lowerSub.includes('ranged') ||
+    lowerDesc.includes('bow') ||
+    lowerDesc.includes('crossbow')
+  ) {
+    actionType = 'ranged';
+  }
+
+  return {
+    name: block.name,
+    type: actionType,
+    activationType: block.cost || 'action',
+    damageDice: damageDice || undefined,
+    range: block.range || (actionType === 'melee' ? '5 ft' : actionType === 'ranged' ? '60 ft' : undefined),
+    description: block.description || '',
+  };
+}
+
 export function addBlockToTokenOrCharacter({
   block,
   targetToken,
@@ -1710,11 +1754,65 @@ export function addBlockToTokenOrCharacter({
         quantity: 1,
       };
       addedItem = newItem;
+      const itemAction = createActionFromItemBlock(block);
+      addedAction = itemAction;
+
+      const isTargetForPlayer = Boolean(
+        character &&
+        (character.id === targetToken.id ||
+         character.name.trim().toLowerCase() === targetToken.name.trim().toLowerCase() ||
+         character.id === targetToken.character?.id ||
+         targetToken.ownerId === player.id ||
+         player.assignedTokenIds?.includes(targetToken.id))
+      );
+
+      if (targetToken && !rawChar) {
+        const updatedActions = [...(targetToken.actions || []), itemAction];
+        const updatedToken: Token = {
+          ...targetToken,
+          actions: updatedActions,
+        };
+        onSyncToken(targetToken.id, { actions: updatedActions });
+        onSetAssociatedToken?.(updatedToken);
+
+        if (character && onUpdatePlayerChar && isTargetForPlayer) {
+          const merged: DnDCharacter = {
+            ...character,
+            actions: [...(character.actions || []), itemAction],
+            items: [...(character.items || []), newItem],
+          };
+          onUpdatePlayerChar(merged);
+        }
+
+        confirmText = `✅ Added **${block.name}** attack to ${targetToken.name}'s token attacks and inventory.`;
+        onSendMessage?.({
+          id: crypto.randomUUID(),
+          senderId: 'system',
+          senderName: 'VTT Guide',
+          senderColor: '#10b981',
+          text: confirmText,
+          timestamp: Date.now(),
+          isEphemeral: true,
+          recipientId: player.id,
+        });
+        return {
+          targetType: 'token',
+          targetId: targetToken.id,
+          targetName: targetToken.name,
+          updatedCharacter: {
+            ...baseChar,
+            actions: updatedActions,
+            items: [...(baseChar.items || []), newItem],
+          },
+        };
+      }
+
       updatedChar = {
         ...baseChar,
         items: [...(baseChar.items || []), newItem],
+        actions: [...(baseChar.actions || []), itemAction],
       };
-      confirmText = `✅ Added item **${block.name}** to ${targetToken.name}'s inventory.`;
+      confirmText = `✅ Added item **${block.name}** and attack to ${targetToken.name}'s character sheet.`;
     } else {
       const newAction: DnDAction = {
         name: block.name,
@@ -1879,11 +1977,13 @@ export function addBlockToTokenOrCharacter({
         dndBeyondUrl: block.sourceUrl,
         quantity: 1,
       };
+      const itemAction = createActionFromItemBlock(block);
       updatedChar = {
         ...baseChar,
         items: [...(baseChar.items || []), newItem],
+        actions: [...(baseChar.actions || []), itemAction],
       };
-      confirmText = `✅ Added item **${block.name}** to ${baseChar.name}'s inventory.`;
+      confirmText = `✅ Added item **${block.name}** and attack to ${baseChar.name}'s character sheet.`;
     } else {
       const newAction: DnDAction = {
         name: block.name,

@@ -336,7 +336,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-213 | when creating a token and then checking its character sheet I see some kind of id in the dndbeyond url block. That should be empty.                                                                                                                                                                                                                                                                                                                                                  | Old Bear VTT   | Testing  | [Feature](#ob-213) |
 | OB-214 | Allow saving custom characters.                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Old Bear VTT   | Testing  | [Feature](#ob-214) |
 | OB-215 | *Find a source for icons and images.*                                                                                                                                                                                                                                                                                                                                                                                                                                                | Old Bear VTT   | Planning | [Feature](#ob-215) |
-| OB-216 | Add to character on an item card does nothing. It should add the attack/ability to the character sheet,                                                                                                                                                                                                                                                                                                                                                                              | Old Bear VTT   | Ready    | [Bug](#ob-216)     |
+| OB-216 | Add to character on an item card does nothing. It should add the attack/ability to the character sheet,                                                                                                                                                                                                                                                                                                                                                                              | Old Bear VTT   | Testing  | [Bug](#ob-216)     |
 | OB-217 | Allow /attack? to query compendium weapons and attacks from Open5e and PF2e                                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Ready    | [Feature](#ob-217) |
 | OB-218 | Chat textbox does not lose focus when we click something else. I clicked a token and the box still had the cursor in it. I wasn't able to use hotkeys until I had selected some text elsewhere.                                                                                                                                                                                                                                                                                      | Common         | Ready    | [Bug](#ob-218)     |
 | OB-219 | Don't favor dnd on the character sheet.                                                                                                                                                                                                                                                                                                                                                                                                                                              | Common         | Ready    | [Feature](#ob-219) |
@@ -3430,18 +3430,17 @@ Find a source for images. Maybe some kind of tagged db where we can calculate th
 
 - [ ]
 
-<a id="ob-216" class="task" data-project="vtt" data-status="ready" data-task-type="bug"></a>
+<a id="ob-216" class="task" data-project="vtt" data-status="testing" data-task-type="bug"></a>
 ### Add to character on an item card does nothing. It should add the attack/ability to the character sheet,
 **ID:** OB-216
 **Project:** Old Bear VTT
-**Status:** Ready
+**Status:** Testing
 **Type:** Bug
-
 
 **Description:**
 Describe task objectives and implementation requirements here.
 
-- [ ]
+- [x]
 
 <a id="ob-217" class="task" data-project="vtt" data-status="ready" data-task-type="feature"></a>
 ### Allow /attack? to query compendium weapons and attacks from Open5e and PF2e

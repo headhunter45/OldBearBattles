@@ -2537,6 +2537,7 @@ export const AppVtt: React.FC = () => {
               type: 'player-update',
               updates: { dndBeyondCharacter },
             });
+            saveCharacterToStorage(dndBeyondCharacter, isGm);
           }}
           onRollAction={handleRollAction}
           onClose={() => setShowCharacterFlyout(false)}

@@ -1259,6 +1259,64 @@ describe('Dice Parser & Slash Command Utilities', () => {
     assert.strictEqual(canRollSpell, true, 'Spells SHOULD have permission to roll / cast');
     assert.strictEqual(canRollMonster, false, 'Monsters should NOT have a useless roll button');
   });
+
+  it('adds an item card attack and inventory item to character sheet and token (OB-216)', () => {
+    const testPlayer = { id: 'p1', name: 'Bob', color: '#10b981' };
+    const itemBlock = {
+      name: 'Flame Tongue Longsword',
+      type: 'item' as const,
+      cost: 'action' as const,
+      damageFormula: '1d8+2',
+      description: 'A magical sword that deals an extra 2d6 fire damage on a hit.',
+    };
+
+    let updatedTokenActions: any = null;
+    const unboundToken: any = {
+      id: 'tok-sword-1',
+      name: 'Warrior Token',
+      actions: [],
+    };
+
+    // Case 1: Add to unbound token
+    const resUnbound = addBlockToTokenOrCharacter({
+      block: itemBlock as any,
+      targetToken: unboundToken,
+      character: null,
+      player: testPlayer as any,
+      onSyncToken: (id, updates) => {
+        if (updates.actions) updatedTokenActions = updates.actions;
+      },
+    });
+
+    assert.ok(resUnbound);
+    assert.strictEqual(resUnbound.targetType, 'token');
+    assert.ok(updatedTokenActions);
+    assert.strictEqual(updatedTokenActions.length, 1);
+    assert.strictEqual(updatedTokenActions[0].name, 'Flame Tongue Longsword');
+    assert.strictEqual(updatedTokenActions[0].type, 'melee');
+    assert.strictEqual(updatedTokenActions[0].damageDice, '1d8+2');
+
+    // Case 2: Add to character sheet directly
+    let updatedChar: any = null;
+    const resChar = addBlockToTokenOrCharacter({
+      block: itemBlock as any,
+      targetToken: null,
+      character: null,
+      player: testPlayer as any,
+      onUpdatePlayerChar: (char) => {
+        updatedChar = char;
+      },
+    });
+
+    assert.ok(resChar);
+    assert.strictEqual(resChar.targetType, 'character');
+    assert.ok(updatedChar);
+    assert.strictEqual(updatedChar.items.length, 1);
+    assert.strictEqual(updatedChar.items[0].name, 'Flame Tongue Longsword');
+    assert.strictEqual(updatedChar.actions.length, 1);
+    assert.strictEqual(updatedChar.actions[0].name, 'Flame Tongue Longsword');
+    assert.strictEqual(updatedChar.actions[0].type, 'melee');
+  });
 });
 
 

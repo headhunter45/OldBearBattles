@@ -1123,5 +1123,38 @@ This document provides step-by-step instructions for manually verifying all feat
 - Characters currently opened in the character sheet can be saved directly to the database via explicit **Save to Database** buttons in both the header and footer.
 - Unbound tokens with HP and actions can be converted and saved directly as custom characters in the database via **Save as Custom Character**.
 
+---
+
+### OB-216 - Add to Character on Item Cards Adds Action/Attack & Inventory to Character Sheet
+
+- **Reference in tasks.md:** [tasks.md: OB-216](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-216)
+- **Primary Source Code:** [ChatPanel.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/ChatPanel.tsx), [StatBlockCard.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/StatBlockCard.tsx), [CharacterFlyout.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/vtt/components/CharacterFlyout.tsx)
+- **Where to find it:** Chat Panel (`Enter` or `~` or chat icon), compendium search cards (`/item?`), and Character Sheet Flyout (`c` key).
+
+#### Step-by-Step Instructions:
+
+1. **Query an Item in Chat:**
+   - Open Chat (`Enter` or click the chat bubble icon on toolbar).
+   - In the input prompt, type `/item? longsword` or `/item? flame tongue` and send.
+   - Verify the compendium result card renders in chat with item details, damage, and action buttons: `+ Add to Sheet` and `Attack / Roll`.
+
+2. **Add Item to Character Sheet:**
+   - With an active character loaded (e.g. Demo Character) or target token selected, click **+ Add to Sheet**.
+   - Verify an ephemeral confirmation message appears: `✅ Added item Longsword and attack to [Character Name]'s character sheet.`
+   - Open the Character Sheet (`c` key).
+   - Inspect the **ACTIONS** section: verify a new attack action for the item (e.g. `Longsword` or `Flame Tongue`) appears with damage formula and type.
+   - Inspect the **INVENTORY & ITEMS** section: verify the item appears in the inventory list with description and quantity.
+
+3. **Add Item to Unbound Token:**
+   - Select an unbound token on the canvas (without a bound sheet).
+   - Query `/item? dagger` in chat and click **+ Add to Sheet**.
+   - Verify confirmation: `✅ Added Dagger attack to [Token Name]'s token attacks and inventory.`
+   - Open token attacks or Character Sheet for the token: verify the dagger attack appears in the token's attacks.
+
+#### Expected Result (Pass Criteria):
+- Clicking `+ Add to Sheet` on an item card reliably adds both the attack/ability to the character's actions and the item record to inventory.
+- Character sheet displays the new action under ACTIONS and item under INVENTORY & ITEMS.
+
+
 
 

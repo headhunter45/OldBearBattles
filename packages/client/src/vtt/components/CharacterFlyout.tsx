@@ -2208,6 +2208,84 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* Inventory / Items Section */}
+              {(character.items || []).length > 0 && (
+                <div style={{ marginTop: '1rem' }}>
+                  <div
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      color: 'var(--text-secondary)',
+                      marginBottom: '0.5rem',
+                    }}
+                  >
+                    INVENTORY & ITEMS ({(character.items || []).length})
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.4rem',
+                    }}
+                  >
+                    {(character.items || []).map((item, idx) => (
+                      <div
+                        key={`${item.id || item.name}-${idx}`}
+                        style={{
+                          backgroundColor: 'var(--bg-surface-elevated)',
+                          border: '1px solid var(--border-subtle)',
+                          borderRadius: 'var(--radius-sm)',
+                          padding: '0.6rem',
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontWeight: 700,
+                              fontSize: '0.85rem',
+                              color: 'var(--text-primary)',
+                            }}
+                          >
+                            {item.name}
+                          </div>
+                          {item.quantity && item.quantity > 1 && (
+                            <span
+                              style={{
+                                fontSize: '0.7rem',
+                                color: 'var(--text-muted)',
+                                backgroundColor: 'var(--bg-surface)',
+                                padding: '1px 6px',
+                                borderRadius: '4px',
+                              }}
+                            >
+                              Qty: {item.quantity}
+                            </span>
+                          )}
+                        </div>
+                        {item.description && (
+                          <div
+                            style={{
+                              marginTop: '0.35rem',
+                              fontSize: '0.72rem',
+                              color: 'var(--text-secondary)',
+                              lineHeight: 1.4,
+                            }}
+                          >
+                            {item.description}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             /* Manual Player HP Editor (No sheet linked) */
