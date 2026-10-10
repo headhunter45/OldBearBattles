@@ -73,19 +73,34 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
   const initialChar = targetToken
     ? (targetToken.character || null)
     : (player.dndBeyondCharacter || null);
+
+  const isDndBeyondSource = (idOrUrl?: string): boolean => {
+    if (!idOrUrl) return false;
+    const str = String(idOrUrl).trim();
+    return (
+      /^\d+$/.test(str) ||
+      str.includes('dndbeyond.com/characters/') ||
+      str.toLowerCase() === 'demo'
+    );
+  };
+
+  const formatDndBeyondUrl = (idOrUrl: string): string => {
+    const str = idOrUrl.trim();
+    if (/^\d+$/.test(str)) {
+      return `https://www.dndbeyond.com/characters/${str}`;
+    }
+    return str;
+  };
+
   const getKnownSyncUrl = (char: DnDCharacter | null): string => {
     const cid = char?.id || targetToken?.character?.id;
-    if (cid) {
-      return /^\d+$/.test(cid)
-        ? `https://www.dndbeyond.com/characters/${cid}`
-        : cid;
+    if (cid && isDndBeyondSource(cid)) {
+      return formatDndBeyondUrl(cid);
     }
     if (!targetToken) {
       const pid = player.dndBeyondCharacterId || player.dndBeyondCharacter?.id;
-      if (pid) {
-        return /^\d+$/.test(pid)
-          ? `https://www.dndbeyond.com/characters/${pid}`
-          : pid;
+      if (pid && isDndBeyondSource(pid)) {
+        return formatDndBeyondUrl(pid);
       }
     }
     return '';
@@ -277,10 +292,10 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
 
     setCharacter(found.charData);
     const cid = found.charData.id || found.id;
-    if (cid) {
-      setCharInput(
-        /^\d+$/.test(cid) ? `https://www.dndbeyond.com/characters/${cid}` : cid,
-      );
+    if (cid && isDndBeyondSource(cid)) {
+      setCharInput(formatDndBeyondUrl(cid));
+    } else {
+      setCharInput('');
     }
     onUpdatePlayerChar?.(found.charData);
     applyCharacterToBoard(found.charData);
@@ -300,12 +315,8 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
       if (targetToken.character) {
         setCharacter(targetToken.character);
         const cid = targetToken.character.id;
-        if (cid) {
-          setCharInput(
-            /^\d+$/.test(cid)
-              ? `https://www.dndbeyond.com/characters/${cid}`
-              : cid,
-          );
+        if (cid && isDndBeyondSource(cid)) {
+          setCharInput(formatDndBeyondUrl(cid));
         } else {
           setCharInput('');
         }

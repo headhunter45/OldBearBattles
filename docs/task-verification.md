@@ -1065,3 +1065,33 @@ This document provides step-by-step instructions for manually verifying all feat
 - 2014 vs 2024 SRD documents are correctly targeted.
 - Stubbed backends (PF1, SF1, SF2) fail gracefully with informative notifications.
 
+---
+
+### OB-213 - D&D Beyond URL Input Left Empty for Newly Created / Unbound Tokens
+
+#### Pre-requisites:
+- Run `npm run dev` and open the VTT client in a browser tab.
+
+#### Steps:
+1. **Spawn a New Token:**
+   - Click the Token Picker icon (the pawn icon) on the left floating toolbar.
+   - Choose a preset avatar or upload a token image, enter a name (e.g. "Goblin Scout"), and click **Add Token to Map**.
+   - Verify the token appears on the canvas and is currently selected.
+
+2. **Open Character Sheet Window:**
+   - Press `c` on your keyboard (or click the Character Sheet icon).
+   - In the Character Sheet drawer, look at the **Link Online Character** / D&D Beyond input box (`Character ID or URL (or 'demo')`).
+
+3. **Verify D&D Beyond Input is Empty:**
+   - Confirm the input text box is completely blank (shows placeholder `Character ID or URL (or 'demo')`).
+   - Confirm that no internal token ID, monster ID, or UUID (e.g. `token-...`, `char-...`) is erroneously pre-populated in the input box.
+
+4. **Verify Authentic D&D Beyond URL Prefilling:**
+   - In the input box, type `47804290` and click the sync/fetch button (or select a saved character synced with D&D Beyond).
+   - Verify that authentic numeric IDs or D&D Beyond URLs properly format to `https://www.dndbeyond.com/characters/47804290`.
+
+#### Expected Result (Pass Criteria):
+- Creating a token and inspecting its character sheet leaves the D&D Beyond URL input field clean and empty.
+- Internal token IDs and non-D&D Beyond identifiers never leak into the online character URL field.
+
+

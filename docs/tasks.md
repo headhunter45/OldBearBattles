@@ -333,7 +333,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-210 | Remove references to rodeo and obr to be nice.                                                                                                                                                                                                                                                                                                                                                                                                                                       | Common         | Done     | [Chore](#ob-210)   |
 | OB-211 | Remove excess display from the info commands.                                                                                                                                                                                                                                                                                                                                                                                                                                        | Common         | Done     | [Feature](#ob-211) |
 | OB-212 | Add a way to request variants like the 2014 vs 2024 srds, between pf1, sf1, pf2+sf2, and between 5e and pf*/sf*.                                                                                                                                                                                                                                                                                                                                                                     | Old Bear VTT   | Testing  | [Feature](#ob-212) |
-| OB-213 | when creating a token and then checking its character sheet I see some kind of id in the dndbeyond url block. That should be empty.                                                                                                                                                                                                                                                                                                                                                  | Old Bear VTT   | Ready    | [Feature](#ob-213) |
+| OB-213 | when creating a token and then checking its character sheet I see some kind of id in the dndbeyond url block. That should be empty.                                                                                                                                                                                                                                                                                                                                                  | Old Bear VTT   | Testing  | [Feature](#ob-213) |
 | OB-214 | Allow saving custom characters.                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Old Bear VTT   | Ready    | [Feature](#ob-214) |
 | OB-215 | *Find a source for icons and images.*                                                                                                                                                                                                                                                                                                                                                                                                                                                | Old Bear VTT   | Planning | [Feature](#ob-215) |
 | OB-216 | Add to character on an item card does nothing. It should add the attack/ability to the character sheet,                                                                                                                                                                                                                                                                                                                                                                              | Old Bear VTT   | Ready    | [Bug](#ob-216)     |
@@ -3393,18 +3393,17 @@ Document any missing backends, but assume we will have an api eventually. Stub o
 
 - [x]
 
-<a id="ob-213" class="task" data-project="vtt" data-status="ready" data-task-type="feature"></a>
+<a id="ob-213" class="task" data-project="vtt" data-status="testing" data-task-type="feature"></a>
 ### when creating a token and then checking its character sheet I see some kind of id in the dndbeyond url block. That should be empty.
 **ID:** OB-213
 **Project:** Old Bear VTT
-**Status:** Ready
+**Status:** Testing
 **Type:** Feature
-
 
 **Description:**
 Describe task objectives and implementation requirements here.
 
-- [ ]
+- [x]
 
 <a id="ob-214" class="task" data-project="vtt" data-status="ready" data-task-type="feature"></a>
 ### Allow saving custom characters.

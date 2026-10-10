@@ -168,4 +168,40 @@ describe('CharacterFlyout Unbound Token Reset (OB-207)', () => {
     );
     assert.ok(markup.includes('Sync with Token (Hero)'), 'Sync button targets the selected Hero token');
   });
+
+  it('keeps D&D Beyond URL input empty for tokens with non-D&D Beyond IDs (OB-213)', () => {
+    // When a token has a character with internal ID 'char-12345', it should NOT prefill the input with that ID
+    const markup = renderToStaticMarkup(
+      React.createElement(CharacterFlyout, {
+        player: mockPlayer,
+        targetToken: tokenWithCharacter,
+        onClose: () => {},
+      })
+    );
+
+    // The input should have value="" and not value="char-12345"
+    assert.ok(!markup.includes('value="char-12345"'), 'Does not display internal character ID in D&D Beyond input');
+
+    // For a token with an authentic numeric D&D Beyond ID:
+    const dndBeyondToken: Token = {
+      ...tokenWithCharacter,
+      character: {
+        ...boundCharacter,
+        id: '47804290',
+      },
+    };
+
+    const dndBeyondMarkup = renderToStaticMarkup(
+      React.createElement(CharacterFlyout, {
+        player: mockPlayer,
+        targetToken: dndBeyondToken,
+        onClose: () => {},
+      })
+    );
+
+    assert.ok(
+      dndBeyondMarkup.includes('value="https://www.dndbeyond.com/characters/47804290"'),
+      'Displays full D&D Beyond URL for genuine numeric D&D Beyond ID'
+    );
+  });
 });
