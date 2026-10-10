@@ -96,4 +96,21 @@ describe('Multi-System Compendium Resolver & Variants (OB-212)', () => {
     assert.ok(SYSTEM_VARIANTS['sf1']);
     assert.ok(SYSTEM_VARIANTS['a5e']);
   });
+
+  it('queries weapon and attack compendium entries with damage formula (OB-217)', async () => {
+    // 5e weapon compendium lookup
+    const attackRes = await fetchCompendiumEntry('attack', 'greatsword');
+    if (attackRes.block) {
+      assert.strictEqual(attackRes.block.type, 'attack');
+      assert.ok(attackRes.block.damageFormula, 'Has damage formula');
+      assert.ok(attackRes.block.sourceUrl?.includes('weapons'), 'Points to weapon source');
+    }
+
+    // PF2e weapon compendium lookup
+    const pf2AttackRes = await fetchCompendiumEntry('attack', 'shortsword', 'pf2');
+    if (pf2AttackRes.block) {
+      assert.strictEqual(pf2AttackRes.block.type, 'attack');
+      assert.strictEqual(pf2AttackRes.sourceSystem, 'pf2');
+    }
+  });
 });

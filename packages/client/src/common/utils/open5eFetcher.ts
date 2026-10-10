@@ -9,6 +9,7 @@ export const OPEN5E_API_V1_BASE = 'https://api.open5e.com/v1';
 export interface Open5eFetchOptions {
   document?: string;
   gamesystem?: string;
+  category?: 'spell' | 'item' | 'monster' | 'attack' | 'ability';
 }
 
 function slugify(text: string): string {
@@ -403,7 +404,8 @@ export async function fetchOpen5eItem(
   const clean = query.trim();
   if (!clean) return null;
   const slug = slugify(clean);
-  const cacheKey = `item:${slug}${options.document ? `:${options.document}` : ''}`;
+  const isAttackCategory = options.category === 'attack';
+  const cacheKey = `${isAttackCategory ? 'attack' : 'item'}:${slug}${options.document ? `:${options.document}` : ''}`;
 
   const cached = getCached(cacheKey);
   if (cached) return cached;
@@ -411,15 +413,47 @@ export async function fetchOpen5eItem(
   try {
     let data: any = null;
 
-    // 1. Try magic items direct slug in v2
-    try {
-      const res = await fetch(`${OPEN5E_API_BASE}/magicitems/${slug}/`);
-      if (res.ok) {
-        data = await res.json();
-      }
-    } catch {}
+    // 1. If attack/weapon search, query weapons first!
+    if (isAttackCategory) {
+      try {
+        let weaponUrl = `${OPEN5E_API_BASE}/weapons/?search=${encodeURIComponent(clean)}&limit=5`;
+        if (options.document) weaponUrl += `&document=${encodeURIComponent(options.document)}`;
+        const weaponRes = await fetch(weaponUrl);
+        if (weaponRes.ok) {
+          const weaponData = await weaponRes.json();
+          if (weaponData.results && weaponData.results.length > 0) {
+            const w =
+              weaponData.results.find((i: any) => {
+                const k = (i.slug || i.key || '').toLowerCase();
+                return k === slug || (i.name || '').toLowerCase() === clean.toLowerCase();
+              }) || weaponData.results[0];
+            data = {
+              slug: w.slug || w.key,
+              name: w.name,
+              type: 'Weapon',
+              desc: `${w.category || ''} weapon. Damage: ${w.damage_dice || ''} ${w.damage_type || ''}. Properties: ${Array.isArray(w.properties) ? w.properties.join(', ') : ''}`,
+              rarity: 'Common',
+              damage_dice: w.damage_dice,
+              damage_type: w.damage_type,
+              category: w.category,
+              properties: w.properties,
+            };
+          }
+        }
+      } catch {}
+    }
 
-    // 2. Search magic items
+    // 2. Try magic items direct slug in v2
+    if (!data) {
+      try {
+        const res = await fetch(`${OPEN5E_API_BASE}/magicitems/${slug}/`);
+        if (res.ok) {
+          data = await res.json();
+        }
+      } catch {}
+    }
+
+    // 3. Search magic items
     if (!data) {
       let searchUrl = `${OPEN5E_API_BASE}/magicitems/?search=${encodeURIComponent(clean)}&limit=5`;
       if (options.document) searchUrl += `&document=${encodeURIComponent(options.document)}`;
@@ -440,7 +474,7 @@ export async function fetchOpen5eItem(
       }
     }
 
-    // 3. Search items / weapons / armor
+    // 4. Search items / weapons / armor
     if (!data) {
       try {
         const itemRes = await fetch(`${OPEN5E_API_BASE}/items/?search=${encodeURIComponent(clean)}&limit=5`);
@@ -453,27 +487,37 @@ export async function fetchOpen5eItem(
       } catch {}
     }
 
-    // 4. Try weapons
+    // 5. Try weapons (standard fallback)
     if (!data) {
       try {
-        const weaponRes = await fetch(`${OPEN5E_API_BASE}/weapons/?search=${encodeURIComponent(clean)}&limit=5`);
+        let weaponUrl = `${OPEN5E_API_BASE}/weapons/?search=${encodeURIComponent(clean)}&limit=5`;
+        if (options.document) weaponUrl += `&document=${encodeURIComponent(options.document)}`;
+        const weaponRes = await fetch(weaponUrl);
         if (weaponRes.ok) {
           const weaponData = await weaponRes.json();
           if (weaponData.results && weaponData.results.length > 0) {
-            const w = weaponData.results[0];
+            const w =
+              weaponData.results.find((i: any) => {
+                const k = (i.slug || i.key || '').toLowerCase();
+                return k === slug || (i.name || '').toLowerCase() === clean.toLowerCase();
+              }) || weaponData.results[0];
             data = {
               slug: w.slug || w.key,
               name: w.name,
               type: 'Weapon',
               desc: `${w.category || ''} weapon. Damage: ${w.damage_dice || ''} ${w.damage_type || ''}. Properties: ${Array.isArray(w.properties) ? w.properties.join(', ') : ''}`,
               rarity: 'Common',
+              damage_dice: w.damage_dice,
+              damage_type: w.damage_type,
+              category: w.category,
+              properties: w.properties,
             };
           }
         }
       } catch {}
     }
 
-    // 5. Try armor
+    // 6. Try armor
     if (!data) {
       try {
         const armorRes = await fetch(`${OPEN5E_API_BASE}/armor/?search=${encodeURIComponent(clean)}&limit=5`);
@@ -493,7 +537,7 @@ export async function fetchOpen5eItem(
       } catch {}
     }
 
-    // 6. Fallback to v1 magicitems
+    // 7. Fallback to v1 magicitems
     if (!data) {
       try {
         const v1Res = await fetch(`${OPEN5E_API_V1_BASE}/magicitems/${slug}/`);
@@ -511,6 +555,42 @@ export async function fetchOpen5eItem(
     const traits: string[] = [];
     if (rarityStr && rarityStr !== 'varies') traits.push(rarityStr);
     if (data.requires_attunement) traits.push('Attunement');
+    if (Array.isArray(data.properties)) {
+      traits.push(...data.properties);
+    }
+
+    const isWeapon = typeStr.toLowerCase().includes('weapon') || Boolean(data.damage_dice) || isAttackCategory;
+    let damageFormula = data.damage_dice || undefined;
+    let damageType = data.damage_type || undefined;
+    let range: string | undefined;
+
+    if (!damageFormula && data.desc) {
+      const dmgMatch =
+        data.desc.match(/(\d+d\d+(?:\s*[+-]\s*\d+)?)\s*(?:[a-zA-Z]+)?\s*damage/i) ||
+        data.desc.match(/(?:damage:\s*)(\d+d\d+(?:\s*[+-]\s*\d+)?)/i) ||
+        data.desc.match(/(\d+d\d+(?:\s*[+-]\s*\d+)?)/i);
+      if (dmgMatch) {
+        damageFormula = dmgMatch[1].trim();
+      }
+    }
+    if (!damageType && data.desc) {
+      const typeMatch = data.desc.match(/\b(slashing|piercing|bludgeoning|fire|cold|lightning|radiant|necrotic|poison|acid|force|psychic)\b/i);
+      if (typeMatch) {
+        damageType = typeMatch[1].toLowerCase();
+      }
+    }
+    if (data.desc) {
+      const rangeMatch =
+        data.desc.match(/range\s*(\d+\/\d+)\s*(?:ft|feet)?/i) ||
+        data.desc.match(/range\s*(\d+)\s*(?:ft|feet)?/i);
+      if (rangeMatch) {
+        range = `${rangeMatch[1]} ft`;
+      } else if (isWeapon && (data.category?.toLowerCase().includes('ranged') || data.desc.toLowerCase().includes('ranged'))) {
+        range = '80/320 ft';
+      } else if (isWeapon) {
+        range = '5 ft';
+      }
+    }
 
     const subtitle = `${rarityStr ? `${rarityStr} ` : ''}${typeStr}`.trim();
     const itemKey = data.key || data.slug || slug;
@@ -518,11 +598,14 @@ export async function fetchOpen5eItem(
     const block: EntityStatBlock = {
       id: `open5e-item-${itemKey}`,
       name: data.name,
-      type: 'item',
+      type: isWeapon ? 'attack' : 'item',
       description: data.desc || '',
       traits,
       subtitle,
-      sourceUrl: `https://open5e.com/magicitems/${itemKey}`,
+      damageFormula,
+      damageType,
+      range,
+      sourceUrl: isWeapon ? `https://open5e.com/weapons/${itemKey}` : `https://open5e.com/magicitems/${itemKey}`,
       sourceSystem: '5e',
     };
 
@@ -550,7 +633,7 @@ export async function fetchOpen5eReference(
     case 'monster':
       return fetchOpen5eMonster(query, options);
     case 'attack':
-      return fetchOpen5eItem(query, options);
+      return fetchOpen5eItem(query, { ...options, category: 'attack' });
     default:
       return null;
   }

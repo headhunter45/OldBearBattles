@@ -182,7 +182,7 @@ export async function fetchCompendiumEntry(
   // 2. Handle 2024 SRD (Open5e v2 srd-2024)
   if (normSys === '5e-2024') {
     let block: EntityStatBlock | null = null;
-    const fetchOptions = { document: 'srd-2024', gamesystem: '5e-2024' };
+    const fetchOptions = { document: 'srd-2024', gamesystem: '5e-2024', category };
     if (category === 'spell') {
       block = await fetchOpen5eSpell(clean, fetchOptions);
     } else if (category === 'monster') {
@@ -202,7 +202,7 @@ export async function fetchCompendiumEntry(
   // 3. Handle 2014 SRD (Open5e v2 srd-2014)
   if (normSys === '5e-2014') {
     let block: EntityStatBlock | null = null;
-    const fetchOptions = { document: 'srd-2014', gamesystem: '5e-2014' };
+    const fetchOptions = { document: 'srd-2014', gamesystem: '5e-2014', category };
     if (category === 'spell') {
       block = await fetchOpen5eSpell(clean, fetchOptions);
     } else if (category === 'monster') {
@@ -222,7 +222,7 @@ export async function fetchCompendiumEntry(
   // 4. Handle Advanced 5e (Level Up)
   if (normSys === 'a5e') {
     let block: EntityStatBlock | null = null;
-    const fetchOptions = { document: 'a5e-ag' };
+    const fetchOptions = { document: 'a5e-ag', category };
     if (category === 'spell') {
       block = await fetchOpen5eSpell(clean, fetchOptions);
     } else if (category === 'monster') {
@@ -240,6 +240,9 @@ export async function fetchCompendiumEntry(
   if (normSys === 'pf2') {
     const pf2Category = category === 'monster' ? 'monster' : category === 'spell' ? 'spell' : 'item';
     const block = await fetchPF2eReference(pf2Category, clean);
+    if (block && category === 'attack' && (block.damageFormula || block.type === 'item')) {
+      block.type = 'attack';
+    }
     return { block, sourceSystem: 'pf2' };
   }
 
@@ -250,7 +253,7 @@ export async function fetchCompendiumEntry(
   } else if (category === 'monster') {
     block = await fetchOpen5eMonster(clean);
   } else if (category === 'item' || category === 'attack') {
-    block = await fetchOpen5eItem(clean);
+    block = await fetchOpen5eItem(clean, { category });
   }
 
   if (block) {
@@ -261,6 +264,9 @@ export async function fetchCompendiumEntry(
   const pf2Category = category === 'monster' ? 'monster' : category === 'spell' ? 'spell' : 'item';
   const pf2Block = await fetchPF2eReference(pf2Category, clean);
   if (pf2Block) {
+    if (category === 'attack' && (pf2Block.damageFormula || pf2Block.type === 'item')) {
+      pf2Block.type = 'attack';
+    }
     return { block: pf2Block, sourceSystem: 'pf2' };
   }
 

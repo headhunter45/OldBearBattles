@@ -472,8 +472,17 @@ export function processSlashCommand(
         const queryArgs = cmd === 'attack?' ? args : args.slice(1);
         const attackQuery = queryArgs.join(' ').trim();
 
-        const availableAttacks: DnDAction[] = (effectiveCharacter?.actions && effectiveCharacter.actions.length > 0)
-          ? effectiveCharacter.actions
+        const charAttacks = effectiveCharacter?.actions || [];
+        const tokAttacks = associatedToken?.actions || [];
+        const localAttacks: DnDAction[] = [...charAttacks];
+        for (const ta of tokAttacks) {
+          if (!localAttacks.some((a) => a.name.toLowerCase() === ta.name.toLowerCase())) {
+            localAttacks.push(ta);
+          }
+        }
+        const hasCustomActions = localAttacks.length > 0;
+        const availableAttacks: DnDAction[] = hasCustomActions
+          ? localAttacks
           : [
               { name: 'Melee Attack', type: 'melee', toHitModifier: 5, damageDice: '1d8+3' },
               { name: 'Ranged Attack', type: 'ranged', toHitModifier: 5, damageDice: '1d6+3' },
@@ -502,9 +511,14 @@ export function processSlashCommand(
           if (!isNaN(numIdx) && String(numIdx) === attackQuery && numIdx >= 1 && numIdx <= availableAttacks.length) {
             found = availableAttacks[numIdx - 1];
           } else {
-            found = availableAttacks.find((a) =>
+            found = localAttacks.find((a) =>
               a.name.toLowerCase().includes(attackQuery.toLowerCase())
             );
+            if (!found && !hasCustomActions) {
+              found = availableAttacks.find((a) =>
+                a.name.toLowerCase() === attackQuery.toLowerCase()
+              );
+            }
           }
         }
 

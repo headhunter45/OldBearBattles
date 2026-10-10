@@ -1155,6 +1155,35 @@ This document provides step-by-step instructions for manually verifying all feat
 - Clicking `+ Add to Sheet` on an item card reliably adds both the attack/ability to the character's actions and the item record to inventory.
 - Character sheet displays the new action under ACTIONS and item under INVENTORY & ITEMS.
 
+---
+
+### OB-217 - Allow /attack? to Query Compendium Weapons and Attacks
+
+- **Reference in tasks.md:** [tasks.md: OB-217](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-217)
+- **Primary Source Code:** [ChatPanel.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/ChatPanel.tsx), [open5eFetcher.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/utils/open5eFetcher.ts), [compendiumResolver.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/utils/compendiumResolver.ts), [StatBlockCard.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/StatBlockCard.tsx)
+- **Where to find it:** Chat Panel (`Enter` or `~` or chat bubble icon on toolbar).
+
+#### Step-by-Step Instructions:
+
+1. **Query Unlisted Weapon via /attack?:**
+   - Open Chat (`Enter` or click the chat bubble on toolbar).
+   - In chat, type `/attack? greatsword` (a weapon not listed on the default sheet) and send.
+   - Verify that rather than saying "could not find attack", the system queries Open5e SRD weapons.
+   - Verify an EntityStatBlock card renders with name `Greatsword`, subtitle `Martial Melee Weapons`, damage formula `2d6 slashing`, range `5 ft`, and button `+ Add to Attacks` (or `+ Add to Sheet`).
+
+2. **Query Multi-System Weapon / Attack:**
+   - In chat, type `/attack? [pf2] shortsword` or `/attack? pf2:shortsword`.
+   - Verify it queries the PF2e database and returns the Pathfinder 2e shortsword weapon card with damage formula and `+ Add to Attacks` button.
+
+3. **Verify Adding Found Weapon to Sheet:**
+   - On the returned `Greatsword` or `Shortsword` card in chat, click **+ Add to Attacks** (or `+ Add to Sheet`).
+   - Open Character Sheet (`c` key): verify the weapon attack is added to **ACTIONS** with its damage dice and reach.
+
+#### Expected Result (Pass Criteria):
+- Using `/attack? <weapon>` when the attack is not present on the character or token queries the Open5e and PF2e compendiums.
+- Weapon stat block displays damage formula, damage type, reach/range, and allows adding to sheet/attacks.
+
+
 
 
 

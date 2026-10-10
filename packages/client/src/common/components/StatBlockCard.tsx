@@ -483,7 +483,7 @@ export const StatBlockCard: React.FC<StatBlockCardProps> = ({
               title="Add this action or spell to your active character sheet"
             >
               <Plus size={13} />
-              + Add to Sheet
+              {statBlock.type === 'attack' ? '+ Add to Attacks' : '+ Add to Sheet'}
             </button>
           )}
 
