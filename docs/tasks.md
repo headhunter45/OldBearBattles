@@ -328,7 +328,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-205 | The add to character sheet button on an inspected spell adds to the currently selected character. Not the as token.                                                                                                                                                                                                                                                                                                                                                                  | Old Bear VTT   | Done     | [Bug](#ob-205)     |
 | OB-206 | Inspecting a spell like /spell? magic missile' shows the spell, but it has the wrong buttons.                                                                                                                                                                                                                                                                                                                                                                                        | Old Bear VTT   | Done     | [Bug](#ob-206)     |
 | OB-207 | Changing to a token without a bound character sheet should reset the form to the token's state.                                                                                                                                                                                                                                                                                                                                                                                      | Old Bear VTT   | Done     | [Bug](#ob-207)     |
-| OB-208 | Update the Open5EFetcher to use the v2 api.                                                                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Ready    | [Feature](#ob-208) |
+| OB-208 | Update the Open5EFetcher to use the v2 api.                                                                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Testing  | [Feature](#ob-208) |
 | OB-209 | There is no settings button next to the active scene name in the top bar.                                                                                                                                                                                                                                                                                                                                                                                                            | Common         | Done     | [Bug](#ob-209)     |
 | OB-210 | Remove references to rodeo and obr to be nice.                                                                                                                                                                                                                                                                                                                                                                                                                                       | Common         | Done     | [Chore](#ob-210)   |
 | OB-211 | Remove excess display from the info commands.                                                                                                                                                                                                                                                                                                                                                                                                                                        | Common         | Done     | [Feature](#ob-211) |
@@ -3326,18 +3326,17 @@ I added a token via Create without image. I already have my character sheet wind
 
 - [x]
 
-<a id="ob-208" class="task" data-project="vtt" data-status="ready" data-task-type="feature"></a>
+<a id="ob-208" class="task" data-project="vtt" data-status="testing" data-task-type="feature"></a>
 ### Update the Open5EFetcher to use the v2 api.
 **ID:** OB-208
 **Project:** Old Bear VTT
-**Status:** Ready
+**Status:** Testing
 **Type:** Feature
-
 
 **Description:**
 Describe task objectives and implementation requirements here.
 
-- [ ]
+- [x]
 
 <a id="ob-209" class="task" data-project="cmn" data-status="done" data-task-type="bug"></a>
 ### There is no settings button next to the active scene name in the top bar.

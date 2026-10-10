@@ -999,5 +999,30 @@ This document provides step-by-step instructions for manually verifying all feat
 - Floating draggable windows, especially chat, can be resized via the bottom-right handle and desktop CSS resize.
 - Window size constraints (min/max) are respected and persisted in localStorage across page reloads.
 
+---
 
+### OB-208 - Update Open5EFetcher to Use v2 API
 
+#### Pre-requisites:
+- Run `npm run dev` and open the VTT client in a browser tab.
+
+#### Steps:
+1. **Open Table Chat:**
+   - Click the chat icon on the left floating toolbar.
+
+2. **Query 5e Spell Reference Card (Open5e v2):**
+   - In the chat text box, type `/spell? fireball` and press Enter.
+   - Verify an ephemeral reference card appears in chat for **Fireball**.
+   - Check that Level 3, School (Evocation), range, and casting time are correctly displayed.
+
+3. **Query 5e Creature / Monster Statblock (Open5e v2 creatures):**
+   - In chat, type `/monster? goblin` and press Enter.
+   - Verify an ephemeral reference card appears with AC 15, HP 7, 30 ft. speed, ability scores, Scimitar/Shortbow attacks, and Nimble Escape.
+
+4. **Query 5e Magic Item Reference Card (Open5e v2 magicitems):**
+   - In chat, type `/item? potion of healing` and press Enter.
+   - Verify the reference card appears with Common Potion traits and recovery details.
+
+#### Expected Result (Pass Criteria):
+- Open5EFetcher queries `https://api.open5e.com/v2/` endpoints (`spells`, `creatures`, `magicitems`, `items`, `weapons`, `armor`) with graceful v1 fallback.
+- Reference statblocks parse nested v2 object shapes correctly.

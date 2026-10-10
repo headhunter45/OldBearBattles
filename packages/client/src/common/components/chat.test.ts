@@ -729,7 +729,7 @@ describe('Dice Parser & Slash Command Utilities', () => {
             }),
           } as any;
         }
-        if (urlStr.includes('api.open5e.com/v1/spells/magic-missile')) {
+        if (urlStr.includes('/spells/magic-missile')) {
           return {
             ok: true,
             status: 200,
