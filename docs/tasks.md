@@ -2120,9 +2120,27 @@ Reorganize `packages/client/src/` into three distinct domain folders to decouple
 
 
 **Description:**
+Triaged on 2026-10-09:
 **Depends On:** [OB-136](#ob-136)
 
-Add a Touch Slop / Hit Radius Buffer in `CanvasEngine.ts` (`touchHitRadius = Math.max(tokenRadius, 28)` for touch events) to eliminate tap-selection misses on mobile touchscreens. When a touch begins within the expanded radius of a selected token, explicitly lock viewport panning and treat touch-drag as token movement.
+**Problem Statement:**
+On touchscreen devices, dragging a token with a finger or thumb covers the token artwork and grid intersection, making precise placement difficult. In addition, standard 1x1 token hitboxes are too small for capacitive touch contacts, causing missed selections or accidental canvas panning.
+
+**Concrete Implementation Steps:**
+1. **Touch Slop & Expanded Hit Radius:**
+   - In `packages/client/src/common/engine/CanvasEngine.ts`:
+     - For touch events (`e.pointerType === 'touch'`), expand effective token hit-test radius:
+       `touchHitRadius = Math.max(tokenRadius, 28 * (1 / camera.zoom))`.
+     - When touch starts within `touchHitRadius` of a token, lock viewport panning and initiate token drag immediately.
+2. **Vertical Touch Drag Offset Calibration:**
+   - When dragging via touch (`pointerType === 'touch'`), apply a calibrated vertical screen-space offset (-40px upward) so the token floats directly above the user's fingertip, keeping both the token artwork and target grid cell fully visible.
+   - In the canvas render loop, render a subtle tether line or drop shadow directly between the touch contact coordinate and the offset token center.
+3. **User Preference Toggle:**
+   - In Settings Modal (`MapSettingsModal.tsx` or user preferences), add a "Touch Drag Offset" selector: `Off`, `Standard (-40px)`, `High (-60px)`.
+4. **Unit & Touch Tests:**
+   - Add unit test in `CanvasEngine.test.ts` verifying touch pointer event hit-testing with expanded touch slop buffer.
+
+- [ ]
 
 <a id="ob-138" class="task" data-project="vtt" data-status="planning" data-task-type="feature"></a>
 ### Mobile Token Interaction Bar & Left Menu Clipping
@@ -2133,11 +2151,26 @@ Add a Touch Slop / Hit Radius Buffer in `CanvasEngine.ts` (`touchHitRadius = Mat
 
 
 **Description:**
-CSS layout adjustments for mobile viewports:
+Triaged on 2026-10-09:
+**Problem Statement & Layout Conflict:**
+On mobile viewports (<768px width and short landscape screens), the floating Token Controls HUD bar collides with both the left toolbar navigation flyout and the device home bar / notch safe areas. The menu drawer can become clipped or obstructed by token actions.
 
-- Add `safe-area-inset` padding (`env(safe-area-inset-bottom)`) to floating HUD.
-- Center token action bar at `bottom: 4.5rem; left: 50%; transform: translateX(-50%)` with `max-width: 90vw`.
-- Add `max-height: calc(100dvh - 5rem); overflow-y: auto` to `.floating-hud-toolbar` in landscape media queries.
+**Concrete Implementation Steps:**
+1. **Safe Area Insets & Floating HUD Centering:**
+   - In `packages/client/src/index.css` and `packages/client/src/common/components/TokenControls.tsx`:
+     - Add `padding-bottom: env(safe-area-inset-bottom, 12px)`.
+     - Center the floating token action bar on mobile screens:
+       `bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); max-width: min(92vw, 480px);`.
+2. **Landscape Viewport Overflow:**
+   - Add media query for landscape mode `(orientation: landscape) and (max-height: 500px)`:
+     - Set `.floating-hud-toolbar` to `max-height: calc(100dvh - 4.5rem); overflow-y: auto; overflow-x: hidden;`.
+     - Collapse less critical buttons into an expandable overflow drawer.
+3. **Z-Index Layering & Drawer Coordination:**
+   - Set left navigation flyout and mobile drawer z-index to `45` (higher than token controls at `30`), preventing touch interactions on token HUD when navigation menu is open.
+   - Automatically auto-hide or dock token HUD when mobile drawer menu is opened.
+
+- [ ]
+
 
 <a id="ob-139" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
 ### Reusable Help & Tooltip Component
@@ -2357,7 +2390,32 @@ The top-level JSON contains a status flag and a `build` object housing all chara
 
 
 **Description:**
-Render a player's live webcam video feed directly inside their controlling token on the canvas battlemap using `ctx.drawImage(videoElement)` within the 60 FPS canvas loop.
+Triaged on 2026-10-09:
+**Technical Research & Architecture:**
+Reference: [docs/backlog-implementation-guide.md](file:///Users/tom/Projects/OldBearBattles/docs/backlog-implementation-guide.md) section 1.
+
+1. **Schema Extension:**
+   - In `packages/shared/src/types.ts`, add `videoPeerId?: string` and `showVideoAvatar?: boolean` to the `Token` schema.
+   - Link a token to a connected peer ID when the token owner enables "Display Webcam on Token" in token settings or player profile.
+2. **Video Element Cache:**
+   - Maintain a registry map in `packages/client/src/common/network/` or `CanvasEngine.ts` mapping `peerId` to off-screen HTML `<video>` elements (`autoplay`, `playsinline`, `muted`).
+3. **Canvas 2D Rendering Pipeline:**
+   - In `packages/client/src/common/engine/TokenRenderer.ts`:
+     - If `token.showVideoAvatar` is true and a ready video stream exists for `token.videoPeerId` (`video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA`):
+     - Clip canvas path to circular token boundary:
+       ```typescript
+       ctx.save();
+       ctx.beginPath();
+       ctx.arc(token.x, token.y, radius, 0, Math.PI * 2);
+       ctx.clip();
+       ctx.drawImage(videoElement, token.x - radius, token.y - radius, radius * 2, radius * 2);
+       ctx.restore();
+       ```
+     - Overlay ring border, HP bar, status badges, and nameplate as normal.
+4. **Animation Loop Request:**
+   - When any token on screen has an active video avatar, ensure `CanvasEngine` maintains continuous `requestAnimationFrame` redraws rather than rendering only on user input.
+
+- [ ]
 
 <a id="ob-146" class="task" data-project="vtt" data-status="planning" data-task-type="feature"></a>
 ### WebRTC Webcam Video Mesh with Draggable PIP Tiles
@@ -2368,7 +2426,27 @@ Render a player's live webcam video feed directly inside their controlling token
 
 
 **Description:**
-Floating, draggable picture-in-picture webcam tiles for players with volume sliders, active speaking rings, and minimize/dock controls over the WebRTC peer mesh.
+Triaged on 2026-10-09:
+**Technical Research & Architecture:**
+Reference: [docs/backlog-implementation-guide.md](file:///Users/tom/Projects/OldBearBattles/docs/backlog-implementation-guide.md) section 1.
+
+1. **WebRTC Video Mesh Renegotiation:**
+   - Extend `VoiceManager.ts` in `packages/client/src/common/network/` to handle video streams (`MediaManager.ts`).
+   - Call `navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, frameRate: 15 }, audio: true })`.
+   - Attach video tracks using `peerConnection.addTrack(videoTrack, mediaStream)` and trigger SDP renegotiation via existing WebSocket signaling (`SIGNAL_OFFER` / `SIGNAL_ANSWER`).
+2. **Bandwidth & Performance Optimization:**
+   - Constrain video resolution to 320x240 @ 15fps to prevent bandwidth saturation in full-mesh topology.
+   - When a peer tile is minimized, set `videoTrack.enabled = false` or `videoTransceiver.direction = 'inactive'`.
+3. **Draggable PIP Overlay Component (`VideoMeshOverlay.tsx`):**
+   - Implement draggable floating container using the `useDraggableWindow` hook pattern established in OB-203.
+   - Each player tile includes:
+     - Webcam video `<video autoPlay playsInline muted={isLocal} />`
+     - Player name badge and audio level indicator
+     - Active speaking glowing green halo border (`box-shadow: 0 0 10px #22c55e`)
+     - Individual volume slider for remote peers
+     - Camera on/off, microphone mute, and tile minimize buttons.
+
+- [ ]
 
 <a id="ob-147" class="task" data-project="vtt" data-status="planning" data-task-type="feature"></a>
 ### Discord Two-Way Bot Sync Gateway
@@ -2379,9 +2457,27 @@ Floating, draggable picture-in-picture webcam tiles for players with volume slid
 
 
 **Description:**
+Triaged on 2026-10-09:
 **Depends On:** [OB-105](#ob-105)
 
-Run a persistent Discord gateway bot daemon providing full two-way synchronization: messages typed in Discord text channels are relayed into OldBear room chat, and vice versa.
+**Technical Research & Architecture:**
+Reference: [docs/backlog-implementation-guide.md](file:///Users/tom/Projects/OldBearBattles/docs/backlog-implementation-guide.md) section 2.
+
+1. **Daemon Architecture:**
+   - Implement `DiscordGatewayService.ts` in `@oldbear/server` (or standalone microservice).
+   - Configured via environment variables: `DISCORD_BOT_TOKEN`, `DISCORD_CHANNEL_ID`, `DISCORD_ROOM_ID`.
+2. **Discord ➔ OldBear Relay:**
+   - Bot connects to Discord Gateway and listens to `messageCreate` events in the configured channel.
+   - Ignores bot messages and webhook posts.
+   - Converts Discord markdown/mentions to OldBear chat format.
+   - Broadcasts into the corresponding OldBear room via WebSocket signaling as `type: 'chat:message'` with sender `"Discord: " + msg.author.username` and Discord avatar.
+3. **OldBear ➔ Discord Relay:**
+   - Server hooks into OldBear room broadcast events.
+   - When public chat messages, `/roll` dice rolls, or combat announcements occur, post to Discord channel webhook (using webhooks to avoid Discord bot rate limits).
+4. **Interactive Bot Slash Commands:**
+   - Add Discord `/roll <formula>` command: evaluates roll using OldBear's dice engine and broadcasts result simultaneously to both Discord and the active OldBear room.
+
+- [ ]
 
 <a id="ob-148" class="task" data-project="vtt" data-status="planning" data-task-type="feature"></a>
 ### D&D Beyond CobaltSession Auth & Private Sheets Support
@@ -2392,9 +2488,27 @@ Run a persistent Discord gateway bot daemon providing full two-way synchronizati
 
 
 **Description:**
+Triaged on 2026-10-09:
 **Depends On:** [OB-140](#ob-140)
 
-Support importing private character sheets and homebrew content via user-supplied D&D Beyond `CobaltSession` authentication tokens or companion browser extension.
+**Technical Research & Architecture:**
+Reference: [docs/backlog-implementation-guide.md](file:///Users/tom/Projects/OldBearBattles/docs/backlog-implementation-guide.md) section 3.
+
+1. **Authentication Mechanism:**
+   - D&D Beyond authenticates private character sheets via an HTTP cookie named `Cobalt-Session`.
+   - When querying `character-service.dndbeyond.com/character/v5/character/{id}`, passing `Cookie: Cobalt-Session=<token>` returns private and campaign-restricted character sheets.
+2. **Security & Ephemeral Storage Strategy:**
+   - Cobalt session tokens grant full account access. **Never store tokens on the server or in shared databases.**
+   - Store locally in client `localStorage` (`oldbear_cobalt_session`) or session storage only.
+   - When requesting a private character, client sends the token in an ephemeral header to the server proxy: `X-Cobalt-Session: <token>`.
+   - In `packages/server/src/dndbeyond.ts`, forward this header as `Cookie: Cobalt-Session=<token>` to D&D Beyond's API, and immediately discard it after the request completes.
+3. **UI Integration in `CharacterFlyout.tsx`:**
+   - Add a collapsible "Private Sheet Auth (Cobalt Session)" drawer in the D&D Beyond tab.
+   - Include clear security disclaimers and instructions on locating the cookie in browser DevTools.
+4. **Alternative Manifest V3 Chrome Extension:**
+   - Provide an optional browser extension companion (see `chrome-extensions` skill) that injects a "Send to OldBear" button onto D&D Beyond character pages to export JSON directly to OldBear without manual cookie copy-pasting.
+
+- [ ]
 
 <a id="ob-149" class="task" data-project="vtt" data-status="planning" data-task-type="feature"></a>
 ### Discord Embedded App SDK Activity Integration
@@ -2405,7 +2519,25 @@ Support importing private character sheets and homebrew content via user-supplie
 
 
 **Description:**
-Embed OldBear directly inside Discord voice channels using the Discord Embedded App SDK so players can launch and join sessions with a single click from their voice call without external links.
+Triaged on 2026-10-09:
+**Technical Research & Architecture:**
+Reference: [docs/backlog-implementation-guide.md](file:///Users/tom/Projects/OldBearBattles/docs/backlog-implementation-guide.md) section 2.
+
+1. **Discord Embedded App SDK Setup:**
+   - Use `@discord/embedded-app-sdk` in `@oldbear/client`.
+   - Detect if running inside Discord iframe (`window.parent !== window`).
+   - Initialize SDK: `const discordSdk = new DiscordSDK(CLIENT_ID); await discordSdk.ready();`.
+2. **OAuth Authorization & Token Exchange:**
+   - Request authorization code via `discordSdk.commands.authorize({ client_id, response_type: 'code', state: '', prompt: 'none', scope: ['identify', 'guilds'] })`.
+   - Client calls `@oldbear/server` endpoint `/api/discord/token` to exchange authorization code for Discord access token using `DISCORD_CLIENT_SECRET`.
+   - Fetch Discord username and avatar to automatically authenticate the player in OldBear.
+3. **Voice Channel Instance & Room Mapping:**
+   - Extract `discordSdk.channelId` and map it directly to `roomId` (`discord-<channelId>`).
+   - All participants launching the activity inside the same Discord voice channel automatically enter the same battlemap room with zero room URL sharing needed.
+4. **CSP & WebSocket Proxy Configuration:**
+   - Ensure WebSocket connections route through Discord URL proxy (`https://*.discordsays.com/.proxy/ws`) or configure appropriate Content Security Policy headers on `@oldbear/server`.
+
+- [ ]
 
 <a id="ob-150" class="task" data-project="vtt" data-status="planning" data-task-type="feature"></a>
 ### System-Agnostic Ruleset Manifest & Characterfiles Integration
@@ -2416,9 +2548,33 @@ Embed OldBear directly inside Discord voice channels using the Discord Embedded 
 
 
 **Description:**
+Triaged on 2026-10-09:
 **Depends On:** [OB-135](#ob-135)
 
-Overhaul system handling by loading external system definition manifests (display templates, stat attributes, resource pools, roll expressions) to render character sheets and token overlays dynamically without hardcoding game rules into the core VTT engine.
+**Technical Research & Architecture:**
+Reference: [docs/backlog-implementation-guide.md](file:///Users/tom/Projects/OldBearBattles/docs/backlog-implementation-guide.md) & [docs/system-agnostic-import.md](file:///Users/tom/Projects/OldBearBattles/docs/system-agnostic-import.md).
+
+1. **Manifest Schema (`RulesetManifest` in `packages/shared/src/types.ts`):**
+   - `id`: Unique identifier (e.g. `'dnd5e'`, `'pf2e'`, `'blades'`, `'generic'`).
+   - `name`: Display name.
+   - `attributes`: List of primary attributes with abbreviations, labels, and derived modifier formulas.
+   - `pools`: Resource tracks (e.g. HP, Temp HP, Spell Slots, Stress, Trauma) with types (`counter`, `tags`, `slots`).
+   - `diceEngine`: Dice mechanics config (`d20_check`, `pool_highest`, `roll_under`, `threshold`).
+   - `sheetLayout`: Section ordering and card display components.
+2. **Dynamic Character Sheet Renderer (`DynamicSheetViewer.tsx`):**
+   - Replace hardcoded D&D-only layouts with dynamic rendering that parses the active character's manifest.
+   - Render attribute grids, skill lists, and resource trackers dynamically from manifest definitions.
+3. **Characterfiles.com & Local File Ingestion:**
+   - Support importing `.character` and `.ruleset` JSON files from characterfiles.com or local file drops.
+   - Convert parsed files into `EntityStatBlock` / `DnDCharacter` structures.
+4. **Built-in Bundled Manifests:**
+   - Create built-in manifests in `packages/shared/src/manifests/` for:
+     - D&D 5e (2014 & 2024)
+     - Pathfinder 2e (PF2e)
+     - Blades in the Dark / FitD
+     - Generic d20 / System-Agnostic
+
+- [ ]
 
 <a id="ob-151" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
 ### Switch Container CI/CD to GitHub Container Registry (ghcr.io)
@@ -2446,15 +2602,37 @@ Transition the production container publishing pipeline from the private registr
 
 
 **Description:**
-
+Triaged on 2026-10-09:
 **Depends On:** [OB-139](#ob-139)
 
-Deploy the `<HelpTip />` component across the application once help text is settled:
+**Implementation Reference:** See authoritative copy and placement table in [docs/helptip-locations.md](file:///Users/tom/Projects/OldBearBattles/docs/helptip-locations.md).
 
-- Toolbars and drawing tool flyouts.
-- Token controls and persistent marker properties bar.
-- Scene settings, map manager, and asset manager.
-- Dice roller, initiative tracker, and chat commands.
+**Key Integration Targets:**
+1. **Map Management (`MapSettingsModal.tsx`):**
+   - Grid Alignment (`Grid Size / DPI`, placement right)
+   - Grid Offset (X/Y, placement right)
+   - Submaps & Staging Areas (placement left)
+2. **Token Controls (`TokenControls.tsx`):**
+   - Hit Points & Temp HP (placement top)
+   - Conditions & Turn Lifecycles (placement top)
+   - Token Facing Rotation (placement top, shortcut `Shift + Drag`)
+   - Player Token Permissions (placement top)
+3. **Chat Panel (`ChatPanel.tsx`):**
+   - Speaking as / Token Association (placement top, shortcut `/token`)
+   - Inspection Syntax (`?` suffix on `/spell?`, `/attack?`, `/monster?`, placement top)
+   - Advanced Dice Syntax (placement top, shortcut `/r`)
+4. **Initiative Tracker (`InitiativeTracker.tsx`):**
+   - Turn Lifecycle & Round Transitions (placement bottom, shortcut `Space`)
+   - Batch Initiative Auto-Roll (placement bottom)
+5. **Toolbar & Tools (`ToolBar.tsx`, `MarkerControls.tsx`):**
+   - Spell Area Templates (placement right)
+   - Laser Pointer (placement right, shortcut `L`)
+   - Modular Dungeon Props (placement right, shortcut `P`)
+   - Ruler Diagonal Rules (5-10-5 vs Euclidean, placement right, shortcut `M`)
+6. **Data Backup & Binder Modal (`DataBackupModal.tsx`):**
+   - Universal `.binder` Package export vs native JSON dump.
+
+- [ ]
 
 <a id="ob-153" class="task" data-project="vtt" data-status="triage" data-task-type="feature"></a>
 ### Pathfinder 2e (PF2e) Ruleset Support
@@ -2465,16 +2643,34 @@ Deploy the `<HelpTip />` component across the application once help text is sett
 
 
 **Description:**
-
+Triaged on 2026-10-09:
 **Depends On:** [OB-144](#ob-144)
 
-Implement PF2e-specific ruleset mechanics and sheet visualization:
+**Architecture & Implementation Details:**
+1. **System Tagging:**
+   - Tag characters and tokens with `system: 'pf2e'` in `DnDCharacter` / `EntityStatBlock` schemas.
+2. **Action Economy Glyphs:**
+   - Wire action glyphs (`◆`, `◆◆`, `◆◆◆`, `↺`, `◇`) from `packages/shared/src/actionCost.ts` into `StatBlockCard.tsx`, `TokenControls.tsx`, and `CharacterFlyout.tsx`.
+3. **Multiple Attack Penalty (MAP) Controls:**
+   - In `<StatBlockCard />` and token action buttons, render 3 strike options:
+     - Standard: Strike (+X), MAP 2 (-5), MAP 3 (-10)
+     - Agile trait weapons: Strike (+X), MAP 2 (-4), MAP 3 (-8)
+4. **TEML Proficiency Framework:**
+   - Display proficiency badges (T = Level+2, E = Level+4, M = Level+6, L = Level+8) in `CharacterFlyout.tsx` when `character.system === 'pf2e'`.
+5. **4-Tier Degrees of Success Engine:**
+   - In `packages/client/src/common/dice/AdvancedDiceEngine.ts`:
+     - Compare roll total $R$ against Target DC:
+       - $R \ge \text{DC} + 10$: **Critical Success**
+       - $R \ge \text{DC}$: **Success**
+       - $R < \text{DC}$: **Failure**
+       - $R \le \text{DC} - 10$: **Critical Failure**
+     - Natural 20 upgrades the result one degree; Natural 1 downgrades one degree.
+     - Emit degree-of-success badge in chat roll messages.
+6. **PF2e Condition Lifecycles:**
+   - In `packages/client/src/common/status/StatusManager.ts`:
+     - Add Frightened (ticks down by 1 at end of turn), Drained, Doomed, Sickened, Clumsy, Enfeebled, Stupefied.
 
-- Tag characters and tokens with `system: 'pf2e'`.
-- Support PF2e 3-action economy glyphs (`◆`, `◆◆`, `◆◆◆`, `↺`, `◇`) on attacks and actions.
-- Support Multiple Attack Penalty (MAP) buttons on strikes (0, -5, -10 or -4, -8 for agile).
-- Support TEML (Trained, Expert, Master, Legendary) proficiency progression for skills, saving throws, and perception.
-- PF2e roll modifiers and degree-of-success rules (critical success on DC +10 or nat 20).
+- [ ]
 
 <a id="ob-154" class="task" data-project="vtt" data-status="testing" data-task-type="feature"></a>
 ### `GAME_MODE` Environment Configuration & Deployment Toggles
@@ -3249,7 +3445,21 @@ Describe task objectives and implementation requirements here.
 
 
 **Description:**
-Describe task objectives and implementation requirements here.
+Triaged on 2026-10-09:
+**Problem Statement:**
+The current `/help` output in `ChatPanel.tsx` prints an unformatted, monolithic plain-text string containing 18 bullet points into chat, which is hard to read on mobile and desktop, has no visual hierarchy, and lacks interactive assistance.
+
+**Concrete Implementation Steps:**
+1. In `packages/client/src/common/components/ChatPanel.tsx`:
+   - Restructure the `/help` command output to render categorized, styled interactive cards or a rich markdown format:
+     - **Dice & Rolling:** `/roll` (adv/dis, exploding, target thresholds)
+     - **Combat & Spells:** `/attack`, `/attack?`, `/spell`, `/spell?`, `/skill`, `/item`, `/item?`, `/ability?`, `/monster?`
+     - **Tokens & Character:** `/token <name|clear>`, `/as`, `/sync <id>`, `/tokens`
+     - **Clocks & Timers:** `/timer <duration>`, `/clock`
+     - **System & Integrations:** `/import <url>`, `/discord webhook`
+   - Make command names clickable badges/chips: clicking a command badge prefills or auto-completes the input box with that command.
+   - Add support for command syntax sub-help: `/help <command>` (e.g. `/help roll`, `/help attack`, `/help timer`) showing detailed examples, flags, and parameter explanations.
+2. Add unit tests in `packages/client/src/common/components/chat.test.ts` verifying `/help` renders categorized command sections and handles sub-commands like `/help timer`.
 
 - [ ]
 
@@ -3274,7 +3484,20 @@ Describe task objectives and implementation requirements here.
 
 
 **Description:**
-Error when trying to import pf2 content with /import Uncaught TypeError: Cannot read properties of undefined (reading 'toUpperCase') at StatBlockCard (StatBlockCard.tsx:330:48) See [OB-177](#0b-177).
+Triaged on 2026-10-09:
+**Root Cause Analysis:**
+In `packages/client/src/common/components/StatBlockCard.tsx` (line 330-333), the component checks `{statBlock.savingThrow && ...}` and immediately accesses `{statBlock.savingThrow.ability.toUpperCase()}` without optional chaining or validation.
+When importing Pathfinder 2e items, spells, or creatures from Foundry PF2e pack JSON via `/import` (or when `savingThrow` object is parsed with non-standard attributes or undefined `ability`), `statBlock.savingThrow.ability` is `undefined`, causing the runtime crash `Cannot read properties of undefined (reading 'toUpperCase')`.
+Furthermore, in PF2e, saving throw statistics are Fortitude, Reflex, and Will (`type: 'fortitude' | 'reflex' | 'will'`), whereas the D&D 5e schema expects standard ability scores (`'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'`).
+
+**Concrete Implementation Steps:**
+1. In `packages/client/src/common/components/StatBlockCard.tsx`:
+   - Guard `statBlock.savingThrow.ability` using optional chaining: `(statBlock.savingThrow.ability || (statBlock.savingThrow as any).type || 'Save').toUpperCase()`.
+   - Format DC cleanly: `{statBlock.savingThrow.dc ? ` DC ${statBlock.savingThrow.dc}` : ''}`.
+2. In `packages/client/src/common/utils/foundryPf2eFetcher.ts`:
+   - Ensure `savingThrow` mapping properly normalizes PF2e defense saves (e.g. `save.statistic` like `"reflex"`) into standard format or sets `ability: save.statistic as any`.
+3. In `packages/client/src/common/components/StatBlockCard.test.ts`:
+   - Add unit test rendering a statblock with undefined/missing `savingThrow.ability` and PF2e Reflex save, verifying no crash occurs.
 
 - [ ]
 
@@ -3426,9 +3649,26 @@ When I open the character sheet I should be able to save that character to my da
 
 
 **Description:**
-Find a source for images. Maybe some kind of tagged db where we can calculate the relevance based on how many tags match the request. I don't want ot burn through ai tokens generating these for people. We could look for places to link to if users want more images or a variety of images. Icons for spells, items, attacks, and abilities too. At worst give me a bunch of prompts to generate images locally and cache them with the prompt text for searching and scoring later.
+Triaged on 2026-10-09:
+**Requirements & Architecture Analysis:**
+1. **Curated Icon Catalog (Zero-Cost / Open Source):**
+   - **Game-icons.net (CC-BY 3.0):** Over 4,000 gaming vector icons covering spells (fire, frost, lightning, heal, necrotic), weapons/attacks (sword, axe, bow, dagger, club, unarmed), armor/items (shield, potion, scroll, ring, wand), and conditions.
+   - Package a compressed tagged index `iconCatalog.json` (icon slug, category, keywords/tags, SVG asset path).
+2. **Tag Matching & Relevance Scoring Engine:**
+   - Search function: `score = matchingTagsCount / queryTokensCount`.
+   - Exact tag match = weight 3; category match = weight 2; substring match = weight 1.
+   - Return top 24 matching icons sorted by score descending.
+3. **Pre-Generated Prompt & Image Seed Bank:**
+   - Bundle a pre-compiled JSON catalog `imagePresets.json` mapping common fantasy archetypes (e.g. "Dwarf Fighter", "Elf Wizard", "Goblin Archer", "Orc Barbarian", "Dragon", "Tavern", "Dungeon Floor", "Forest Clearing") to bundled WebP thumbnails and detailed image-generation prompts.
+   - When users want to generate custom art via external tools, provide an "Export / Copy Generation Prompt" button with curated prompt keywords (e.g. `"Fantasy tabletop token portrait, watercolor painting, circular framing, transparent background"`).
+4. **External Image Search & Free Repository Integration:**
+   - Provide direct links/search query helpers to Openverse (openverse.org, CC-licensed art) and Wikimedia Commons.
+5. **Integration Points:**
+   - Token Editor Modal (`TokenEditorModal.tsx`) and Token Picker Modal (`TokenPickerModal.tsx`): add an "Icon & Asset Library" tab with the tagged search bar.
+   - Item / Attack / Spell cards: auto-select default icon based on action type or weapon traits.
 
 - [ ]
+
 
 <a id="ob-216" class="task" data-project="vtt" data-status="testing" data-task-type="bug"></a>
 ### Add to character on an item card does nothing. It should add the attack/ability to the character sheet,
