@@ -50,6 +50,7 @@ import { getTokenAABB } from '../common/engine/GridRenderer.js';
 import { duplicateAttachedMarkers } from '../common/engine/PointerSystem.js';
 import { NetworkClient } from '../common/network/NetworkClient.js';
 import { VoiceManager, VoiceState } from '../common/network/VoiceManager.js';
+import { useFeatureFlag } from '../common/config/featureFlags.js';
 import { processTurnTransition, resolveStatusDefinitions } from '../common/status/StatusManager.js';
 import { formatTimerCompletionText } from '../common/timer/timerUtils.js';
 import {
@@ -128,6 +129,9 @@ export const AppVtt: React.FC = () => {
     desktopVolume: 0.8,
     localLevel: 0,
   });
+  const isVoiceChatEnabled = useFeatureFlag('voice_chat');
+  const isSoundboardEnabled = useFeatureFlag('soundboard');
+  const isDiceRollerEnabled = useFeatureFlag('dice_roller');
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
 
   // Modals & Flyouts
@@ -2461,7 +2465,7 @@ export const AppVtt: React.FC = () => {
       )}
 
       {/* Floating Draggable Dice Roller Window (Task #120) */}
-      {showDiceRoller && session && localPlayer && (
+      {isDiceRollerEnabled && showDiceRoller && session && localPlayer && (
         <DiceRoller
           userName={localPlayer.name}
           userColor={localPlayer.color}
@@ -2645,7 +2649,7 @@ export const AppVtt: React.FC = () => {
       )}
 
       {/* Soundboard Modal */}
-      {showSoundboard && (
+      {isSoundboardEnabled && showSoundboard && (
         <SoundboardModal
           isGm={isGm}
           onClose={() => setShowSoundboard(false)}
@@ -2661,7 +2665,7 @@ export const AppVtt: React.FC = () => {
       )}
 
       {/* Voice Settings Modal */}
-      {showVoiceSettings && voiceManagerRef.current && session && (
+      {isVoiceChatEnabled && showVoiceSettings && voiceManagerRef.current && session && (
         <VoiceSettingsModal
           voiceManager={voiceManagerRef.current}
           voiceState={voiceState}
@@ -2903,7 +2907,7 @@ export const AppVtt: React.FC = () => {
       />
 
       {/* On-Screen Push-to-Talk touch button for mobile / touch screens */}
-      {voiceState.transmissionMode === 'ptt' && (
+      {isVoiceChatEnabled && voiceState.transmissionMode === 'ptt' && (
         <div
           className="floating-hud"
           style={{

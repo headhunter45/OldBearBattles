@@ -24,6 +24,7 @@ import {
 import { ActiveTool } from '../engine/CanvasEngine.js';
 
 import { COLOR_VALUES } from '../config/colors.js';
+import { useFeatureFlag } from '../config/featureFlags.js';
 
 export interface ToolBarProps {
   activeTool: ActiveTool;
@@ -72,6 +73,7 @@ export const ToolBar: React.FC<ToolBarProps> = ({
 }) => {
   const [showSelectMenu, setShowSelectMenu] = useState(false);
   const selectMenuRef = useRef<HTMLDivElement>(null);
+  const fogOfWarEnabled = useFeatureFlag('fog_of_war');
 
   const [showFogMenu, setShowFogMenu] = useState(false);
   const fogMenuRef = useRef<HTMLDivElement>(null);
@@ -533,7 +535,7 @@ export const ToolBar: React.FC<ToolBarProps> = ({
       )}
 
       {/* GM Fog of War Tools Sub-menu (Bug #58) */}
-      {isGm && (
+      {isGm && fogOfWarEnabled && (
         <>
           <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '0.2rem 0' }} />
           <div ref={fogMenuRef} style={{ position: 'relative' }}>

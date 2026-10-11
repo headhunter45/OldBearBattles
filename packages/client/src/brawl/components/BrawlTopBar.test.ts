@@ -3,6 +3,7 @@ import assert from 'node:assert';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { BrawlTopBar } from './BrawlTopBar.js';
+import { updateActiveFlags } from '../../common/config/featureFlags.js';
 
 describe('BrawlTopBar Active Scene Settings (OB-209)', () => {
   it('renders Scene label and settings button for Organizer in BrawlTopBar', () => {
@@ -271,6 +272,87 @@ describe('BrawlTopBar Active Scene Settings (OB-209)', () => {
     assert.ok(markup.includes('title="Start Clock"'), 'Renders Start Clock button when enabled');
     assert.ok(markup.includes('title="Hide / Disable Chess Clocks"'), 'Renders Disable Chess Clocks button');
   });
+
+  it('respects feature flags for topbar buttons (OB-232)', () => {
+    const baseProps = {
+      roomName: 'Test Room',
+      activeMapName: 'Wargame Ruins',
+      isOrganizer: true,
+      players: [],
+      localPlayer: null,
+      activePlayerIndex: 1 as const,
+      currentRound: 1,
+      currentPhase: 'Command' as const,
+      p1ClockSeconds: 300,
+      p2ClockSeconds: 300,
+      isClockRunning: false,
+      onToggleClock: () => {},
+      onNextPhase: () => {},
+      onSwitchActivePlayer: () => {},
+      onOpenArmyRoster: () => {},
+      onOpenDice: () => {},
+      onOpenScoreboard: () => {},
+      onOpenObjectives: () => {},
+      onOpenToModal: () => {},
+      onOpenMaps: () => {},
+      onOpenSceneSettings: () => {},
+      onOpenSoundboard: () => {},
+      onOpenBackup: () => {},
+      onAddNewModel: () => {},
+      onToggleMobileDrawer: () => {},
+      onToggleChessClockHUD: () => {},
+      onToggleChessClockEnabled: () => {},
+    };
+
+    // When flags are enabled
+    updateActiveFlags({
+      chess_clock: true,
+      scoreboard: true,
+      objectives: true,
+      army_roster: true,
+      to_mode: true,
+      dice_roller: true,
+    });
+    const enabledMarkup = renderToStaticMarkup(
+      React.createElement(BrawlTopBar, baseProps)
+    );
+    assert.ok(enabledMarkup.includes('title="Open Army Roster"'), 'Shows Army button when flag enabled');
+    assert.ok(enabledMarkup.includes('title="Open Dice Roller"'), 'Shows Dice button when flag enabled');
+    assert.ok(enabledMarkup.includes('title="Open Match Scoreboard (VP, CP, Casualties)"'), 'Shows Scoreboard button when flag enabled');
+    assert.ok(enabledMarkup.includes('title="Open Objective Markers &amp; Control Zones"') || enabledMarkup.includes('title="Open Objective Markers & Control Zones"'), 'Shows Objectives button when flag enabled');
+    assert.ok(enabledMarkup.includes('title="Tournament Organizer &amp; Spectator Settings"') || enabledMarkup.includes('title="Tournament Organizer & Spectator Settings"'), 'Shows TO button when flag enabled');
+    assert.ok(enabledMarkup.includes('title="Enable Match Chess Clocks"'), 'Shows Clock button when flag enabled');
+
+    // When flags are disabled
+    updateActiveFlags({
+      chess_clock: false,
+      scoreboard: false,
+      objectives: false,
+      army_roster: false,
+      to_mode: false,
+      dice_roller: false,
+    });
+    const disabledMarkup = renderToStaticMarkup(
+      React.createElement(BrawlTopBar, baseProps)
+    );
+    assert.ok(!disabledMarkup.includes('title="Open Army Roster"'), 'Hides Army button when flag disabled');
+    assert.ok(!disabledMarkup.includes('title="Open Dice Roller"'), 'Hides Dice button when flag disabled');
+    assert.ok(!disabledMarkup.includes('title="Open Match Scoreboard (VP, CP, Casualties)"'), 'Hides Scoreboard button when flag disabled');
+    assert.ok(!disabledMarkup.includes('title="Open Objective Markers & Control Zones"'), 'Hides Objectives button when flag disabled');
+    assert.ok(!disabledMarkup.includes('title="Tournament Organizer & Spectator Settings"'), 'Hides TO button when flag disabled');
+    assert.ok(!disabledMarkup.includes('title="Enable Match Chess Clocks"'), 'Hides Clock button when flag disabled');
+
+    // Reset flags to defaults
+    updateActiveFlags({
+      chess_clock: false,
+      scoreboard: true,
+      objectives: true,
+      army_roster: true,
+      to_mode: true,
+      dice_roller: true,
+    });
+  });
 });
+
 
 

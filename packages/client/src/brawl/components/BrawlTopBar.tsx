@@ -19,6 +19,7 @@ import {
   Settings,
   ChevronDown,
   X,
+  Dices,
 } from 'lucide-react';
 import { BrawlUserRole } from '../domain/toManager.js';
 import { Player } from '@oldbear/shared';
@@ -134,6 +135,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
   const objectivesEnabled = useFeatureFlag('objectives');
   const armyRosterEnabled = useFeatureFlag('army_roster');
   const toModeEnabled = useFeatureFlag('to_mode');
+  const diceRollerEnabled = useFeatureFlag('dice_roller');
 
   return (
     <header
@@ -873,6 +875,33 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
             title="Open Army Roster"
           >
             <Shield size={14} /> Army
+          </button>
+        )}
+
+        {/* Dice Roller Button */}
+        {diceRollerEnabled && onOpenDice && (
+          <button
+            className="btn btn-glass"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              color: '#ec4899',
+              border: '1px solid rgba(236, 72, 153, 0.35)',
+              background: 'rgba(236, 72, 153, 0.12)',
+              padding: '3px 8px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              flexShrink: 0,
+              whiteSpace: 'nowrap',
+            }}
+            onClick={onOpenDice}
+            title="Open Dice Roller"
+          >
+            <Dices size={13} />
+            <span className="brawl-topbar-btn-label">Dice</span>
           </button>
         )}
 

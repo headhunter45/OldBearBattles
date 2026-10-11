@@ -24,6 +24,7 @@ import { VoiceState } from '../network/VoiceManager.js';
 
 import { COLOR_VALUES } from '../config/colors.js';
 import { isSingleGameModeEnforced, switchGameMode, detectGameMode } from '../../App.js';
+import { useFeatureFlag } from '../config/featureFlags.js';
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -84,6 +85,10 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   );
   const [copied, setCopied] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+
+  const voiceChatEnabled = useFeatureFlag('voice_chat');
+  const soundboardEnabled = useFeatureFlag('soundboard');
+  const diceRollerEnabled = useFeatureFlag('dice_roller');
 
   useEffect(() => {
     if (isOpen) {
@@ -189,73 +194,75 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
         </div>
 
         {/* Voice Controls Section */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0.6rem 0.75rem',
-            backgroundColor: 'rgba(255, 255, 255, 0.03)',
-            borderRadius: 'var(--radius-sm)',
-            border: '1px solid var(--border-subtle)',
-            marginBottom: '1rem',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div
-              style={{
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                backgroundColor: voiceState?.isSpeaking ? 'var(--accent-emerald)' : 'var(--text-muted)',
-                boxShadow: voiceState?.isSpeaking ? '0 0 8px var(--accent-emerald)' : 'none',
-              }}
-            />
-            <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>
-              {voiceState?.isForceMuted ? 'Muted by GM' : voiceState?.isMuted ? 'Mic Muted' : isSendingAudio ? 'Transmitting...' : 'Voice Active'}
-            </span>
+        {voiceChatEnabled && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0.6rem 0.75rem',
+              backgroundColor: 'rgba(255, 255, 255, 0.03)',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border-subtle)',
+              marginBottom: '1rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div
+                style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  backgroundColor: voiceState?.isSpeaking ? 'var(--accent-emerald)' : 'var(--text-muted)',
+                  boxShadow: voiceState?.isSpeaking ? '0 0 8px var(--accent-emerald)' : 'none',
+                }}
+              />
+              <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                {voiceState?.isForceMuted ? 'Muted by GM' : voiceState?.isMuted ? 'Mic Muted' : isSendingAudio ? 'Transmitting...' : 'Voice Active'}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.35rem' }}>
+              <button
+                className={`btn-icon ${isSendingAudio ? 'anim-sending-audio' : ''}`}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  color: voiceState?.isMuted || voiceState?.isForceMuted ? 'var(--accent-rose)' : isSendingAudio ? 'var(--accent-emerald)' : undefined,
+                }}
+                onClick={onToggleMute}
+                title="Toggle Microphone"
+              >
+                {voiceState?.isMuted || voiceState?.isForceMuted ? <MicOff size={16} /> : <Mic size={16} />}
+              </button>
+
+              <button
+                className="btn-icon"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  color: voiceState?.isDeafened ? 'var(--accent-rose)' : undefined,
+                }}
+                onClick={onToggleDeafen}
+                title="Toggle Deafen"
+              >
+                <Headphones size={16} />
+              </button>
+
+              <button
+                className="btn-icon"
+                style={{ width: '32px', height: '32px' }}
+                onClick={() => {
+                  onClose();
+                  onOpenVoiceSettings?.();
+                }}
+                title="Voice Settings"
+              >
+                <Radio size={16} />
+              </button>
+            </div>
           </div>
-
-          <div style={{ display: 'flex', gap: '0.35rem' }}>
-            <button
-              className={`btn-icon ${isSendingAudio ? 'anim-sending-audio' : ''}`}
-              style={{
-                width: '32px',
-                height: '32px',
-                color: voiceState?.isMuted || voiceState?.isForceMuted ? 'var(--accent-rose)' : isSendingAudio ? 'var(--accent-emerald)' : undefined,
-              }}
-              onClick={onToggleMute}
-              title="Toggle Microphone"
-            >
-              {voiceState?.isMuted || voiceState?.isForceMuted ? <MicOff size={16} /> : <Mic size={16} />}
-            </button>
-
-            <button
-              className="btn-icon"
-              style={{
-                width: '32px',
-                height: '32px',
-                color: voiceState?.isDeafened ? 'var(--accent-rose)' : undefined,
-              }}
-              onClick={onToggleDeafen}
-              title="Toggle Deafen"
-            >
-              <Headphones size={16} />
-            </button>
-
-            <button
-              className="btn-icon"
-              style={{ width: '32px', height: '32px' }}
-              onClick={() => {
-                onClose();
-                onOpenVoiceSettings?.();
-              }}
-              title="Voice Settings"
-            >
-              <Radio size={16} />
-            </button>
-          </div>
-        </div>
+        )}
 
         {/* Main Tool Actions (reorganized per Task #108) */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginBottom: '1.25rem' }}>
@@ -335,16 +342,18 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
           )}
 
           {/* 6. Soundboard */}
-          <button
-            className="btn btn-secondary"
-            style={{ justifyContent: 'flex-start', padding: '0.65rem' }}
-            onClick={() => {
-              onClose();
-              onOpenSoundboard();
-            }}
-          >
-            <Volume2 size={18} color="var(--accent-emerald)" /> Soundboard
-          </button>
+          {soundboardEnabled && (
+            <button
+              className="btn btn-secondary"
+              style={{ justifyContent: 'flex-start', padding: '0.65rem' }}
+              onClick={() => {
+                onClose();
+                onOpenSoundboard();
+              }}
+            >
+              <Volume2 size={18} color="var(--accent-emerald)" /> Soundboard
+            </button>
+          )}
 
           {/* 6b. Progress Clocks (OB-132) */}
           {onOpenClocks && (
@@ -389,28 +398,32 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
           )}
 
           {/* 8. Voice & Audio Settings */}
-          <button
-            className="btn btn-secondary"
-            style={{ justifyContent: 'flex-start', padding: '0.65rem' }}
-            onClick={() => {
-              onClose();
-              onOpenVoiceSettings?.();
-            }}
-          >
-            <Radio size={18} color="var(--accent-primary)" /> Voice & Audio Settings
-          </button>
+          {voiceChatEnabled && (
+            <button
+              className="btn btn-secondary"
+              style={{ justifyContent: 'flex-start', padding: '0.65rem' }}
+              onClick={() => {
+                onClose();
+                onOpenVoiceSettings?.();
+              }}
+            >
+              <Radio size={18} color="var(--accent-primary)" /> Voice & Audio Settings
+            </button>
+          )}
 
           {/* Dice Roller Tool */}
-          <button
-            className="btn btn-secondary"
-            style={{ justifyContent: 'flex-start', padding: '0.65rem', opacity: 0.9 }}
-            onClick={() => {
-              onClose();
-              onOpenDice();
-            }}
-          >
-            <Dices size={18} color="var(--accent-primary)" /> Dice Roller
-          </button>
+          {diceRollerEnabled && (
+            <button
+              className="btn btn-secondary"
+              style={{ justifyContent: 'flex-start', padding: '0.65rem', opacity: 0.9 }}
+              onClick={() => {
+                onClose();
+                onOpenDice();
+              }}
+            >
+              <Dices size={18} color="var(--accent-primary)" /> Dice Roller
+            </button>
+          )}
         </div>
 
         {/* Profile Customization Section */}

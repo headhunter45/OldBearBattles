@@ -171,7 +171,18 @@ This document provides step-by-step instructions for manually verifying all feat
 
 - **Reference in tasks.md:** [tasks.md: OB-232](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-232)
 - **Primary Source Code:** [featureFlags.ts](file:///Users/tom/Projects/OldBearBattles/packages/shared/src/featureFlags.ts), [featureFlags.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/config/featureFlags.ts), [index.ts](file:///Users/tom/Projects/OldBearBattles/packages/server/src/index.ts)
-- **Where to find it:** Environment variables (`.env` in dev, container environment in prod), `/api/features` endpoint, and browser console (`window.__oldbear_features`).
+- **Where to find it:** Environment variables (`.env` in dev, container environment in prod), `/api/features` endpoint, and browser console (`window.__oldbear_features`). Controls:
+  1. `chess_clock`: Brawl topbar button & floating Chess Clock HUD widget.
+  2. `voice_chat`: Voice section in Mobile Drawer, Voice Settings modal, and floating PTT button.
+  3. `soundboard`: Soundboard button in Mobile Drawer and Soundboard modal in VTT/Brawl.
+  4. `dice_roller`: Dice button in Mobile Drawer, Brawl topbar, and draggable Dice Roller window.
+  5. `scoreboard`: Scoreboard VP button in Brawl topbar and Scoreboard modal.
+  6. `objectives`: Objectives button in Brawl topbar and Objectives modal.
+  7. `to_mode`: TO / Spectator button in Brawl topbar and TO Controls modal.
+  8. `dndbeyond`: D&D Beyond 5e tab and importer in Character Sheet flyout.
+  9. `pathbuilder`: Pathbuilder 2e PF2e tab and importer in Character Sheet flyout.
+  10. `army_roster`: Army button in Brawl topbar and Army Roster flyout.
+  11. `fog_of_war`: GM Fog of War tool and submenus in the canvas toolbar.
 
 #### Step-by-Step Instructions:
 
@@ -181,23 +192,28 @@ This document provides step-by-step instructions for manually verifying all feat
    - Core features like Army Roster, Objectives, Scoreboard, and TO mode are enabled by default.
 2. **Verify Server Endpoint (`/api/features`)**:
    - In your browser or via curl, navigate to `http://localhost:3000/api/features`.
-   - Verify the response JSON returns `{ features: { chess_clock: false, voice_chat: true, ... } }`.
+   - Verify the response JSON returns all 11 flags: `{ features: { chess_clock: false, voice_chat: true, soundboard: true, dice_roller: true, scoreboard: true, objectives: true, to_mode: true, dndbeyond: true, pathbuilder: true, army_roster: true, fog_of_war: true } }`.
 3. **Verify Runtime / Post-Deployment Toggling**:
    - Open browser developer console on the Brawl page.
    - Type `__oldbear_features.set('chess_clock', true)`.
    - Verify the top bar immediately updates and displays the "Clock" button. Click it to open the floating Chess Clock HUD.
    - Type `__oldbear_features.set('chess_clock', false)` (or `__oldbear_features.reset()`).
    - Verify the chess clock button immediately hides.
-4. **Verify URL Query Override**:
+4. **Verify Component-Level Toggling for Flags**:
+   - **Character Imports**: Open the Character Sheet in VTT. In console run `__oldbear_features.set('dndbeyond', false)` and `__oldbear_features.set('pathbuilder', false)`. Observe that the D&D Beyond and Pathbuilder tabs hide, leaving only Local Character. Reset them with `__oldbear_features.reset()`.
+   - **Brawl Modules**: In console run `__oldbear_features.set('scoreboard', false)` or `__oldbear_features.set('army_roster', false)`. Observe that the corresponding top bar buttons hide and their modals cannot be opened.
+   - **Fog of War**: As GM in VTT, run `__oldbear_features.set('fog_of_war', false)` in console. Observe that the Fog of War button in the toolbar disappears.
+   - **Dice Roller / Soundboard / Voice**: Run `__oldbear_features.set('dice_roller', false)`. Observe that the Dice buttons disappear from the top bar and mobile drawer.
+5. **Verify URL Query Override**:
    - Navigate to `http://localhost:3000/?brawl=true&enable_feature=chess_clock` (or `?feature:chess_clock=true`).
    - Verify the chess clock appears enabled without requiring environment modifications.
-5. **Verify Development `.env` Support**:
+6. **Verify Development `.env` Support**:
    - Check `.env.example` and `.env` under section `9. Feature Flags (OB-232)`.
    - Setting `FEATURE_CHESS_CLOCK=true` in `.env` activates chess clocks upon server restart or Vite reload.
 
 #### Expected Result (Pass Criteria):
 
-- All supported feature flags have explicit defaults documented in `.env.example`.
+- All 11 supported feature flags have explicit defaults documented in `.env.example`.
 - In production, flags can be toggled via host/container environment variables without rebuilding the static frontend bundle.
 - In development, flags can be set in `.env` using standard naming (`FEATURE_<NAME>=true|false`).
 - Frontend components reactively update when flags change without full page reloads.

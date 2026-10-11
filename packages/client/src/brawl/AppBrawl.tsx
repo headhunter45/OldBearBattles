@@ -133,6 +133,13 @@ export const AppBrawl: React.FC = () => {
   const [showArmyRoster, setShowArmyRoster] = useState(false);
   const [localArmy, setLocalArmy] = useState<WargameArmy>(() => loadSavedBrawlArmy());
   const isChessClockFeatureEnabled = useFeatureFlag('chess_clock');
+  const isDiceRollerEnabled = useFeatureFlag('dice_roller');
+  const isSoundboardEnabled = useFeatureFlag('soundboard');
+  const isVoiceChatEnabled = useFeatureFlag('voice_chat');
+  const isScoreboardEnabled = useFeatureFlag('scoreboard');
+  const isObjectivesEnabled = useFeatureFlag('objectives');
+  const isArmyRosterEnabled = useFeatureFlag('army_roster');
+  const isToModeEnabled = useFeatureFlag('to_mode');
   const [showChessClockHUD, setShowChessClockHUD] = useState(false);
   const [showDiceRoller, setShowDiceRoller] = useState(false);
   const [showMapManager, setShowMapManager] = useState(false);
@@ -854,7 +861,7 @@ export const AppBrawl: React.FC = () => {
       />
 
       {/* Army Roster Flyout */}
-      {showArmyRoster && (
+      {isArmyRosterEnabled && showArmyRoster && (
         <ArmyRosterFlyout
           army={localArmy}
           onArmyChange={(updated) => {
@@ -948,7 +955,7 @@ export const AppBrawl: React.FC = () => {
       )}
 
       {/* Chat & Dice Roller */}
-      {showDiceRoller && (
+      {isDiceRollerEnabled && showDiceRoller && (
         <DiceRoller
           userName={localPlayer?.name || 'Player'}
           userColor={localPlayer?.color || '#f59e0b'}
@@ -984,7 +991,7 @@ export const AppBrawl: React.FC = () => {
       )}
 
       {/* Scoreboard Modal (OB-159) */}
-      {showScoreboardModal && (
+      {isScoreboardEnabled && showScoreboardModal && (
         <ScoreboardModal
           scoreboard={scoreboard}
           onUpdateResource={handleUpdateScoreResource}
@@ -1002,7 +1009,7 @@ export const AppBrawl: React.FC = () => {
       )}
 
       {/* Objectives & Control Zones Modal (OB-160) */}
-      {showObjectivesModal && (
+      {isObjectivesEnabled && showObjectivesModal && (
         <ObjectivesModal
           objectives={objectives}
           evaluation={objectivesEvaluation}
@@ -1111,7 +1118,7 @@ export const AppBrawl: React.FC = () => {
       )}
 
       {/* Soundboard Modal */}
-      {showSoundboard && session && (
+      {isSoundboardEnabled && showSoundboard && session && (
         <SoundboardModal
           isGm={isOrganizer}
           onClose={() => setShowSoundboard(false)}
@@ -1122,7 +1129,7 @@ export const AppBrawl: React.FC = () => {
       )}
 
       {/* Voice Settings Modal */}
-      {showVoiceSettings && voiceManagerRef.current && (
+      {isVoiceChatEnabled && showVoiceSettings && voiceManagerRef.current && (
         <VoiceSettingsModal
           voiceState={voiceState}
           voiceManager={voiceManagerRef.current}
@@ -1134,7 +1141,7 @@ export const AppBrawl: React.FC = () => {
       )}
 
       {/* Tournament Organizer & Spectator Controls Modal (OB-163) */}
-      {showToModal && (
+      {isToModeEnabled && showToModal && (
         <TournamentOrganizerModal
           currentRole={brawlRole}
           scoreboard={scoreboard}

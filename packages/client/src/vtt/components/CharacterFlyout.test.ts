@@ -4,6 +4,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CharacterFlyout } from './CharacterFlyout.js';
 import type { Player, Token, DnDCharacter } from '@oldbear/shared';
+import { updateActiveFlags } from '../../common/config/featureFlags.js';
 
 describe('CharacterFlyout Unbound Token Reset (OB-207)', () => {
   let mockStore: Record<string, string> = {};
@@ -266,4 +267,36 @@ describe('CharacterFlyout Unbound Token Reset (OB-207)', () => {
       'Displays Local Character Import JSON button'
     );
   });
+
+  it('respects dndbeyond and pathbuilder feature flags (OB-232)', () => {
+    // Both enabled
+    updateActiveFlags({ dndbeyond: true, pathbuilder: true });
+    const allEnabledMarkup = renderToStaticMarkup(
+      React.createElement(CharacterFlyout, {
+        player: mockPlayer,
+        targetToken: unboundToken,
+        onClose: () => {},
+      })
+    );
+    assert.ok(allEnabledMarkup.includes('Local Character'), 'Shows Local tab');
+    assert.ok(allEnabledMarkup.includes('D&amp;D Beyond (5e)') || allEnabledMarkup.includes('D&D Beyond (5e)'), 'Shows D&D Beyond tab when enabled');
+    assert.ok(allEnabledMarkup.includes('Pathbuilder 2e (PF2e)'), 'Shows Pathbuilder tab when enabled');
+
+    // Both disabled
+    updateActiveFlags({ dndbeyond: false, pathbuilder: false });
+    const disabledMarkup = renderToStaticMarkup(
+      React.createElement(CharacterFlyout, {
+        player: mockPlayer,
+        targetToken: unboundToken,
+        onClose: () => {},
+      })
+    );
+    assert.ok(disabledMarkup.includes('Local Character'), 'Shows Local tab');
+    assert.ok(!disabledMarkup.includes('D&amp;D Beyond (5e)') && !disabledMarkup.includes('D&D Beyond (5e)'), 'Hides D&D Beyond tab when disabled');
+    assert.ok(!disabledMarkup.includes('Pathbuilder 2e (PF2e)'), 'Hides Pathbuilder tab when disabled');
+
+    // Reset back to defaults
+    updateActiveFlags({ dndbeyond: true, pathbuilder: true });
+  });
 });
+

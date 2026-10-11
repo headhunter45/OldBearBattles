@@ -34,6 +34,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { DraggableWindowTitleBar } from '../../common/components/DraggableWindow.js';
 import HelpTip from '../../common/components/HelpTip.js';
 import { useDraggableWindow } from '../../common/hooks/useDraggableWindow.js';
+import { useFeatureFlag } from '../../common/config/featureFlags.js';
 import {
   SavedCharacterRecord,
   deleteSavedCharacter,
@@ -127,16 +128,27 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
   >(() => getSavedCharacters(isGm));
   const [isMinimized, setIsMinimized] = useState(false);
 
-  // Character Source / Ruleset state (OB-219)
+  // Character Source / Ruleset state (OB-219, OB-232)
+  const dndBeyondEnabled = useFeatureFlag('dndbeyond');
+  const pathbuilderEnabled = useFeatureFlag('pathbuilder');
+
   const [importSource, setImportSource] = useState<
     'local' | 'dndbeyond' | 'pathbuilder'
   >(() => {
     const cid = targetToken?.character?.id;
-    if (cid && isDndBeyondSource(cid)) {
+    if (cid && isDndBeyondSource(cid) && dndBeyondEnabled) {
       return 'dndbeyond';
     }
     return 'local';
   });
+
+  useEffect(() => {
+    if (importSource === 'dndbeyond' && !dndBeyondEnabled) {
+      setImportSource('local');
+    } else if (importSource === 'pathbuilder' && !pathbuilderEnabled) {
+      setImportSource('local');
+    }
+  }, [importSource, dndBeyondEnabled, pathbuilderEnabled]);
   const [pathbuilderInput, setPathbuilderInput] = useState('');
   const [pathbuilderPasteOpen, setPathbuilderPasteOpen] = useState(false);
   const [pathbuilderPasteText, setPathbuilderPasteText] = useState('');
@@ -448,7 +460,7 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
       if (targetToken.character) {
         setCharacter(targetToken.character);
         const cid = targetToken.character.id;
-        if (cid && isDndBeyondSource(cid)) {
+        if (cid && isDndBeyondSource(cid) && dndBeyondEnabled) {
           setCharInput(formatDndBeyondUrl(cid));
           setImportSource('dndbeyond');
         } else {
@@ -722,32 +734,36 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
             >
               Local Character
             </button>
-            <button
-              type="button"
-              className={`btn ${importSource === 'dndbeyond' ? 'btn-primary' : 'btn-secondary'}`}
-              style={{
-                flex: 1,
-                padding: '0.35rem 0.5rem',
-                fontSize: '0.75rem',
-                justifyContent: 'center',
-              }}
-              onClick={() => setImportSource('dndbeyond')}
-            >
-              D&D Beyond (5e)
-            </button>
-            <button
-              type="button"
-              className={`btn ${importSource === 'pathbuilder' ? 'btn-primary' : 'btn-secondary'}`}
-              style={{
-                flex: 1,
-                padding: '0.35rem 0.5rem',
-                fontSize: '0.75rem',
-                justifyContent: 'center',
-              }}
-              onClick={() => setImportSource('pathbuilder')}
-            >
-              Pathbuilder 2e (PF2e)
-            </button>
+            {dndBeyondEnabled && (
+              <button
+                type="button"
+                className={`btn ${importSource === 'dndbeyond' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{
+                  flex: 1,
+                  padding: '0.35rem 0.5rem',
+                  fontSize: '0.75rem',
+                  justifyContent: 'center',
+                }}
+                onClick={() => setImportSource('dndbeyond')}
+              >
+                D&D Beyond (5e)
+              </button>
+            )}
+            {pathbuilderEnabled && (
+              <button
+                type="button"
+                className={`btn ${importSource === 'pathbuilder' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{
+                  flex: 1,
+                  padding: '0.35rem 0.5rem',
+                  fontSize: '0.75rem',
+                  justifyContent: 'center',
+                }}
+                onClick={() => setImportSource('pathbuilder')}
+              >
+                Pathbuilder 2e (PF2e)
+              </button>
+            )}
           </div>
 
           {importSource === 'local' ? (
@@ -818,7 +834,7 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
                 )}
               </div>
             </>
-          ) : importSource === 'dndbeyond' ? (
+          ) : importSource === 'dndbeyond' && dndBeyondEnabled ? (
             <>
               <div
                 style={{
@@ -863,7 +879,7 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
                 </button>
               </div>
             </>
-          ) : (
+          ) : importSource === 'pathbuilder' && pathbuilderEnabled ? (
             <>
               <div
                 style={{
@@ -990,7 +1006,7 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
                 </div>
               )}
             </>
-          )}
+          ) : null}
 
           {/* Board Token Assignment (Bug #41) */}
           <div style={{ marginTop: '0.6rem', marginBottom: '0.4rem' }}>
