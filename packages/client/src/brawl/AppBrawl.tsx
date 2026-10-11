@@ -414,6 +414,25 @@ export const AppBrawl: React.FC = () => {
     });
   }, [objectives, session?.tokens, scoreboard.p1Name, scoreboard.p2Name]);
 
+  useEffect(() => {
+    if (engineRef.current) {
+      const mapped = objectivesEvaluation.evaluations.map((ev) => ({
+        id: ev.marker.id,
+        label: ev.marker.label,
+        x: ev.marker.x,
+        y: ev.marker.y,
+        baseMm: ev.marker.baseMm,
+        controlRadiusInches: ev.marker.controlRadiusInches,
+        vpValue: ev.marker.vpValue,
+        status: ev.status,
+        controllingPlayerName: ev.controllingPlayerName,
+        p1OcTotal: ev.p1OcTotal,
+        p2OcTotal: ev.p2OcTotal,
+      }));
+      engineRef.current.setObjectives(mapped);
+    }
+  }, [objectivesEvaluation]);
+
   const handleDeployStandardObjectives = () => {
     const mapWidth = currentMap?.width || 3000;
     const mapHeight = currentMap?.height || 2200;
@@ -578,6 +597,11 @@ export const AppBrawl: React.FC = () => {
         networkRef.current?.send({ type: 'marker-update', id, updates });
         setSession((prev) => (prev ? { ...prev, markers: (prev.markers || []).map((m) => (m.id === id ? { ...m, ...updates } : m)) } : prev));
         setSelectedMarker((cur) => (cur?.id === id ? { ...cur, ...updates } : cur));
+      },
+      onObjectiveMove: (id, x, y) => {
+        setObjectives((prev) =>
+          prev.map((obj) => (obj.id === id ? { ...obj, x, y } : obj))
+        );
       },
     };
 

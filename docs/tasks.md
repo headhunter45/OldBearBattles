@@ -346,6 +346,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-223 | The hamburger menu is bright purple in vtt and dark like the backgournd color in brawl.                                                                                                                                                                                                                                                                                                                                                                                              | Old Bear Brawl | Done     | [Bug](#ob-223)     |
 | OB-224 | Separate map and token instances between VTT and Brawl modes                                                                                                                                                                                                                                                                                                                                                                                                                         | Old Bear Brawl | Ready    | [Bug](#ob-224)     |
 | OB-225 | Add floating token bar and model wargear inspector when selecting tokens in Brawl mode                                                                                                                                                                                                                                                                                                                                                                                               | Old Bear Brawl | Ready    | [Bug](#ob-225)     |
+| OB-226 | Add dedicated UI controls to place custom objective markers and wargaming tokens onto the canvas                                                                                                                                                                                                                                                                                                                                                                                     | Old Bear Brawl | Ready    | [Feature](#ob-226) |
 
 ---
 
@@ -3780,6 +3781,17 @@ When selecting tokens in Brawl mode, there is currently no floating token contro
 - [ ] Display model-specific wargear and weapon profiles (Range, Attacks, Skill, Strength, AP, Damage)
 - [ ] Provide quick-roll action buttons or dice macros for model weapons
 - [ ] Allow incrementing/decrementing wounds/HP on selected models directly from the token bar
+
+<a id="ob-226" class="task" data-project="brawl" data-status="ready" data-task-type="feature"></a>
+### Add dedicated UI controls to place custom objective markers and wargaming tokens onto the canvas
+**ID:** OB-226
+**Project:** Old Bear Brawl
+**Status:** Ready
+**Type:** Feature
+
+**Description:**
+Provide dedicated UI tools, flyout palette, or token picker controls to add custom objective markers and miscellaneous wargaming tokens directly to the canvas in Brawl mode.
+- [ ]
 
 ---
 

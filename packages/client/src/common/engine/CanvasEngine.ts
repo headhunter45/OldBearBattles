@@ -56,6 +56,20 @@ export type ActiveTool =
   | 'fog-brush-reveal'
   | 'fog-brush-hide';
 
+export interface CanvasObjectiveMarker {
+  id: string;
+  label: string;
+  x: number;
+  y: number;
+  baseMm?: number;
+  controlRadiusInches?: number;
+  vpValue?: number;
+  status?: 1 | 2 | 'contested' | 'uncontested';
+  controllingPlayerName?: string;
+  p1OcTotal?: number;
+  p2OcTotal?: number;
+}
+
 export interface CanvasEngineCallbacks {
   onTokenMove?: (id: string, x: number, y: number) => void;
   onTokenSelect?: (token: Token | null) => void;
@@ -66,6 +80,7 @@ export interface CanvasEngineCallbacks {
   onMarkerSelect?: (marker: ScreenMarker | null) => void;
   onFogUpdate?: (shape: FogShape) => void;
   onToolChange?: (tool: ActiveTool) => void;
+  onObjectiveMove?: (id: string, x: number, y: number) => void;
 }
 
 export class CanvasEngine {
@@ -111,6 +126,11 @@ export class CanvasEngine {
   drawStart: Point | null = null;
   drawCurrent: Point | null = null;
   laserPoints: Point[] = [];
+
+  // Objective markers state (Brawl mode)
+  objectiveMarkers: CanvasObjectiveMarker[] = [];
+  draggingObjectiveId: string | null = null;
+  dragObjectiveGrabOffset: Point | null = null;
 
   // Multi-touch gestures
   private activePointers = new Map<number, Point>();
@@ -201,6 +221,11 @@ export class CanvasEngine {
     this.selectedTokenId = ids[0] || null;
   }
 
+  setObjectives(objectives: CanvasObjectiveMarker[]) {
+    this.objectiveMarkers = objectives || [];
+    this.render();
+  }
+
   destroy() {
     cancelAnimationFrame(this.animId);
     this.unbindEvents();
@@ -265,6 +290,11 @@ export class CanvasEngine {
         this.selectedMarkerId,
         this.session.tokens
       );
+    }
+
+    // 3.7. Render Wargaming Objective Markers (40mm bases + 3" control auras)
+    if (this.objectiveMarkers.length > 0) {
+      this.renderObjectives(ctx, currentMap);
     }
 
     // 4. Render Tokens and Props
@@ -1023,6 +1053,26 @@ export class CanvasEngine {
       } else {
         this.selectedMarkerId = null;
         this.callbacks.onMarkerSelect?.(null);
+
+        // Hit-test objective markers (40mm base radius)
+        if (this.objectiveMarkers.length > 0) {
+          const ppi = 50;
+          const clickedObjective = this.objectiveMarkers.find((obj) => {
+            const baseRadiusPx = (((obj.baseMm ?? 40) / 25.4) / 2) * ppi;
+            const dx = worldPos.x - obj.x;
+            const dy = worldPos.y - obj.y;
+            return Math.sqrt(dx * dx + dy * dy) <= baseRadiusPx + 10;
+          });
+
+          if (clickedObjective) {
+            this.draggingObjectiveId = clickedObjective.id;
+            this.dragObjectiveGrabOffset = {
+              x: worldPos.x - clickedObjective.x,
+              y: worldPos.y - clickedObjective.y,
+            };
+            return;
+          }
+        }
       }
     }
   }
@@ -1106,9 +1156,22 @@ export class CanvasEngine {
         !this.draggingToken &&
         !this.isDrawing &&
         !this.draggingMarker &&
-        !this.draggingMarkerHandle)
+        !this.draggingMarkerHandle &&
+        !this.draggingObjectiveId)
     ) {
       this.viewport.pan(currentScreen.x - prevScreen.x, currentScreen.y - prevScreen.y);
+      return;
+    }
+
+    // Objective Marker Dragging
+    if (this.draggingObjectiveId) {
+      const obj = this.objectiveMarkers.find((o) => o.id === this.draggingObjectiveId);
+      if (obj) {
+        const offset = this.dragObjectiveGrabOffset || { x: 0, y: 0 };
+        obj.x = worldPos.x - offset.x;
+        obj.y = worldPos.y - offset.y;
+        this.render();
+      }
       return;
     }
 
@@ -1312,6 +1375,17 @@ export class CanvasEngine {
         targetX: marker.targetX,
         targetY: marker.targetY,
       });
+    }
+
+    // Finish Objective Marker Drag
+    if (this.draggingObjectiveId) {
+      const obj = this.objectiveMarkers.find((o) => o.id === this.draggingObjectiveId);
+      if (obj) {
+        this.callbacks.onObjectiveMove?.(obj.id, obj.x, obj.y);
+      }
+      this.draggingObjectiveId = null;
+      this.dragObjectiveGrabOffset = null;
+      this.render();
     }
 
     // Finish Marker Handle Drag (Cone spread / Spray rotate / Tether endpoints)
@@ -1714,6 +1788,142 @@ export class CanvasEngine {
       this.viewport.pan(dx, dy);
     }
   };
+
+  private renderObjectives(ctx: CanvasRenderingContext2D, _map: GameMap) {
+    const pixelsPerInch = 50;
+
+    for (const obj of this.objectiveMarkers) {
+      const x = obj.x;
+      const y = obj.y;
+      const baseRadiusPx = (((obj.baseMm ?? 40) / 25.4) / 2) * pixelsPerInch; // ~39.4px for 40mm
+      const controlRadiusPx = (obj.controlRadiusInches ?? 3.0) * pixelsPerInch; // 150px
+      const totalZoneRadiusPx = baseRadiusPx + controlRadiusPx; // ~189.4px
+
+      let auraFill = 'rgba(245, 158, 11, 0.07)';
+      let auraStroke = 'rgba(245, 158, 11, 0.45)';
+      let baseRingColor = '#f59e0b';
+      let statusSubtitle = `Uncontested • 3″ Aura (${obj.vpValue ?? 4} VP)`;
+
+      if (obj.status === 1) {
+        auraFill = 'rgba(56, 189, 248, 0.12)';
+        auraStroke = 'rgba(56, 189, 248, 0.75)';
+        baseRingColor = '#38bdf8';
+        statusSubtitle = `${obj.controllingPlayerName || 'Player 1'} Control • ${obj.p1OcTotal ?? 0} OC`;
+      } else if (obj.status === 2) {
+        auraFill = 'rgba(236, 72, 153, 0.12)';
+        auraStroke = 'rgba(236, 72, 153, 0.75)';
+        baseRingColor = '#ec4899';
+        statusSubtitle = `${obj.controllingPlayerName || 'Player 2'} Control • ${obj.p2OcTotal ?? 0} OC`;
+      } else if (obj.status === 'contested') {
+        auraFill = 'rgba(239, 68, 68, 0.15)';
+        auraStroke = 'rgba(239, 68, 68, 0.85)';
+        baseRingColor = '#ef4444';
+        statusSubtitle = `Contested (P1: ${obj.p1OcTotal ?? 0} vs P2: ${obj.p2OcTotal ?? 0} OC)`;
+      }
+
+      ctx.save();
+
+      // 1. 3" Control Zone Aura (Translucent area + dashed boundary)
+      ctx.beginPath();
+      ctx.arc(x, y, totalZoneRadiusPx, 0, Math.PI * 2);
+      ctx.fillStyle = auraFill;
+      ctx.fill();
+
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      ctx.strokeStyle = auraStroke;
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 2. 40mm Objective Base
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+      ctx.shadowBlur = 12;
+
+      // Base disc fill
+      ctx.beginPath();
+      ctx.arc(x, y, baseRadiusPx, 0, Math.PI * 2);
+      ctx.fillStyle = '#0f172a';
+      ctx.fill();
+
+      // Base outer perimeter ring
+      ctx.shadowBlur = 0;
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = baseRingColor;
+      ctx.stroke();
+
+      // Inner subtle concentric ring
+      ctx.beginPath();
+      ctx.arc(x, y, baseRadiusPx * 0.7, 0, Math.PI * 2);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.stroke();
+
+      // Center crosshairs
+      ctx.beginPath();
+      ctx.moveTo(x - baseRadiusPx * 0.45, y);
+      ctx.lineTo(x + baseRadiusPx * 0.45, y);
+      ctx.moveTo(x, y - baseRadiusPx * 0.45);
+      ctx.lineTo(x, y + baseRadiusPx * 0.45);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = baseRingColor;
+      ctx.stroke();
+
+      // Center target pip
+      ctx.beginPath();
+      ctx.arc(x, y, baseRadiusPx * 0.22, 0, Math.PI * 2);
+      ctx.fillStyle = baseRingColor;
+      ctx.fill();
+
+      // 3. Objective Label Badge (above base)
+      const labelText = obj.label;
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const labelMetrics = ctx.measureText(labelText);
+      const labelW = labelMetrics.width + 14;
+      const labelH = 20;
+      const labelY = y - baseRadiusPx - 14;
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(x - labelW / 2, labelY - labelH / 2, labelW, labelH, 4);
+      } else {
+        ctx.rect(x - labelW / 2, labelY - labelH / 2, labelW, labelH);
+      }
+      ctx.fill();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = baseRingColor;
+      ctx.stroke();
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillText(labelText, x, labelY);
+
+      // 4. Status Subtitle Badge (below base)
+      ctx.font = '600 10px sans-serif';
+      const subMetrics = ctx.measureText(statusSubtitle);
+      const subW = subMetrics.width + 12;
+      const subH = 18;
+      const subY = y + baseRadiusPx + 14;
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(x - subW / 2, subY - subH / 2, subW, subH, 4);
+      } else {
+        ctx.rect(x - subW / 2, subY - subH / 2, subW, subH);
+      }
+      ctx.fill();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.stroke();
+
+      ctx.fillStyle = baseRingColor;
+      ctx.fillText(statusSubtitle, x, subY);
+
+      ctx.restore();
+    }
+  }
 
   private bindEvents() {
     const c = this.canvas;
