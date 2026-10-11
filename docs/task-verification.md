@@ -254,9 +254,9 @@ This document provides step-by-step instructions for manually verifying all feat
 #### Step-by-Step Instructions:
 
 1. Open Army Roster Flyout in Brawl mode and click **Import**.
-2. Select or drop a roster file such as `docs/newrecruit-list.ros` (NewRecruit BattleScribe XML) or a `.rosz` / `.json` export.
+2. Select or drop a roster file such as `docs/examples/armies/newrecruit-list.json`, `.ros`, or `.rosz` export.
 3. Verify the Army Roster header and metadata:
-   - Header displays accurate points: `Army Roster (1000 / 1000 pts)`.
+   - Header displays accurate points: `Army Roster (1000 / 1000 pts)` (does not include configuration/upgrades like Battle Size, Detachment, Show/Hide Options).
    - Faction displays: `Faction: Chaos - Thousand Sons • Detachment: Changehost of Deceit`.
 4. Inspect unit model counts and cards:
    - Single-model units (e.g. `Ahriman`, `Brayherd Shaman [Crucible]`, `Exalted Sorcerer`, `Chaos Predator Annihilator`) show **1 model** (not 5).
@@ -268,7 +268,8 @@ This document provides step-by-step instructions for manually verifying all feat
 
 #### Expected Result (Pass Criteria):
 
-- NewRecruit XML (`.ros`), `.rosz`, and JSON files parse accurately with correct points calculations.
+- NewRecruit JSON, XML (`.ros`), and `.rosz` files parse accurately with correct points calculations.
+- Configuration and upgrade selections (e.g., Battle Size, Detachment, Show/Hide Options) are filtered out and not treated as playable units.
 - Single-model characters display 1 model; multi-model squads display their actual model count.
 - The Army Roster Flyout scrolls cleanly without squishing unit cards.
 

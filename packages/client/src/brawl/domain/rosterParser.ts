@@ -55,12 +55,50 @@ export function parseNewRecruitJson(jsonContent: string | Record<string, any>): 
 
   const armyId = `army_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
   const armyName = root.name || data.name || 'Imported Army';
-  const faction = root.faction || root.gameSystemName || data.faction || 'Unknown Faction';
+  let faction = root.faction || root.gameSystemName || data.faction || 'Unknown Faction';
+  if (root.forces?.[0]?.catalogueName) {
+    faction = root.forces[0].catalogueName;
+  }
 
-  let pointsLimit = root.pointsLimit || root.maxPoints || 2000;
+  // Extract detachment if present
+  let detachment: string | undefined = undefined;
+  const allTopSelections = root.forces?.[0]?.selections || root.selections || [];
+  const detachSel = allTopSelections.find(
+    (s: any) => s.name === 'Detachment' || s.group === 'Detachment',
+  );
+  if (detachSel) {
+    const sub = detachSel.selections?.[0];
+    if (sub) detachment = sub.name;
+    else if (detachSel.group === 'Detachment') detachment = detachSel.name;
+  }
+
+  // Extract points limit
+  let pointsLimit = root.pointsLimit || root.maxPoints;
+  if (!pointsLimit && Array.isArray(root.costLimits)) {
+    const ptsLimitObj = root.costLimits.find((c: any) => c.name === 'pts');
+    if (ptsLimitObj) pointsLimit = Number(ptsLimitObj.value);
+  }
+  if (!pointsLimit && Array.isArray(root.costs)) {
+    const ptsCostObj = root.costs.find((c: any) => c.name === 'pts');
+    if (ptsCostObj) pointsLimit = Number(ptsCostObj.value);
+  }
+  if (!pointsLimit) pointsLimit = 2000;
+
   let totalCost = 0;
 
-  const rawUnits: any[] = root.units || root.selections || root.forces?.[0]?.selections || [];
+  // Filter raw units: exclude settings / configuration / upgrades
+  let rawUnits: any[] = [];
+  if (Array.isArray(root.units)) {
+    rawUnits = root.units;
+  } else if (Array.isArray(allTopSelections)) {
+    rawUnits = allTopSelections.filter((s: any) => {
+      if (s.type === 'upgrade') return false;
+      const isConfig = s.categories?.some((c: any) => c.name === 'Configuration');
+      if (isConfig) return false;
+      return s.type === 'unit' || s.type === 'model';
+    });
+  }
+
   const parsedUnits: WargameUnit[] = [];
 
   for (let uIdx = 0; uIdx < rawUnits.length; uIdx++) {
@@ -68,17 +106,54 @@ export function parseNewRecruitJson(jsonContent: string | Record<string, any>): 
     const unitName = rawUnit.name || `Unit ${uIdx + 1}`;
     const unitId = `unit_${armyId}_${uIdx}`;
 
-    // Extract unit points
-    const unitPts =
-      typeof rawUnit.costs?.pts === 'number'
-        ? rawUnit.costs.pts
-        : typeof rawUnit.cost === 'number'
-        ? rawUnit.cost
-        : typeof rawUnit.points === 'number'
-        ? rawUnit.points
-        : 100;
+    // Extract unit points (support direct object, single number, or costs array)
+    let unitPts = 0;
+    if (typeof rawUnit.costs?.pts === 'number') {
+      unitPts = rawUnit.costs.pts;
+    } else if (typeof rawUnit.cost === 'number') {
+      unitPts = rawUnit.cost;
+    } else if (typeof rawUnit.points === 'number') {
+      unitPts = rawUnit.points;
+    } else if (Array.isArray(rawUnit.costs)) {
+      const ptsObj = rawUnit.costs.find((c: any) => c.name === 'pts');
+      if (ptsObj) unitPts = Number(ptsObj.value) || 0;
+    } else {
+      unitPts = 100;
+    }
 
     totalCost += unitPts;
+
+    // Recursively extract all profiles (including wargear profiles nested in child selections)
+    const extractProfiles = (node: any): any[] => {
+      const res: any[] = [];
+      if (Array.isArray(node.profiles)) res.push(...node.profiles);
+      if (Array.isArray(node.selections)) {
+        for (const sub of node.selections) res.push(...extractProfiles(sub));
+      }
+      return res;
+    };
+    const profiles = extractProfiles(rawUnit);
+
+    const getAttr = (prof: any, key: string) => {
+      if (!prof) return undefined;
+      if (prof.attributes && typeof prof.attributes === 'object') {
+        for (const k of Object.keys(prof.attributes)) {
+          if (k.toLowerCase() === key.toLowerCase()) return prof.attributes[k];
+        }
+      }
+      if (Array.isArray(prof.characteristics)) {
+        const c = prof.characteristics.find(
+          (x: any) => x.name?.toLowerCase() === key.toLowerCase(),
+        );
+        return c?.$text ?? c?.value ?? c?.text;
+      }
+      if (prof.characteristics && typeof prof.characteristics === 'object') {
+        for (const k of Object.keys(prof.characteristics)) {
+          if (k.toLowerCase() === key.toLowerCase()) return prof.characteristics[k];
+        }
+      }
+      return undefined;
+    };
 
     // Find stats profile if present
     let movement = 6;
@@ -88,73 +163,76 @@ export function parseNewRecruitJson(jsonContent: string | Record<string, any>): 
     let leadership = '6+';
     let oc = 1;
 
-    const profiles = rawUnit.profiles || [];
     const unitProfile = profiles.find(
-      (p: any) => p.typeName === 'Unit' || p.type === 'unit' || p.name === unitName
+      (p: any) => p.typeName === 'Unit' || p.type === 'unit' || p.name === unitName,
     );
 
-    if (unitProfile?.attributes || unitProfile?.characteristics) {
-      const attrs = unitProfile.attributes || unitProfile.characteristics;
-      const getAttr = (key: string) => {
-        if (typeof attrs === 'object') {
-          for (const k of Object.keys(attrs)) {
-            if (k.toLowerCase() === key.toLowerCase()) return attrs[k];
-          }
-        }
-        return undefined;
-      };
-
-      movement = parseInt(String(getAttr('M') || '6').replace(/\D/g, ''), 10) || 6;
-      toughness = parseInt(String(getAttr('T') || '4').replace(/\D/g, ''), 10) || 4;
-      armorSave = String(getAttr('SV') || getAttr('Save') || '3+');
-      wounds = parseInt(String(getAttr('W') || '2').replace(/\D/g, ''), 10) || 2;
-      leadership = String(getAttr('LD') || '6+');
-      oc = parseInt(String(getAttr('OC') || '1').replace(/\D/g, ''), 10) || 1;
+    if (unitProfile) {
+      movement = parseInt(String(getAttr(unitProfile, 'M') || '6').replace(/\D/g, ''), 10) || 6;
+      toughness = parseInt(String(getAttr(unitProfile, 'T') || '4').replace(/\D/g, ''), 10) || 4;
+      armorSave = String(getAttr(unitProfile, 'SV') || getAttr(unitProfile, 'Save') || '3+');
+      wounds = parseInt(String(getAttr(unitProfile, 'W') || '2').replace(/\D/g, ''), 10) || 2;
+      leadership = String(getAttr(unitProfile, 'LD') || '6+');
+      oc = parseInt(String(getAttr(unitProfile, 'OC') || '1').replace(/\D/g, ''), 10) || 1;
     }
 
     // Extract weapons into baseActions
     const baseActions: WargameAction[] = [];
+    const seenActionNames = new Set<string>();
     const weaponProfiles = profiles.filter(
       (p: any) =>
         p.typeName?.includes('Weapon') ||
         p.type?.includes('weapon') ||
         p.attributes?.Range ||
-        p.characteristics?.Range
+        (Array.isArray(p.characteristics) &&
+          p.characteristics.some((c: any) => c.name?.toLowerCase() === 'range')),
     );
 
     weaponProfiles.forEach((wp: any, wIdx: number) => {
       const wName = wp.name || `Weapon ${wIdx + 1}`;
-      const isMelee = wp.typeName?.toLowerCase().includes('melee') || wp.type?.toLowerCase().includes('melee');
-      const attrs = wp.attributes || wp.characteristics || {};
-      const getVal = (k: string) => {
-        for (const key of Object.keys(attrs)) {
-          if (key.toLowerCase() === k.toLowerCase()) return String(attrs[key]);
-        }
-        return '';
-      };
+      if (seenActionNames.has(wName)) return;
+      seenActionNames.add(wName);
+
+      const isMelee =
+        wp.typeName?.toLowerCase().includes('melee') ||
+        wp.type?.toLowerCase().includes('melee') ||
+        String(getAttr(wp, 'range') || '').toLowerCase().includes('melee');
 
       baseActions.push({
         id: `act_${unitId}_${wIdx}`,
         name: wName,
         type: isMelee ? 'melee' : 'ranged',
-        rangeInches: isMelee ? 0 : parseInt(getVal('range').replace(/\D/g, ''), 10) || 24,
-        attacks: getVal('A') || '2',
-        skill: getVal('BS') || getVal('WS') || '3+',
-        strength: parseInt(getVal('S').replace(/\D/g, ''), 10) || 4,
-        ap: parseInt(getVal('AP').replace(/[^0-9-]/g, ''), 10) || 0,
-        damage: getVal('D') || '1',
+        rangeInches: isMelee ? 0 : parseInt(String(getAttr(wp, 'range') || '24').replace(/\D/g, ''), 10) || 24,
+        attacks: String(getAttr(wp, 'A') || '2'),
+        skill: String(getAttr(wp, 'BS') || getAttr(wp, 'WS') || '3+'),
+        strength: parseInt(String(getAttr(wp, 'S') || '4').replace(/\D/g, ''), 10) || 4,
+        ap: parseInt(String(getAttr(wp, 'AP') || '0').replace(/[^0-9-]/g, ''), 10) || 0,
+        damage: String(getAttr(wp, 'D') || '1'),
       });
     });
 
     // Model count
-    const modelCount =
-      rawUnit.count ||
-      rawUnit.number ||
-      rawUnit.models?.length ||
-      rawUnit.selections?.filter((s: any) => s.type === 'model').length ||
-      5;
+    let modelCount = 0;
+    const childModels = (rawUnit.selections || []).filter((s: any) => s.type === 'model');
+    if (childModels.length > 0) {
+      for (const cm of childModels) {
+        modelCount += Number(cm.number || cm.count || 1);
+      }
+    } else if (typeof rawUnit.count === 'number') {
+      modelCount = rawUnit.count;
+    } else if (rawUnit.number) {
+      modelCount = Number(rawUnit.number);
+    } else if (Array.isArray(rawUnit.models)) {
+      modelCount = rawUnit.models.length;
+    } else {
+      modelCount = 1;
+    }
+    if (modelCount === 0 || isNaN(modelCount)) {
+      modelCount = 1;
+    }
 
-    const baseShape = inferBaseShape(unitName, toughness, wounds);
+    const baseSpec = getAttr(unitProfile, 'Base');
+    const baseShape = inferBaseShape(unitName, toughness, wounds, baseSpec);
 
     const models: WargameModel[] = [];
     for (let m = 0; m < modelCount; m++) {
@@ -191,7 +269,8 @@ export function parseNewRecruitJson(jsonContent: string | Record<string, any>): 
     id: armyId,
     name: armyName,
     faction,
-    pointsLimit: Math.max(pointsLimit, totalCost),
+    detachment,
+    pointsLimit: pointsLimit || Math.max(totalCost, 1000),
     units: parsedUnits,
   };
 

@@ -273,9 +273,13 @@ describe('Roster Ingestion Pipeline (OB-161)', () => {
     it('accurately parses 1000-point Thousand Sons list from docs/newrecruit-list.ros', async () => {
       const fs = await import('fs');
       const path = await import('path');
-      const rosPath = fs.existsSync(path.join(process.cwd(), 'docs/newrecruit-list.ros'))
-        ? path.join(process.cwd(), 'docs/newrecruit-list.ros')
-        : path.join(process.cwd(), '../../docs/newrecruit-list.ros');
+      const rosCandidates = [
+        path.join(process.cwd(), 'docs/examples/armies/newrecruit-list.ros'),
+        path.join(process.cwd(), '../../docs/examples/armies/newrecruit-list.ros'),
+        path.join(process.cwd(), 'docs/newrecruit-list.ros'),
+        path.join(process.cwd(), '../../docs/newrecruit-list.ros'),
+      ];
+      const rosPath = rosCandidates.find((p) => fs.existsSync(p)) || rosCandidates[0];
       const xml = fs.readFileSync(rosPath, 'utf8');
 
       const parsed = parseBattleScribeXml(xml);
@@ -306,6 +310,37 @@ describe('Roster Ingestion Pipeline (OB-161)', () => {
       assert.strictEqual(predator.models.length, 1);
       assert.strictEqual(predator.points, 140);
       assert.strictEqual(predator.models[0].baseShape.type, 'rect');
+    });
+
+    it('accurately parses 1000-point Thousand Sons list from docs/examples/armies/newrecruit-list.json', async () => {
+      const fs = await import('fs');
+      const path = await import('path');
+      const jsonPath = fs.existsSync(path.join(process.cwd(), 'docs/examples/armies/newrecruit-list.json'))
+        ? path.join(process.cwd(), 'docs/examples/armies/newrecruit-list.json')
+        : path.join(process.cwd(), '../../docs/examples/armies/newrecruit-list.json');
+      const jsonContent = fs.readFileSync(jsonPath, 'utf8');
+
+      const parsed = parseNewRecruitJson(jsonContent);
+      assert.strictEqual(parsed.faction, 'Chaos - Thousand Sons');
+      assert.strictEqual(parsed.detachment, 'Changehost of Deceit');
+      assert.strictEqual(parsed.pointsLimit, 1000);
+
+      // Verify setting/configuration upgrades are NOT included as units
+      const unitNames = parsed.units.map((u) => u.name);
+      assert.ok(!unitNames.some((n) => n.includes('Battle Size')), 'Battle Size must not be a unit');
+      assert.ok(!unitNames.some((n) => n.includes('Show/Hide Options')), 'Show/Hide Options must not be a unit');
+      assert.ok(!unitNames.some((n) => n.includes('Force Disposition')), 'Force Disposition must not be a unit');
+      assert.strictEqual(parsed.units.length, 11, 'Should only have 11 real units');
+
+      const totalPoints = parsed.units.reduce((s, u) => s + u.points, 0);
+      assert.strictEqual(totalPoints, 1000, 'Total points should be exactly 1000, not 1600');
+
+      const ahriman = parsed.units.find((u) => u.name.startsWith('Ahriman'));
+      assert.ok(ahriman);
+      assert.strictEqual(ahriman.models.length, 1, 'Ahriman must be 1 model, not 5');
+      assert.strictEqual(ahriman.points, 105);
+      assert.strictEqual(ahriman.models[0].baseShape.widthMm, 40);
+      assert.strictEqual(ahriman.baseActions.length, 3);
     });
 
     it('throws error on unsupported format', async () => {
