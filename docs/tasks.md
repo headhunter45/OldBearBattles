@@ -344,6 +344,8 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-221 | Make the ` or ~ key toggle the chat display like c togles the character sheet.                                                                                                                                                                                                                                                                                                                                                                                                       | Common         | Testing  | [Feature](#ob-221) |
 | OB-222 | The brawl map is very zoomed in and blury.                                                                                                                                                                                                                                                                                                                                                                                                                                           | Old Bear Brawl | Done     | [Bug](#ob-222)     |
 | OB-223 | The hamburger menu is bright purple in vtt and dark like the backgournd color in brawl.                                                                                                                                                                                                                                                                                                                                                                                              | Old Bear Brawl | Done     | [Bug](#ob-223)     |
+| OB-224 | Separate map and token instances between VTT and Brawl modes                                                                                                                                                                                                                                                                                                                                                                                                                         | Old Bear Brawl | Ready    | [Bug](#ob-224)     |
+| OB-225 | Add floating token bar and model wargear inspector when selecting tokens in Brawl mode                                                                                                                                                                                                                                                                                                                                                                                               | Old Bear Brawl | Ready    | [Bug](#ob-225)     |
 
 ---
 
@@ -3757,6 +3759,35 @@ It should be at the same zoom level. i.e. the same ratio of tiels to pixels as v
 Describe task objectives and implementation requirements here.
 
 - [x]
+
+<a id="ob-224" class="task" data-project="brawl" data-status="ready" data-task-type="bug"></a>
+### Separate map and token instances between VTT and Brawl modes
+**ID:** OB-224
+**Project:** Old Bear Brawl
+**Status:** Ready
+**Type:** Bug
+
+**Description:**
+Brawl mode currently shares the same default session, maps, and tokens as VTT mode (e.g. showing Valeros the Fighter and Goblin Scout). VTT and Brawl sessions/maps should be isolated so Brawl tables have their own wargaming map instance and clean starting state without D&D/Pathfinder RPG tokens.
+
+- [ ] Isolate Brawl rooms/sessions or default tokens so VTT RPG tokens do not spawn on Brawl tables
+- [ ] Ensure switching modes or joining tables maintains separate map and token instances
+
+<a id="ob-225" class="task" data-project="brawl" data-status="ready" data-task-type="bug"></a>
+### Add floating token bar and model wargear inspector when selecting tokens in Brawl mode
+**ID:** OB-225
+**Project:** Old Bear Brawl
+**Status:** Ready
+**Type:** Bug
+
+**Description:**
+When selecting tokens in Brawl mode, there is currently no floating token controls bar or inspector displaying model details. Players cannot inspect the selected model's wargear, weapon profiles, movement, wounds/HP, or saves.
+
+- [ ] Render a floating token controls HUD for selected tokens in Brawl mode
+- [ ] Display model datasheet attributes (Movement, Toughness, Save, Wounds, Leadership, Objective Control)
+- [ ] Display model-specific wargear and weapon profiles (Range, Attacks, Skill, Strength, AP, Damage)
+- [ ] Provide quick-roll action buttons or dice macros for model weapons
+- [ ] Allow incrementing/decrementing wounds/HP on selected models directly from the token bar
 
 ---
 
