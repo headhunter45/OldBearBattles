@@ -10,13 +10,8 @@ This document provides step-by-step instructions for manually verifying all feat
 ## Tasks Awaiting Verification
 
 | Task ID | Feature Title | Domain | Status |
-| :--- | :--- | :--- | :--- |
-| **[OB-200](#ob-200---standalone-token-attacks-without-character-sync)** | Standalone Token Attacks Without Character Sync | VTT / Tokens | Testing |
-| **[OB-198](#ob-198---reveal-fog-shortcut-key-shift-f)** | Reveal Fog Shortcut Key (`Shift+F`) | VTT / Fog of War | Testing |
-| **[OB-211](#ob-211---remove-excess-display-from-info-commands)** | Remove Excess Display from Info Commands | Common / Chat | Testing |
-| **[OB-207](#ob-207---unbound-token-resets-character-sheet-form-state)** | Unbound Token Resets Character Sheet Form State | VTT / Character Sheet | Testing |
-| **[OB-182](#ob-182---associate-controllable-token-with-chat-panel)** | Associate Controllable Token with Chat Panel | VTT / Chat | Testing |
-| **[OB-197](#ob-197---brawl-mode-top-bar-and-bidirectional-mode-switching)** | Brawl Mode Top Bar & Bidirectional Mode Switching | Platform / Brawl | Testing |
+| :------ | :------------ | :----- | :----- |
+
 | **[OB-154](#ob-154---game_mode-environment-configuration--deployment-toggles)** | `GAME_MODE` Environment Configuration & Deployment Toggles | Platform / Brawl | Testing |
 | **[OB-155](#ob-155---army-unit-and-model-domain-hierarchy--disambiguation)** | Army, Unit, and Model Domain Hierarchy & Disambiguation | Wargaming / Brawl | Testing |
 | **[OB-156](#ob-156---unit-coherency-graph-engine--real-time-warning-halos)** | Unit Coherency Graph Engine & Real-Time Warning Halos | Wargaming / Brawl | Testing |
@@ -27,6 +22,7 @@ This document provides step-by-step instructions for manually verifying all feat
 | **[OB-161](#ob-161---roster-ingestion-pipeline-newrecruit-json--battlescribe-rosz)** | Roster Ingestion Pipeline: NewRecruit JSON & BattleScribe `.rosz` | Wargaming / Brawl | Testing |
 | **[OB-162](#ob-162---deployment-zones-casualty-trays--staging-submap-templates)** | Deployment Zones, Casualty Trays & Staging Submap Templates | Wargaming / Brawl | Testing |
 | **[OB-163](#ob-163---tournament-organizer-to-mode-match-privacy--spectator-controls)** | Tournament Organizer (TO) Mode, Match Privacy & Spectator Controls | Wargaming / Brawl | Testing |
+| **[OB-182](#ob-182---associate-controllable-token-with-chat-panel)** | Associate Controllable Token with Chat Panel | VTT / Chat | Testing |
 | **[OB-183](#ob-183---codebase-simplification--refactoring-plan-docsrefactor-1md)** | Codebase Simplification & Refactoring Plan (`docs/refactor-1.md`) | Architecture / Plan | Testing |
 | **[OB-184](#ob-184---helptip-component--placement-guide-docshelptip-locationsmd)** | HelpTip Component & Placement Guide (`docs/helptip-locations.md`) | UI / UX Guide | Testing |
 | **[OB-185](#ob-185---backlog-research--implementation-guide-docsbacklog-implementation-guidemd)** | Backlog Research & Implementation Guide (`docs/backlog-implementation-guide.md`) | Architecture / Guide | Testing |
@@ -36,6 +32,11 @@ This document provides step-by-step instructions for manually verifying all feat
 | **[OB-191](#ob-191---no-ring-color-default-for-props-and-tiles)** | No Ring Color as Default for Props & Tiles | Common / Canvas | Testing |
 | **[OB-192](#ob-192---custom-status-creation-editing-and-token-controls-integration)** | Custom Status Creation, Editing, & Token Controls Integration | Common / Statuses | Testing |
 | **[OB-193](#ob-193---choose-existing-and-preset-images-in-token-editor)** | Choose Existing & Preset Images in Token Editor | Common / Tokens | Testing |
+| **[OB-197](#ob-197---brawl-mode-top-bar-and-bidirectional-mode-switching)** | Brawl Mode Top Bar & Bidirectional Mode Switching | Platform / Brawl | Testing |
+| **[OB-198](#ob-198---reveal-fog-shortcut-key-shift-f)** | Reveal Fog Shortcut Key (`Shift+F`) | VTT / Fog of War | Testing |
+| **[OB-200](#ob-200---standalone-token-attacks-without-character-sync)** | Standalone Token Attacks Without Character Sync | VTT / Tokens | Testing |
+| **[OB-207](#ob-207---unbound-token-resets-character-sheet-form-state)** | Unbound Token Resets Character Sheet Form State | VTT / Character Sheet | Testing |
+| **[OB-211](#ob-211---remove-excess-display-from-info-commands)** | Remove Excess Display from Info Commands | Common / Chat | Testing |
 
 ---
 
@@ -129,8 +130,8 @@ This document provides step-by-step instructions for manually verifying all feat
 6. Open the Toolbar Fog submenu:
    - Verify the tooltip and menu item for Reveal Fog display `Reveal Fog (Shift+F)`.
 7. Press `?` (or `Shift + /`) to open the Keyboard Shortcuts Cheat Sheet:
-   - Verify that under **Fog of War**, the shortcut for *Reveal Fog of War* is listed as `Shift + F`.
-   - Verify that *Hide / Cover Fog of War* remains `F`.
+   - Verify that under **Fog of War**, the shortcut for _Reveal Fog of War_ is listed as `Shift + F`.
+   - Verify that _Hide / Cover Fog of War_ remains `F`.
 
 #### Expected Result (Pass Criteria):
 
@@ -226,31 +227,6 @@ This document provides step-by-step instructions for manually verifying all feat
 ---
 
 ## Old Bear Brawl (Tabletop Wargaming Platform)
-
-### OB-154 - `GAME_MODE` Environment Configuration & Deployment Toggles
-
-- **Reference in tasks.md:** [tasks.md: OB-154](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-154)
-- **Primary Source Code:** [App.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/App.tsx), [gameMode.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/config/gameMode.ts), [BrawlTopBar.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/brawl/components/BrawlTopBar.tsx)
-- **Where to find it:** The application TopBar and URL search parameters (`?mode=`).
-
-#### Step-by-Step Instructions:
-
-1. In your browser, navigate to: `http://localhost:3000/?mode=brawl`.
-   - Verify Old Bear Brawl loads with wargaming top bar, round stepper, chess clocks, and army roster tools.
-2. In your browser, navigate to: `http://localhost:3000/?mode=vtt`.
-   - Verify Old Bear VTT loads with tabletop RPG top bar, character sheet button, and initiative tracker.
-3. Test TopBar Mode Switching:
-   - While in VTT mode, locate the mode toggle pill next to the scene name: click **`⚔️ Brawl`**.
-   - Notice the application transitions into Brawl mode and persists the preference in `localStorage`.
-   - In Brawl mode, locate the top bar mode button: click **`🐻 VTT`**.
-   - Notice the application transitions back into VTT mode.
-
-#### Expected Result (Pass Criteria):
-
-- URL query parameter `?mode=` correctly sets and persists active game mode.
-- Top bar pill switches cleanly between VTT and Brawl in multi-mode deployment.
-
----
 
 ### OB-155 - Army, Unit, and Model Domain Hierarchy & Disambiguation
 
@@ -566,6 +542,7 @@ This document provides step-by-step instructions for manually verifying all feat
    - Click it and verify seamless mode switching.
 
 #### Expected Result (Pass Criteria):
+
 - The Brawl mode top bar is prominently visible and completely styled as a floating HUD above the canvas.
 - Mode switching works bidirectionally (VTT to Brawl and Brawl to VTT).
 - The selected mode correctly persists in `localStorage` so users are never trapped in a mode.
@@ -636,6 +613,7 @@ This document provides step-by-step instructions for manually verifying all feat
     - Re-open Scene Settings: verify all edited submap properties were preserved.
 
 #### Expected Result (Pass Criteria):
+
 - Submap property editor provides expandable drawers with controls for position, dimensions (px & cells), border/badge colors, background fill/tint, custom battlemap images, and grid settings.
 - All properties update smoothly and persist across scene saves and template duplications.
 
@@ -671,6 +649,7 @@ This document provides step-by-step instructions for manually verifying all feat
    - Verify magnetic edge snapping engages cleanly when edges come within snapping distance.
 
 #### Expected Result (Pass Criteria):
+
 - Dragging tokens, modular tiles, and props is relative to the initial cursor grab point without sudden pivot or center jumps.
 - Multi-token group dragging maintains exact relative positions for all selected entities.
 
@@ -705,6 +684,7 @@ This document provides step-by-step instructions for manually verifying all feat
    - Verify the canvas viewport smoothly centers directly on the coordinates where the new random tile spawned, ensuring it is immediately visible even on large scenes.
 
 #### Expected Result (Pass Criteria):
+
 - Uploaded modular tiles support custom width/height editing with quick dimension preset chips (`1×1`, `2×2`, `4×2`, `4×4`, `8×8`).
 - Placed tiles respect edited dimensions, and random tile generation automatically centers the camera viewport on the newly spawned tile.
 
@@ -736,6 +716,7 @@ This document provides step-by-step instructions for manually verifying all feat
    - Verify the ring color automatically switches to **Transparent (No Ring)** unless the user explicitly selected a custom ring color.
 
 #### Expected Result (Pass Criteria):
+
 - Newly spawned modular tiles, room tiles, and props default to `transparent` (no ring outline).
 - Existing custom rings remain configurable in the Token/Tile Editor modal with full toggle support.
 
@@ -795,6 +776,7 @@ This document provides step-by-step instructions for manually verifying all feat
    - Verify the custom status is cleanly deleted and removed from the active status list and token dropdowns.
 
 #### Expected Result (Pass Criteria):
+
 - Token controls and token editor dynamically load all built-in, global, and scene-level custom statuses.
 - Users can create, customize, and delete custom statuses with custom colors, descriptions, numeric counters, and turn lifecycle triggers.
 - Custom statuses are cleanly persisted and immediately usable on tokens across the canvas.
@@ -839,6 +821,7 @@ This document provides step-by-step instructions for manually verifying all feat
    - Click **Save Changes** and verify the token on the canvas updates accordingly.
 
 #### Expected Result (Pass Criteria):
+
 - Users can switch an existing token's image to any preset token or previously saved asset from their IndexedDB library without re-uploading.
 - Interactive cropping, zoom, pan, and removal are fully supported.
 
@@ -873,6 +856,7 @@ This document provides step-by-step instructions for manually verifying all feat
      - Verify the Token Editor crop canvas opens with the zoom slider and pan position pre-set to the preset's zoom and offset values.
 
 #### Expected Result (Pass Criteria):
+
 - Preset tokens retain calibrated zoom and vertical/horizontal offset framing in thumbnail chips, the selection preview box, and when placed onto the active game map.
 
 ---
@@ -906,6 +890,7 @@ This document provides step-by-step instructions for manually verifying all feat
      - Verify the unread badge is cleared.
 
 #### Expected Result (Pass Criteria):
+
 - The chat toggle button is positioned on the left sidebar floating toolbar directly below the measuring tape icon.
 - Clicking the button toggles chat visibility and reflects active state and unread message count.
 
@@ -958,6 +943,7 @@ This document provides step-by-step instructions for manually verifying all feat
    - Press `]` or `=` or `.`: verify brush radius increases by 5px and the cursor ring expands.
 
 #### Expected Result (Pass Criteria):
+
 - Fog of War operates on a single unified raster layer where reveal and hide shapes are evaluated in chronological order, allowing infinite alternating reveals and hides.
 - Circular brush reveal and hide tools are available alongside rectangular tools.
 - Brush size is easily adjustable via hotkeys, the flyout slider, and the draggable left toolbar widget.
@@ -967,9 +953,11 @@ This document provides step-by-step instructions for manually verifying all feat
 ### OB-203 - Make Draggable Windows Resizable on Desktop (Chat Panel & Floating Windows)
 
 #### Pre-requisites:
+
 - Run `npm run dev` and open the VTT client in a desktop browser window (viewport width > 768px).
 
 #### Steps:
+
 1. **Open Table Chat:**
    - Click the chat icon on the left floating toolbar (or press \` if enabled).
    - Verify the chat window opens at its initial size (380px wide by 440px high).
@@ -996,6 +984,7 @@ This document provides step-by-step instructions for manually verifying all feat
    - Re-expand: verify it restores to the previously resized dimensions.
 
 #### Expected Result (Pass Criteria):
+
 - Floating draggable windows, especially chat, can be resized via the bottom-right handle and desktop CSS resize.
 - Window size constraints (min/max) are respected and persisted in localStorage across page reloads.
 
@@ -1004,9 +993,11 @@ This document provides step-by-step instructions for manually verifying all feat
 ### OB-208 - Update Open5EFetcher to Use v2 API
 
 #### Pre-requisites:
+
 - Run `npm run dev` and open the VTT client in a browser tab.
 
 #### Steps:
+
 1. **Open Table Chat:**
    - Click the chat icon on the left floating toolbar.
 
@@ -1024,6 +1015,7 @@ This document provides step-by-step instructions for manually verifying all feat
    - Verify the reference card appears with Common Potion traits and recovery details.
 
 #### Expected Result (Pass Criteria):
+
 - Open5EFetcher queries `https://api.open5e.com/v2/` endpoints (`spells`, `creatures`, `magicitems`, `items`, `weapons`, `armor`) with graceful v1 fallback.
 - Reference statblocks parse nested v2 object shapes correctly.
 
@@ -1032,9 +1024,11 @@ This document provides step-by-step instructions for manually verifying all feat
 ### OB-212 - Compendium Source Filter & System Variants (2014 vs 2024, PF2, SF2, PF1, SF1)
 
 #### Pre-requisites:
+
 - Run `npm run dev` and open the VTT client in a browser tab.
 
 #### Steps:
+
 1. **Open Table Chat:**
    - Click the chat icon on the left floating toolbar.
 
@@ -1061,6 +1055,7 @@ This document provides step-by-step instructions for manually verifying all feat
    - Verify it checks the active character sheet first, then queries the general compendium database (5e), with PF2e fallback.
 
 #### Expected Result (Pass Criteria):
+
 - Info commands (`/spell?`, `/item?`, `/monster?`, `/attack?`) support prefix tags (`[2024]`, `pf2:`, `-s 2024`, `2024 fireball`).
 - 2014 vs 2024 SRD documents are correctly targeted.
 - Stubbed backends (PF1, SF1, SF2) fail gracefully with informative notifications.
@@ -1070,9 +1065,11 @@ This document provides step-by-step instructions for manually verifying all feat
 ### OB-213 - D&D Beyond URL Input Left Empty for Newly Created / Unbound Tokens
 
 #### Pre-requisites:
+
 - Run `npm run dev` and open the VTT client in a browser tab.
 
 #### Steps:
+
 1. **Spawn a New Token:**
    - Click the Token Picker icon (the pawn icon) on the left floating toolbar.
    - Choose a preset avatar or upload a token image, enter a name (e.g. "Goblin Scout"), and click **Add Token to Map**.
@@ -1091,6 +1088,7 @@ This document provides step-by-step instructions for manually verifying all feat
    - Verify that authentic numeric IDs or D&D Beyond URLs properly format to `https://www.dndbeyond.com/characters/47804290`.
 
 #### Expected Result (Pass Criteria):
+
 - Creating a token and inspecting its character sheet leaves the D&D Beyond URL input field clean and empty.
 - Internal token IDs and non-D&D Beyond identifiers never leak into the online character URL field.
 
@@ -1120,6 +1118,7 @@ This document provides step-by-step instructions for manually verifying all feat
    - Verify the Character Sheet immediately switches to the full character view displaying the newly saved character.
 
 #### Expected Result (Pass Criteria):
+
 - Characters currently opened in the character sheet can be saved directly to the database via explicit **Save to Database** buttons in both the header and footer.
 - Unbound tokens with HP and actions can be converted and saved directly as custom characters in the database via **Save as Custom Character**.
 
@@ -1152,6 +1151,7 @@ This document provides step-by-step instructions for manually verifying all feat
    - Open token attacks or Character Sheet for the token: verify the dagger attack appears in the token's attacks.
 
 #### Expected Result (Pass Criteria):
+
 - Clicking `+ Add to Sheet` on an item card reliably adds both the attack/ability to the character's actions and the item record to inventory.
 - Character sheet displays the new action under ACTIONS and item under INVENTORY & ITEMS.
 
@@ -1180,6 +1180,7 @@ This document provides step-by-step instructions for manually verifying all feat
    - Open Character Sheet (`c` key): verify the weapon attack is added to **ACTIONS** with its damage dice and reach.
 
 #### Expected Result (Pass Criteria):
+
 - Using `/attack? <weapon>` when the attack is not present on the character or token queries the Open5e and PF2e compendiums.
 - Weapon stat block displays damage formula, damage type, reach/range, and allows adding to sheet/attacks.
 
@@ -1207,6 +1208,7 @@ This document provides step-by-step instructions for manually verifying all feat
    - Verify that pressing `Escape` blurs the chat input without needing mouse interaction.
 
 #### Expected Result (Pass Criteria):
+
 - Clicking any token or canvas area immediately blurs active text inputs and focuses the canvas.
 - Canvas hotkeys work immediately upon clicking the board without requiring selecting text elsewhere.
 - Pressing `Escape` in the chat input blurs the input.
@@ -1237,6 +1239,7 @@ This document provides step-by-step instructions for manually verifying all feat
    - Verify that the imported data populates into the unified local sheet and is stored locally in the database.
 
 #### Expected Result (Pass Criteria):
+
 - Character sheet has three options: Local Character, D&D Beyond (5e), and Pathbuilder 2e (PF2e).
 - Sheet defaults to the system-agnostic Local Character option rather than favoring D&D Beyond.
 - Third-party imports integrate directly into the unified local character data model.
@@ -1266,6 +1269,7 @@ This document provides step-by-step instructions for manually verifying all feat
    - On desktop, verify that mouse drag pans and mouse wheel zooms the portrait preview.
 
 #### Expected Result (Pass Criteria):
+
 - Two-finger pinch gestures zoom only the token portrait image, with browser page zoom gestures prevented.
 - One-finger drags pan the token portrait.
 
@@ -1296,6 +1300,7 @@ This document provides step-by-step instructions for manually verifying all feat
    - Verify typing characters while focused inside the input types normally without toggling the window.
 
 #### Expected Result (Pass Criteria):
+
 - Pressing ` or ~ toggles the chat panel open or closed.
 - Pressing Escape while in the chat textbox blurs the textbox, allowing subsequent hotkeys to close the chat.
 
@@ -1322,6 +1327,7 @@ This document provides step-by-step instructions for manually verifying all feat
    - Verify the canvas buffer updates to match viewport dimensions immediately without stretching or distorting.
 
 #### Expected Result (Pass Criteria):
+
 - Brawl mode canvas matches full browser window resolution.
 - Canvas rendering is razor-sharp with no blurriness or incorrect zoom stretch.
 - Ratio of tiles to pixels matches VTT mode.
@@ -1348,15 +1354,5 @@ This document provides step-by-step instructions for manually verifying all feat
    - Click the hamburger button in Brawl mode: verify it opens the mobile drawer menu normally.
 
 #### Expected Result (Pass Criteria):
+
 - Hamburger menu button in Brawl mode has consistent primary accent background and white icon styling matching VTT mode.
-
-
-
-
-
-
-
-
-
-
-

@@ -29,6 +29,7 @@ if [ -n "${IMAGE_REGISTRY}" ] && [[ "${IMAGE_REGISTRY}" != */ ]]; then
 fi
 
 IMAGE_TAG="${IMAGE_TAG:-${APP_VERSION}}"
+PLATFORM="${PLATFORM:-${DOCKER_DEFAULT_PLATFORM:-}}"
 DO_PUSH=false
 RUN_TESTS=false
 
@@ -46,6 +47,10 @@ while [[ $# -gt 0 ]]; do
       IMAGE_TAG="$2"
       shift 2
       ;;
+    --platform)
+      PLATFORM="$2"
+      shift 2
+      ;;
     --push)
       DO_PUSH=true
       shift
@@ -60,6 +65,7 @@ while [[ $# -gt 0 ]]; do
       echo "Options:"
       echo "  --registry <URL>   Container registry prefix (default: ${IMAGE_REGISTRY})"
       echo "  --tag <TAG>        Container image tag (default: ${IMAGE_TAG} from VERSION file)"
+      echo "  --platform <ARCH>  Target platform architecture (e.g. linux/amd64, linux/arm64)"
       echo "  --push             Push container images to registry after building"
       echo "  --test             Run test suites before building images"
       echo "  -h, --help         Show this help message"
@@ -88,6 +94,7 @@ echo " Application Ver : ${APP_VERSION} (from VERSION)"
 echo " Git Commit Hash : ${GIT_COMMIT_SHORT}"
 echo " Primary Tag     : ${IMAGE_TAG}"
 echo " Registry Prefix : ${IMAGE_REGISTRY:-<local docker>}"
+echo " Target Platform: ${PLATFORM:-<host default>}"
 echo " Push to Registry: ${DO_PUSH}"
 echo " Project Root    : ${ROOT_DIR}"
 echo "======================================================================"
@@ -96,7 +103,12 @@ echo "======================================================================"
 if [ "${RUN_TESTS}" = true ]; then
   echo ""
   echo "==> Running automated test suites..."
-  npm test
+  yarn test
+fi
+
+PLATFORM_ARG=()
+if [ -n "${PLATFORM}" ]; then
+  PLATFORM_ARG=(--platform "${PLATFORM}")
 fi
 
 CLIENT_IMAGE="${IMAGE_REGISTRY}oldbear_client:${IMAGE_TAG}"
@@ -114,6 +126,7 @@ NGINX_IMAGE_LATEST="${IMAGE_REGISTRY}oldbear_nginx:latest"
 echo ""
 echo "==> 1/3 Building Client container (${CLIENT_IMAGE})..."
 docker build \
+  "${PLATFORM_ARG[@]}" \
   -t "${CLIENT_IMAGE}" \
   -t "${CLIENT_IMAGE_COMMIT}" \
   -t "${CLIENT_IMAGE_LATEST}" \
@@ -126,6 +139,7 @@ docker build \
 echo ""
 echo "==> 2/3 Building Server container (${SERVER_IMAGE})..."
 docker build \
+  "${PLATFORM_ARG[@]}" \
   -t "${SERVER_IMAGE}" \
   -t "${SERVER_IMAGE_COMMIT}" \
   -t "${SERVER_IMAGE_LATEST}" \
@@ -138,6 +152,7 @@ docker build \
 echo ""
 echo "==> 3/3 Building Nginx proxy container (${NGINX_IMAGE})..."
 docker build \
+  "${PLATFORM_ARG[@]}" \
   -t "${NGINX_IMAGE}" \
   -t "${NGINX_IMAGE_COMMIT}" \
   -t "${NGINX_IMAGE_LATEST}" \

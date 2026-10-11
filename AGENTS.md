@@ -45,19 +45,19 @@ Before committing any code or declaring a task ready for testing:
 
 - **Run Client Tests**:
   ```bash
-  npm test -w @oldbear/client
+  yarn workspace @oldbear/client test
   ```
 - **Run Shared Tests**:
   ```bash
-  npm test -w @oldbear/shared
+  yarn workspace @oldbear/shared test
   ```
 - **Start Local Dev Server**:
   ```bash
-  npm run dev
+  yarn dev
   ```
 - **Build Production Bundle** (only when validating build cleanliness):
   ```bash
-  npm run build
+  yarn build
   ```
 
 ---

@@ -1,4 +1,5 @@
 import http from 'node:http';
+import net from 'node:net';
 import path from 'node:path';
 import express from 'express';
 import cors from 'cors';
@@ -129,11 +130,39 @@ const wss = new WebSocketServer({ server });
 
 setupWebSocket(wss);
 
+function isPortFree(port: number, host = '0.0.0.0'): Promise<boolean> {
+  return new Promise((resolve) => {
+    const s = net.createServer();
+    s.unref();
+    s.once('error', () => resolve(false));
+    s.once('listening', () => s.close(() => resolve(true)));
+    s.listen(port, host);
+  });
+}
+
+async function findAvailablePort(startPort: number): Promise<number> {
+  let port = startPort;
+  while (port < 65535) {
+    const [v4, v4Loopback] = await Promise.all([
+      isPortFree(port, '0.0.0.0'),
+      isPortFree(port, '127.0.0.1'),
+    ]);
+    if (v4 && v4Loopback) return port;
+    port++;
+  }
+  return startPort;
+}
+
 async function start() {
+  const effectivePort = await findAvailablePort(PORT);
+  if (effectivePort !== PORT) {
+    console.log(`[OldBear Server] Port ${PORT} is in use; automatically selected port ${effectivePort}`);
+  }
+
   // Start HTTP and WebSocket server immediately so clients and proxies can connect without delay
-  server.listen(PORT, '0.0.0.0', () => {
-    console.log(`[OldBear Server] Running on http://localhost:${PORT}`);
-    console.log(`[OldBear Server] WebSocket listening on ws://localhost:${PORT}`);
+  server.listen(effectivePort, '0.0.0.0', () => {
+    console.log(`[OldBear Server] Running on http://localhost:${effectivePort}`);
+    console.log(`[OldBear Server] WebSocket listening on ws://localhost:${effectivePort}`);
     console.log(`[OldBear Server] Database mode: ${isDbConnected() ? 'PostgreSQL (Persistent)' : 'In-Memory'}`);
   });
 

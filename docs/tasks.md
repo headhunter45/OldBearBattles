@@ -274,7 +274,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-151 | Switch Container CI/CD to GitHub Container Registry (ghcr.io)                                                                                                                                                                                                                                                                                                                                                                                                                        | Old Bear VTT   | Done     | [Bug](#ob-151)     |
 | OB-152 | *Integrate Help & Tooltip Component Across UI*                                                                                                                                                                                                                                                                                                                                                                                                                                       | Old Bear VTT   | Triage   | [Feature](#ob-152) |
 | OB-153 | *Pathfinder 2e (PF2e) Ruleset Support*                                                                                                                                                                                                                                                                                                                                                                                                                                               | Old Bear VTT   | Triage   | [Feature](#ob-153) |
-| OB-154 | `GAME_MODE` Environment Configuration & Deployment Toggles                                                                                                                                                                                                                                                                                                                                                                                                                           | Old Bear VTT   | Testing  | [Feature](#ob-154) |
+| OB-154 | `GAME_MODE` Environment Configuration & Deployment Toggles                                                                                                                                                                                                                                                                                                                                                                                                                           | Old Bear VTT   | Done     | [Feature](#ob-154) |
 | OB-155 | Army, Unit, and Model Domain Hierarchy & Disambiguation                                                                                                                                                                                                                                                                                                                                                                                                                              | Old Bear Brawl | Testing  | [Feature](#ob-155) |
 | OB-156 | Unit Coherency Graph Engine & Real-Time Warning Halos                                                                                                                                                                                                                                                                                                                                                                                                                                | Old Bear Brawl | Testing  | [Feature](#ob-156) |
 | OB-157 | Battle Round Stepper & Wargaming Phase Engine                                                                                                                                                                                                                                                                                                                                                                                                                                        | Old Bear Brawl | Testing  | [Feature](#ob-157) |
@@ -333,12 +333,12 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-210 | Remove references to rodeo and obr to be nice.                                                                                                                                                                                                                                                                                                                                                                                                                                       | Common         | Done     | [Chore](#ob-210)   |
 | OB-211 | Remove excess display from the info commands.                                                                                                                                                                                                                                                                                                                                                                                                                                        | Common         | Done     | [Feature](#ob-211) |
 | OB-212 | Add a way to request variants like the 2014 vs 2024 srds, between pf1, sf1, pf2+sf2, and between 5e and pf*/sf*.                                                                                                                                                                                                                                                                                                                                                                     | Old Bear VTT   | Testing  | [Feature](#ob-212) |
-| OB-213 | when creating a token and then checking its character sheet I see some kind of id in the dndbeyond url block. That should be empty.                                                                                                                                                                                                                                                                                                                                                  | Old Bear VTT   | Testing  | [Feature](#ob-213) |
+| OB-213 | Tokens without a character show the wrong sheet.                                                                                                                                                                                                                                                                                                                                                                                                                                     | Old Bear VTT   | Testing  | [Feature](#ob-213) |
 | OB-214 | Allow saving custom characters.                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Old Bear VTT   | Testing  | [Feature](#ob-214) |
 | OB-215 | *Find a source for icons and images.*                                                                                                                                                                                                                                                                                                                                                                                                                                                | Old Bear VTT   | Planning | [Feature](#ob-215) |
 | OB-216 | Add to character on an item card does nothing. It should add the attack/ability to the character sheet,                                                                                                                                                                                                                                                                                                                                                                              | Old Bear VTT   | Testing  | [Bug](#ob-216)     |
 | OB-217 | Allow /attack? to query compendium weapons and attacks from Open5e and PF2e                                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Testing  | [Feature](#ob-217) |
-| OB-218 | Chat textbox does not lose focus when we click something else. I clicked a token and the box still had the cursor in it. I wasn't able to use hotkeys until I had selected some text elsewhere.                                                                                                                                                                                                                                                                                      | Common         | Testing  | [Bug](#ob-218)     |
+| OB-218 | Chat textbox does not give up focus when you click away.                                                                                                                                                                                                                                                                                                                                                                                                                             | Common         | Testing  | [Bug](#ob-218)     |
 | OB-219 | Don't favor dnd on the character sheet.                                                                                                                                                                                                                                                                                                                                                                                                                                              | Common         | Testing  | [Feature](#ob-219) |
 | OB-220 | Pinch zoom doesn't work right on token portraits.                                                                                                                                                                                                                                                                                                                                                                                                                                    | Common         | Testing  | [Bug](#ob-220)     |
 | OB-221 | Make the ` or ~ key toggle the chat display like c togles the character sheet.                                                                                                                                                                                                                                                                                                                                                                                                       | Common         | Testing  | [Feature](#ob-221) |
@@ -2171,7 +2171,6 @@ On mobile viewports (<768px width and short landscape screens), the floating Tok
 
 - [ ]
 
-
 <a id="ob-139" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
 ### Reusable Help & Tooltip Component
 **ID:** OB-139
@@ -2672,16 +2671,14 @@ Triaged on 2026-10-09:
 
 - [ ]
 
-<a id="ob-154" class="task" data-project="vtt" data-status="testing" data-task-type="feature"></a>
+<a id="ob-154" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
 ### `GAME_MODE` Environment Configuration & Deployment Toggles
 **ID:** OB-154
 **Project:** Old Bear VTT
-**Status:** Testing
+**Status:** Done
 **Type:** Feature
 
-
 **Description:**
-
 Support multi-mode deployment and runtime game mode selection via environment variables (`GAME_MODE=vtt`, `GAME_MODE=brawl`, or `GAME_MODES=vtt,brawl`):
 
 - Single-mode instances restrict the room interface to either VTT or Brawl (ideal for dedicated subdomains like `vtt.oldbear.app` and `brawl.oldbear.app`).
@@ -3617,16 +3614,14 @@ Document any missing backends, but assume we will have an api eventually. Stub o
 - [x]
 
 <a id="ob-213" class="task" data-project="vtt" data-status="testing" data-task-type="feature"></a>
-### when creating a token and then checking its character sheet I see some kind of id in the dndbeyond url block. That should be empty.
+### Tokens without a character show the wrong sheet.
 **ID:** OB-213
 **Project:** Old Bear VTT
 **Status:** Testing
 **Type:** Feature
 
 **Description:**
-Describe task objectives and implementation requirements here.
-
-- [x]
+when creating a token and then checking its character sheet I see some kind of id in the dndbeyond url block. That should be empty.
 
 <a id="ob-214" class="task" data-project="vtt" data-status="testing" data-task-type="feature"></a>
 ### Allow saving custom characters.
@@ -3669,7 +3664,6 @@ Triaged on 2026-10-09:
 
 - [ ]
 
-
 <a id="ob-216" class="task" data-project="vtt" data-status="testing" data-task-type="bug"></a>
 ### Add to character on an item card does nothing. It should add the attack/ability to the character sheet,
 **ID:** OB-216
@@ -3695,16 +3689,14 @@ When using /attack? <name> in chat, if the attack is not found in the active cha
 - [x]
 
 <a id="ob-218" class="task" data-project="cmn" data-status="testing" data-task-type="bug"></a>
-### Chat textbox does not lose focus when we click something else. I clicked a token and the box still had the cursor in it. I wasn't able to use hotkeys until I had selected some text elsewhere.
+### Chat textbox does not give up focus when you click away.
 **ID:** OB-218
 **Project:** Common
 **Status:** Testing
 **Type:** Bug
 
 **Description:**
-Describe task objectives and implementation requirements here.
-
-- [x]
+Chat textbox does not lose focus when we click something else. I clicked a token and the box still had the cursor in it. I wasn't able to use hotkeys until I had selected some text elsewhere.
 
 <a id="ob-219" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
 ### Don't favor dnd on the character sheet.
