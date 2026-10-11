@@ -134,7 +134,7 @@ export class CanvasEngine {
   }
 
   setSession(session: GameSession) {
-    const isFirstInit = !this.session && !this.currentMapId;
+    const isFirstInit = !this.session;
     this.session = session;
     if (!this.currentMapId) {
       this.currentMapId = session.activeMapId;

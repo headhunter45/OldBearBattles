@@ -264,4 +264,64 @@ describe('CanvasEngine', () => {
     assert.strictEqual(canvasFocused, true, 'Canvas is focused on click');
     assert.strictEqual(prevented, true, 'Pointerdown prevents default browser drag');
   });
+
+  it('centers and scales map on initial setSession even if currentMapId was previously set (OB-222)', () => {
+    const mockCanvas: any = {
+      getContext: () => ({}),
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      setPointerCapture: () => {},
+      focus: () => {},
+      width: 1920,
+      height: 1080,
+      style: {},
+    };
+    Object.setPrototypeOf(mockCanvas, (globalThis as any).HTMLElement?.prototype || Object.prototype);
+
+    const prevWin = (globalThis as any).window;
+    const prevRaf = (globalThis as any).requestAnimationFrame;
+    const prevCaf = (globalThis as any).cancelAnimationFrame;
+
+    (globalThis as any).requestAnimationFrame = () => 0;
+    (globalThis as any).cancelAnimationFrame = () => {};
+    (globalThis as any).window = {
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      innerWidth: 1920,
+      innerHeight: 1080,
+    };
+
+    const engine = new CanvasEngine(mockCanvas);
+    assert.strictEqual(engine.viewport.scale, 1.0);
+
+    // Simulate mapId being set prior to session arriving (as occurred in Brawl mode join-ack)
+    engine.currentMapId = 'map-test';
+
+    const mockSession: any = {
+      activeMapId: 'map-test',
+      maps: [
+        {
+          id: 'map-test',
+          name: 'Test Map',
+          width: 2000,
+          height: 1500,
+          gridSize: 50,
+        },
+      ],
+      tokens: {},
+      markers: [],
+      fog: {},
+    };
+
+    engine.setSession(mockSession);
+
+    // Expected scale: Math.min(1.5, Math.max(0.15, Math.min((1920 * 0.85) / 2000, (1080 * 0.85) / 1500)))
+    // (1920 * 0.85) / 2000 = 0.816; (1080 * 0.85) / 1500 = 0.612 -> scale should be 0.612
+    const expectedScale = Math.min((1920 * 0.85) / 2000, (1080 * 0.85) / 1500);
+    assert.strictEqual(Math.abs(engine.viewport.scale - expectedScale) < 0.001, true);
+
+    (globalThis as any).window = prevWin;
+    (globalThis as any).requestAnimationFrame = prevRaf;
+    (globalThis as any).cancelAnimationFrame = prevCaf;
+  });
 });

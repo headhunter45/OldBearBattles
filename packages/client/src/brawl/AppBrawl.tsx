@@ -488,8 +488,10 @@ export const AppBrawl: React.FC = () => {
       },
     };
 
+    const searchParams = new URLSearchParams(window.location.search);
+    const roomParam = searchParams.get('room');
     const path = window.location.pathname.replace(/^\/|\/$/g, '');
-    const currentRoomId = path || 'brawl-table';
+    const currentRoomId = roomParam || path || 'brawl-table';
     setRoomId(currentRoomId);
     setRoomUrl(window.location.href);
 
@@ -513,15 +515,8 @@ export const AppBrawl: React.FC = () => {
         setSession(msg.session);
         setIsOrganizer(msg.isGm);
         setGmPreviewMapId(msg.session.activeMapId || msg.session.maps[0]?.id || '');
-        if (msg.session.maps.length > 0 && !engine.currentMapId) {
-          engine.setActiveMap(msg.session.activeMapId || msg.session.maps[0].id, true);
-        }
       } else if (msg.type === 'sync-session') {
         setSession(msg.session);
-        engine.setSession(msg.session);
-        if (msg.session.maps.length > 0 && !engine.currentMapId) {
-          engine.setActiveMap(msg.session.activeMapId || msg.session.maps[0].id, true);
-        }
       } else if (msg.type === 'map-added') {
         setSession((prev) => {
           if (!prev) return prev;
@@ -1025,7 +1020,7 @@ export const AppBrawl: React.FC = () => {
               return [...list].sort((a, b) => a.name.localeCompare(b.name));
             })()
           }
-          selectedToken={selectedToken}
+          selectedToken={selectedTokens[0] || null}
           messages={chatMessages}
           onSendMessage={(m) => {
             if (m.isEphemeral) {
@@ -1125,8 +1120,10 @@ export const AppBrawl: React.FC = () => {
                     setConnectionError(null);
                     const net = networkRef.current;
                     if (net) {
+                      const searchParams = new URLSearchParams(window.location.search);
+                      const roomParam = searchParams.get('room');
                       const path = window.location.pathname.replace(/^\/|\/$/g, '');
-                      const currentRoomId = path || 'brawl-table';
+                      const currentRoomId = roomParam || path || 'brawl-table';
                       net.connect(currentRoomId, generateRandomName('random'), '#f59e0b', '');
                     } else {
                       window.location.reload();
