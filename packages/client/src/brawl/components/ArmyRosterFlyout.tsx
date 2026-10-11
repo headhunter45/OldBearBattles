@@ -451,6 +451,7 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({
       <div
         onMouseDown={handleMouseDown}
         style={{
+          flexShrink: 0,
           padding: '0.75rem 1rem',
           background:
             'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.05))',
@@ -482,6 +483,7 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({
       {/* Army Meta & Import Controls */}
       <div
         style={{
+          flexShrink: 0,
           padding: '0.75rem 1rem',
           borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
           fontSize: '0.8rem',
@@ -577,6 +579,7 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({
       <div
         style={{
           flex: 1,
+          minHeight: 0,
           overflowY: 'auto',
           padding: '0.75rem 1rem',
           display: 'flex',
@@ -590,6 +593,7 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({
             <div
               key={unit.id}
               style={{
+                flexShrink: 0,
                 background: 'rgba(0, 0, 0, 0.25)',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
                 borderRadius: '8px',

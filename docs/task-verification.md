@@ -253,16 +253,24 @@ This document provides step-by-step instructions for manually verifying all feat
 
 #### Step-by-Step Instructions:
 
-1. Open Army Roster Flyout and click **Import Roster**.
-2. Drag and drop a NewRecruit JSON export or BattleScribe `.rosz` archive file.
-3. Observe roster breakdown: Army Name, Faction, Detachment, Points Total, and Units.
-4. Click **Confirm Import**:
-   - Verify units appear populated in the roster with full model counts and wargear.
+1. Open Army Roster Flyout in Brawl mode and click **Import**.
+2. Select or drop a roster file such as `docs/newrecruit-list.ros` (NewRecruit BattleScribe XML) or a `.rosz` / `.json` export.
+3. Verify the Army Roster header and metadata:
+   - Header displays accurate points: `Army Roster (1000 / 1000 pts)`.
+   - Faction displays: `Faction: Chaos - Thousand Sons • Detachment: Changehost of Deceit`.
+4. Inspect unit model counts and cards:
+   - Single-model units (e.g. `Ahriman`, `Brayherd Shaman [Crucible]`, `Exalted Sorcerer`, `Chaos Predator Annihilator`) show **1 model** (not 5).
+   - Squads show accurate counts: `Flamers` (3 models), `Chaos Spawn` (2 models).
+   - Base sizes are respected (e.g. 40mm for Ahriman, 50mm for Chaos Spawn, Hull/rectangular for Predator).
+5. Scroll through the Army Roster:
+   - Confirm the units list scrolls smoothly with a vertical scrollbar.
+   - Confirm unit cards maintain their full readable layout and do NOT compress/shrink to 4-8px tall strips.
 
 #### Expected Result (Pass Criteria):
 
-- NewRecruit JSON and BattleScribe `.rosz` archives parse without errors.
-- Extracted units, models, stats, and wargear populate the Army Roster accurately.
+- NewRecruit XML (`.ros`), `.rosz`, and JSON files parse accurately with correct points calculations.
+- Single-model characters display 1 model; multi-model squads display their actual model count.
+- The Army Roster Flyout scrolls cleanly without squishing unit cards.
 
 ---
 

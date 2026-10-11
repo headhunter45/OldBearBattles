@@ -10,10 +10,28 @@ export interface ParseRosterResult {
 /**
  * Infers an appropriate base shape and diameter in millimeters from unit keywords, toughness, and wounds.
  */
-export function inferBaseShape(name: string, toughness = 4, wounds = 1): BaseShape {
+export function inferBaseShape(name: string, toughness = 4, wounds = 1, baseSpec?: string): BaseShape {
+  if (baseSpec) {
+    const clean = baseSpec.trim().toLowerCase();
+    if (clean.includes('hull') || clean.includes('rect') || clean.includes('vehicle')) {
+      return { type: 'rect', widthMm: 120, heightMm: 75 };
+    }
+    const num = parseInt(clean.replace(/\D/g, ''), 10);
+    if (!isNaN(num) && num > 0) {
+      return { type: 'circle', widthMm: num, heightMm: num };
+    }
+  }
+
   const lower = name.toLowerCase();
 
-  if (lower.includes('tank') || lower.includes('rhino') || lower.includes('land raider') || lower.includes('repulsor')) {
+  if (
+    lower.includes('tank') ||
+    lower.includes('rhino') ||
+    lower.includes('land raider') ||
+    lower.includes('repulsor') ||
+    lower.includes('predator') ||
+    lower.includes('battery')
+  ) {
     return { type: 'rect', widthMm: 120, heightMm: 75 };
   }
   if (lower.includes('dreadnought') || lower.includes('helbrute') || lower.includes('carnifex')) {
@@ -180,116 +198,297 @@ export function parseNewRecruitJson(jsonContent: string | Record<string, any>): 
   return disambiguateArmy(army);
 }
 
+interface XmlNode {
+  tagName: string;
+  attrs: Record<string, string>;
+  children: XmlNode[];
+  text: string;
+}
+
+/**
+ * Lightweight, zero-dependency XML element parser suitable for browser & node test runners.
+ */
+function parseXmlSimple(str: string): XmlNode | null {
+  let pos = 0;
+  function parseNode(): XmlNode | { type: 'close'; tagName: string } | null {
+    while (pos < str.length && str[pos] !== '<') pos++;
+    if (pos >= str.length) return null;
+    if (str.startsWith('<!--', pos)) {
+      const end = str.indexOf('-->', pos);
+      pos = end === -1 ? str.length : end + 3;
+      return parseNode();
+    }
+    if (str.startsWith('<?', pos)) {
+      const end = str.indexOf('?>', pos);
+      pos = end === -1 ? str.length : end + 2;
+      return parseNode();
+    }
+    if (str.startsWith('<!', pos)) {
+      const end = str.indexOf('>', pos);
+      pos = end === -1 ? str.length : end + 1;
+      return parseNode();
+    }
+    if (str.startsWith('</', pos)) {
+      const end = str.indexOf('>', pos);
+      const closeTagName = str.slice(pos + 2, end).trim();
+      pos = end === -1 ? str.length : end + 1;
+      return { type: 'close', tagName: closeTagName };
+    }
+    const tagEnd = str.indexOf('>', pos);
+    if (tagEnd === -1) return null;
+    const tagContent = str.slice(pos + 1, tagEnd);
+    const isSelfClosing = tagContent.endsWith('/');
+    const cleanContent = isSelfClosing ? tagContent.slice(0, -1).trim() : tagContent.trim();
+
+    const spaceIdx = cleanContent.search(/\s/);
+    const tagName = spaceIdx === -1 ? cleanContent : cleanContent.slice(0, spaceIdx);
+    const attrStr = spaceIdx === -1 ? '' : cleanContent.slice(spaceIdx);
+    const attrs: Record<string, string> = {};
+    const attrRegex = /([a-zA-Z0-9_:-]+)="([^"]*)"/g;
+    let aMatch: RegExpExecArray | null;
+    while ((aMatch = attrRegex.exec(attrStr)) !== null) {
+      attrs[aMatch[1]] = aMatch[2];
+    }
+
+    pos = tagEnd + 1;
+    const node: XmlNode = { tagName, attrs, children: [], text: '' };
+    if (isSelfClosing) return node;
+
+    while (pos < str.length) {
+      const textStart = pos;
+      const nextTag = str.indexOf('<', pos);
+      if (nextTag === -1) break;
+      if (nextTag > textStart) {
+        node.text += str.slice(textStart, nextTag);
+      }
+      pos = nextTag;
+      if (str.startsWith('</', pos)) {
+        const closeEnd = str.indexOf('>', pos);
+        pos = closeEnd === -1 ? str.length : closeEnd + 1;
+        break;
+      }
+      const child = parseNode();
+      if (child) {
+        if ('type' in child && child.type === 'close') {
+          break;
+        } else {
+          node.children.push(child as XmlNode);
+        }
+      }
+    }
+    return node;
+  }
+  const root = parseNode();
+  return root && !('type' in root) ? root : null;
+}
+
+function findChildren(node: XmlNode, tagName: string): XmlNode[] {
+  return (node.children || []).filter((c) => c.tagName === tagName);
+}
+
+function findDescendants(node: XmlNode, tagName: string): XmlNode[] {
+  const res: XmlNode[] = [];
+  if (node.tagName === tagName) res.push(node);
+  for (const c of node.children || []) {
+    res.push(...findDescendants(c, tagName));
+  }
+  return res;
+}
+
 /**
  * Parses BattleScribe `.ros` XML format.
  */
 export function parseBattleScribeXml(xmlContent: string): WargameArmy {
   const armyId = `army_bs_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+  const root = parseXmlSimple(xmlContent);
+
+  if (!root) {
+    throw new Error('Invalid or unparseable BattleScribe XML');
+  }
 
   // Extract roster name
-  const rosterNameMatch = xmlContent.match(/<roster[^>]*\bname="([^"]+)"/i);
-  const armyName = rosterNameMatch ? rosterNameMatch[1] : 'BattleScribe Army';
+  const armyName = root.attrs.name || 'BattleScribe Army';
 
-  // Extract catalogue / faction
-  const forceMatch = xmlContent.match(/<force[^>]*\bcatalogueName="([^"]+)"/i);
-  const faction = forceMatch ? forceMatch[1] : 'Unknown Faction';
+  // Extract catalogue / faction & detachment
+  const forces = findDescendants(root, 'force');
+  let faction = 'Unknown Faction';
+  if (forces.length > 0) {
+    faction = forces[0].attrs.catalogueName || forces[0].attrs.name || 'Unknown Faction';
+  }
 
-  // Extract points limit
-  const costMatch = xmlContent.match(/<cost[^>]*\bname="pts"[^>]*\bvalue="([^"]+)"/i);
-  const pointsLimit = costMatch ? parseInt(costMatch[1], 10) : 2000;
+  // Check detachment
+  let detachment: string | undefined = undefined;
+  const detachmentSel = findDescendants(root, 'selection').find(
+    (s) => s.attrs.name === 'Detachment' || s.attrs.group === 'Detachment',
+  );
+  if (detachmentSel) {
+    const subSel = findDescendants(detachmentSel, 'selection').find((s) => s !== detachmentSel);
+    if (subSel) detachment = subSel.attrs.name;
+    else if (detachmentSel.attrs.group === 'Detachment') detachment = detachmentSel.attrs.name;
+  }
 
-  // Extract units from <selection ... type="unit" or type="model">
-  const unitRegex = /<selection\b[^>]*\btype="(?:unit|model)"[^>]*>([\s\S]*?)<\/selection>/gi;
+  // Points limit & Roster Points
+  let pointsLimit = 2000;
+  let rosterTotalPts = 0;
+  for (const costs of findChildren(root, 'costs')) {
+    for (const cost of findChildren(costs, 'cost')) {
+      if (cost.attrs.name === 'pts') {
+        rosterTotalPts = parseInt(cost.attrs.value, 10) || 0;
+      }
+    }
+  }
+  for (const limits of findChildren(root, 'costLimits')) {
+    for (const limit of findChildren(limits, 'costLimit')) {
+      if (limit.attrs.name === 'pts') {
+        pointsLimit = parseInt(limit.attrs.value, 10) || 0;
+      }
+    }
+  }
+  if ((!pointsLimit || pointsLimit === 0) && rosterTotalPts > 0) {
+    pointsLimit = rosterTotalPts;
+  }
+
+  // Top-level selections to extract as units
+  let unitSelections: XmlNode[] = [];
+  if (forces.length > 0) {
+    for (const force of forces) {
+      const selectionsWrap = findChildren(force, 'selections')[0];
+      const directSelections = selectionsWrap
+        ? findChildren(selectionsWrap, 'selection')
+        : findChildren(force, 'selection');
+      for (const sel of directSelections) {
+        if (sel.attrs.type === 'unit' || sel.attrs.type === 'model') {
+          unitSelections.push(sel);
+        }
+      }
+    }
+  }
+
+  // Fallback if not inside <force>
+  if (unitSelections.length === 0) {
+    const rootSelectionsWrap = findChildren(root, 'selections')[0];
+    const directSelections = rootSelectionsWrap
+      ? findChildren(rootSelectionsWrap, 'selection')
+      : findChildren(root, 'selection');
+    for (const sel of directSelections) {
+      if (sel.attrs.type === 'unit' || sel.attrs.type === 'model') {
+        unitSelections.push(sel);
+      }
+    }
+  }
+
+  // Fallback to any selection of type unit or model if still empty
+  if (unitSelections.length === 0) {
+    unitSelections = findDescendants(root, 'selection').filter(
+      (s) => s.attrs.type === 'unit' || s.attrs.type === 'model',
+    );
+  }
+
   const parsedUnits: WargameUnit[] = [];
-
-  let match: RegExpExecArray | null;
   let uIdx = 0;
 
-  while ((match = unitRegex.exec(xmlContent)) !== null) {
-    const unitXml = match[0];
-    const unitInner = match[1];
-
-    const nameMatch = unitXml.match(/<selection\b[^>]*\bname="([^"]+)"/i);
-    const unitName = nameMatch ? nameMatch[1] : `Unit ${uIdx + 1}`;
+  for (const sel of unitSelections) {
+    const unitName = sel.attrs.name || `Unit ${uIdx + 1}`;
     const unitId = `unit_${armyId}_${uIdx}`;
 
-    // Extract unit points
-    const unitCostMatch = unitXml.match(/<cost[^>]*\bname="pts"[^>]*\bvalue="([^"]+)"/i);
-    const unitPts = unitCostMatch ? parseInt(unitCostMatch[1], 10) : 100;
+    // Extract unit points: first try direct <costs><cost name="pts"/>, otherwise sum descendants
+    const directCostNode = findChildren(sel, 'costs')
+      .flatMap((c) => findChildren(c, 'cost'))
+      .find((c) => c.attrs.name === 'pts');
+    let unitPts = 0;
+    if (directCostNode && directCostNode.attrs.value) {
+      unitPts = parseInt(directCostNode.attrs.value, 10) || 0;
+    } else {
+      const descCosts = findDescendants(sel, 'cost').filter((c) => c.attrs.name === 'pts');
+      unitPts = descCosts.reduce((sum, c) => sum + (parseInt(c.attrs.value, 10) || 0), 0);
+    }
 
-    // Extract profile characteristics
-    const profileMatch = unitInner.match(/<profile\b[^>]*\btypeName="Unit"[\s\S]*?<\/profile>/i);
+    // Profile characteristics
+    const allProfiles = findDescendants(sel, 'profile');
+    const unitProfile =
+      allProfiles.find((p) => p.attrs.typeName === 'Unit') ||
+      allProfiles.find((p) =>
+        findDescendants(p, 'characteristic').some(
+          (c) => c.attrs.name === 'M' || c.attrs.name === 'T',
+        ),
+      );
+
     let movement = 6;
     let toughness = 4;
     let armorSave = '3+';
     let wounds = 2;
     let leadership = '6+';
     let oc = 1;
+    let baseSpec: string | undefined = undefined;
 
-    if (profileMatch) {
-      const pXml = profileMatch[0];
+    if (unitProfile) {
+      const chars = findDescendants(unitProfile, 'characteristic');
       const getChar = (cName: string) => {
-        const charMatch = pXml.match(new RegExp(`<characteristic\\b[^>]*\\bname="${cName}"[^>]*>([^<]*)<`, 'i'));
-        return charMatch ? charMatch[1].trim() : '';
+        const c = chars.find((x) => x.attrs.name?.toLowerCase() === cName.toLowerCase());
+        return c ? c.text.trim() : '';
       };
 
       movement = parseInt(getChar('M').replace(/\D/g, ''), 10) || 6;
       toughness = parseInt(getChar('T').replace(/\D/g, ''), 10) || 4;
       armorSave = getChar('Sv') || '3+';
       wounds = parseInt(getChar('W').replace(/\D/g, ''), 10) || 2;
-      leadership = getChar('Ld') || '6+';
+      leadership = getChar('Ld') || getChar('LD') || '6+';
       oc = parseInt(getChar('OC').replace(/\D/g, ''), 10) || 1;
+      baseSpec = getChar('Base') || undefined;
     }
 
     // Extract weapons
+    const weaponProfiles = allProfiles.filter((p) =>
+      (p.attrs.typeName || '').toLowerCase().includes('weapon'),
+    );
     const baseActions: WargameAction[] = [];
-    const profileRegex = /<profile\b([^>]*)>([\s\S]*?)<\/profile>/gi;
-    let pMatch: RegExpExecArray | null;
+    const seenWeaponNames = new Set<string>();
     let wIdx = 0;
 
-    while ((pMatch = profileRegex.exec(unitInner)) !== null) {
-      const pHeader = pMatch[1];
-      const pContent = pMatch[2];
+    for (const wp of weaponProfiles) {
+      const typeName = wp.attrs.typeName || '';
+      const isMelee = typeName.toLowerCase().includes('melee');
+      const wName = wp.attrs.name || `Weapon ${wIdx + 1}`;
+      if (seenWeaponNames.has(wName)) continue;
+      seenWeaponNames.add(wName);
 
-      const typeMatch = pHeader.match(/typeName="([^"]+)"/i);
-      const typeName = typeMatch ? typeMatch[1] : '';
+      const chars = findDescendants(wp, 'characteristic');
+      const getWChar = (cName: string) => {
+        const c = chars.find((x) => x.attrs.name?.toLowerCase() === cName.toLowerCase());
+        return c ? c.text.trim() : '';
+      };
 
-      if (typeName.toLowerCase().includes('weapon')) {
-        const isMelee = typeName.toLowerCase().includes('melee');
-        const nameMatch = pHeader.match(/name="([^"]+)"/i);
-        const wName = nameMatch ? nameMatch[1] : `Weapon ${wIdx + 1}`;
-
-        const getWChar = (cName: string) => {
-          const cMatch = pContent.match(new RegExp(`<characteristic\\b[^>]*\\bname="${cName}"[^>]*>([^<]*)<`, 'i'));
-          return cMatch ? cMatch[1].trim() : '';
-        };
-
-        baseActions.push({
-          id: `act_${unitId}_${wIdx}`,
-          name: wName,
-          type: isMelee ? 'melee' : 'ranged',
-          rangeInches: isMelee ? 0 : parseInt(getWChar('Range').replace(/\D/g, ''), 10) || 24,
-          attacks: getWChar('A') || '2',
-          skill: getWChar('BS') || getWChar('WS') || '3+',
-          strength: parseInt(getWChar('S').replace(/\D/g, ''), 10) || 4,
-          ap: parseInt(getWChar('AP').replace(/[^0-9-]/g, ''), 10) || 0,
-          damage: getWChar('D') || '1',
-        });
-        wIdx++;
-      }
+      baseActions.push({
+        id: `act_${unitId}_${wIdx}`,
+        name: wName,
+        type: isMelee ? 'melee' : 'ranged',
+        rangeInches: isMelee ? 0 : parseInt(getWChar('Range').replace(/\D/g, ''), 10) || 24,
+        attacks: getWChar('A') || '2',
+        skill: getWChar('BS') || getWChar('WS') || '3+',
+        strength: parseInt(getWChar('S').replace(/\D/g, ''), 10) || 4,
+        ap: parseInt(getWChar('AP').replace(/[^0-9-]/g, ''), 10) || 0,
+        damage: getWChar('D') || '1',
+      });
+      wIdx++;
     }
 
-    // Count models: find <selection type="model" count="X">
+    // Model count: sum child models if present, else check unit selection number
     let modelCount = 0;
-    const modelRegex = /<selection\b[^>]*\btype="model"[^>]*>/gi;
-    let mMatch: RegExpExecArray | null;
-    while ((mMatch = modelRegex.exec(unitInner)) !== null) {
-      const countMatch = mMatch[0].match(/number="(\d+)"/i);
-      modelCount += countMatch ? parseInt(countMatch[1], 10) : 1;
+    const childModels = findDescendants(sel, 'selection').filter(
+      (s) => s !== sel && s.attrs.type === 'model',
+    );
+    if (childModels.length > 0) {
+      for (const cm of childModels) {
+        modelCount += parseInt(cm.attrs.number || '1', 10);
+      }
+    } else {
+      modelCount = parseInt(sel.attrs.number || '1', 10);
     }
-    if (modelCount === 0) modelCount = 5;
+    if (modelCount === 0 || isNaN(modelCount)) {
+      modelCount = 1;
+    }
 
-    const baseShape = inferBaseShape(unitName, toughness, wounds);
+    const baseShape = inferBaseShape(unitName, toughness, wounds, baseSpec);
 
     const models: WargameModel[] = [];
     for (let m = 0; m < modelCount; m++) {
@@ -324,11 +523,14 @@ export function parseBattleScribeXml(xmlContent: string): WargameArmy {
     uIdx++;
   }
 
+  const calculatedTotal = parsedUnits.reduce((sum, u) => sum + u.points, 0);
+
   const army: WargameArmy = {
     id: armyId,
     name: armyName,
     faction,
-    pointsLimit,
+    detachment,
+    pointsLimit: pointsLimit || Math.max(calculatedTotal, 1000),
     units: parsedUnits,
   };
 

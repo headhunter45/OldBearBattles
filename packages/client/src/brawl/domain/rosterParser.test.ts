@@ -270,6 +270,44 @@ describe('Roster Ingestion Pipeline (OB-161)', () => {
       assert.strictEqual(resRosz.army.units.length, 3);
     });
 
+    it('accurately parses 1000-point Thousand Sons list from docs/newrecruit-list.ros', async () => {
+      const fs = await import('fs');
+      const path = await import('path');
+      const rosPath = fs.existsSync(path.join(process.cwd(), 'docs/newrecruit-list.ros'))
+        ? path.join(process.cwd(), 'docs/newrecruit-list.ros')
+        : path.join(process.cwd(), '../../docs/newrecruit-list.ros');
+      const xml = fs.readFileSync(rosPath, 'utf8');
+
+      const parsed = parseBattleScribeXml(xml);
+      assert.strictEqual(parsed.faction, 'Chaos - Thousand Sons');
+      assert.strictEqual(parsed.detachment, 'Changehost of Deceit');
+      assert.strictEqual(parsed.pointsLimit, 1000);
+
+      const totalPoints = parsed.units.reduce((s, u) => s + u.points, 0);
+      assert.strictEqual(totalPoints, 1000, 'Total points should be exactly 1000');
+
+      const ahriman = parsed.units.find((u) => u.name.startsWith('Ahriman'));
+      assert.ok(ahriman, 'Ahriman should be in roster');
+      assert.strictEqual(ahriman.models.length, 1, 'Ahriman must be 1 model, not 5');
+      assert.strictEqual(ahriman.points, 105);
+      assert.strictEqual(ahriman.models[0].baseShape.widthMm, 40);
+      assert.strictEqual(ahriman.baseActions.length, 3, 'Ahriman has 3 weapons');
+
+      const flamers = parsed.units.filter((u) => u.name.startsWith('Flamers'));
+      assert.strictEqual(flamers.length, 2);
+      assert.strictEqual(flamers[0].models.length, 3, 'Flamers unit has 3 models (1 Pyrocaster + 2 Flamers)');
+
+      const spawns = parsed.units.filter((u) => u.name.startsWith('Chaos Spawn'));
+      assert.strictEqual(spawns.length, 2);
+      assert.strictEqual(spawns[0].models.length, 2, 'Chaos Spawn has 2 models');
+
+      const predator = parsed.units.find((u) => u.name.startsWith('Chaos Predator Annihilator'));
+      assert.ok(predator);
+      assert.strictEqual(predator.models.length, 1);
+      assert.strictEqual(predator.points, 140);
+      assert.strictEqual(predator.models[0].baseShape.type, 'rect');
+    });
+
     it('throws error on unsupported format', async () => {
       await assert.rejects(
         async () => {
