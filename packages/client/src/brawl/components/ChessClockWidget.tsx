@@ -51,11 +51,12 @@ export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
   const [showConfig, setShowConfig] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  const { position, isDragging, windowRef, handleMouseDown } = useDraggableWindow({
-    storageKey: 'brawl_chess_clock_position',
-    initialX: 350,
-    initialY: 90,
-  });
+  const { position, isDragging, windowRef, handleMouseDown } =
+    useDraggableWindow({
+      storageKey: 'brawl_chess_clock_position',
+      initialX: 350,
+      initialY: 90,
+    });
 
   const p1Time = formatChessClock(p1Seconds);
   const p2Time = formatChessClock(p2Seconds);
@@ -67,7 +68,10 @@ export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
     onSwitchPlayer();
   };
 
-  const getStatusColor = (status: ReturnType<typeof getClockWarningStatus>, defaultColor: string) => {
+  const getStatusColor = (
+    status: ReturnType<typeof getClockWarningStatus>,
+    defaultColor: string,
+  ) => {
     switch (status) {
       case 'overtime':
         return '#ef4444';
@@ -118,7 +122,9 @@ export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
           }}
         >
           <Timer size={14} color={activeColor} />
-          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: activeColor }}>
+          <span
+            style={{ fontSize: '0.8rem', fontWeight: 700, color: activeColor }}
+          >
             P{activePlayer} ({activeName}):
           </span>
           <span
@@ -186,7 +192,8 @@ export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
         top: `${position?.y ?? 90}px`,
         zIndex: 80,
         width: '380px',
-        background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95))',
+        background:
+          'linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95))',
         border: '1px solid rgba(255, 255, 255, 0.12)',
         boxShadow: '0 12px 36px rgba(0,0,0,0.65)',
         borderRadius: '12px',
@@ -213,7 +220,14 @@ export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <Timer size={16} color="#f59e0b" />
-          <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#f8fafc', letterSpacing: '0.5px' }}>
+          <span
+            style={{
+              fontSize: '0.8rem',
+              fontWeight: 800,
+              color: '#f8fafc',
+              letterSpacing: '0.5px',
+            }}
+          >
             MATCH CHESS CLOCK
           </span>
           <span
@@ -222,7 +236,9 @@ export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
               fontWeight: 700,
               padding: '1px 5px',
               borderRadius: '4px',
-              background: isRunning ? 'rgba(16, 185, 129, 0.2)' : 'rgba(148, 163, 184, 0.2)',
+              background: isRunning
+                ? 'rgba(16, 185, 129, 0.2)'
+                : 'rgba(148, 163, 184, 0.2)',
               color: isRunning ? '#10b981' : '#94a3b8',
             }}
           >
@@ -237,7 +253,11 @@ export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
             style={{ width: '24px', height: '24px' }}
             title={soundEnabled ? 'Mute Sounds' : 'Enable Sounds'}
           >
-            {soundEnabled ? <Volume2 size={13} /> : <VolumeX size={13} color="#94a3b8" />}
+            {soundEnabled ? (
+              <Volume2 size={13} />
+            ) : (
+              <VolumeX size={13} color="#94a3b8" />
+            )}
           </button>
           <button
             className="btn-icon"
@@ -280,14 +300,20 @@ export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
             gap: '6px',
           }}
         >
-          <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+          <span
+            style={{
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              color: 'var(--text-secondary)',
+            }}
+          >
             RESET MATCH TIME PER PLAYER:
           </span>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
             {CLOCK_PRESETS.map((preset) => (
               <button
                 key={preset.label}
-                className="btn-glass"
+                className="btn btn-glass"
                 onClick={() => {
                   onResetClock(preset.seconds);
                   setShowConfig(false);
@@ -304,7 +330,7 @@ export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
             ))}
             {onDisable && (
               <button
-                className="btn-glass"
+                className="btn btn-glass"
                 onClick={() => {
                   setShowConfig(false);
                   onDisable();
@@ -327,7 +353,14 @@ export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
       )}
 
       {/* Dual Clock Faces */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', padding: '12px' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '8px',
+          padding: '12px',
+        }}
+      >
         {/* Player 1 Clock */}
         <div
           onClick={() => {
@@ -336,7 +369,10 @@ export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
           style={{
             padding: '12px 10px',
             borderRadius: '8px',
-            background: activePlayer === 1 ? 'rgba(56, 189, 248, 0.12)' : 'rgba(0, 0, 0, 0.25)',
+            background:
+              activePlayer === 1
+                ? 'rgba(56, 189, 248, 0.12)'
+                : 'rgba(0, 0, 0, 0.25)',
             border: `2px solid ${activePlayer === 1 ? p1Color : 'rgba(255, 255, 255, 0.06)'}`,
             display: 'flex',
             flexDirection: 'column',
@@ -346,7 +382,14 @@ export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
             transition: 'all 0.2s ease',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              marginBottom: '4px',
+            }}
+          >
             <span
               style={{
                 fontSize: '0.72rem',
@@ -387,7 +430,14 @@ export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
             {p1Time.formatted}
           </span>
           {activePlayer === 1 && (
-            <span style={{ fontSize: '0.65rem', fontWeight: 700, color: p1Color, marginTop: '2px' }}>
+            <span
+              style={{
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                color: p1Color,
+                marginTop: '2px',
+              }}
+            >
               ACTIVE (Click to Pass)
             </span>
           )}
@@ -401,7 +451,10 @@ export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
           style={{
             padding: '12px 10px',
             borderRadius: '8px',
-            background: activePlayer === 2 ? 'rgba(236, 72, 153, 0.12)' : 'rgba(0, 0, 0, 0.25)',
+            background:
+              activePlayer === 2
+                ? 'rgba(236, 72, 153, 0.12)'
+                : 'rgba(0, 0, 0, 0.25)',
             border: `2px solid ${activePlayer === 2 ? p2Color : 'rgba(255, 255, 255, 0.06)'}`,
             display: 'flex',
             flexDirection: 'column',
@@ -411,7 +464,14 @@ export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
             transition: 'all 0.2s ease',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              marginBottom: '4px',
+            }}
+          >
             <span
               style={{
                 fontSize: '0.72rem',
@@ -452,7 +512,14 @@ export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
             {p2Time.formatted}
           </span>
           {activePlayer === 2 && (
-            <span style={{ fontSize: '0.65rem', fontWeight: 700, color: p2Color, marginTop: '2px' }}>
+            <span
+              style={{
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                color: p2Color,
+                marginTop: '2px',
+              }}
+            >
               ACTIVE (Click to Pass)
             </span>
           )}
@@ -471,7 +538,7 @@ export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
         }}
       >
         <button
-          className="btn-primary"
+          className="btn btn-primary"
           onClick={handleClockSwitch}
           style={{
             display: 'flex',
@@ -490,7 +557,7 @@ export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <button
-            className="btn-glass"
+            className="btn btn-glass"
             onClick={onToggleRunning}
             style={{
               display: 'flex',

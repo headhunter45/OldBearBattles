@@ -1,5 +1,14 @@
 import React from 'react';
-import { Target, X, Check, ShieldAlert, Sparkles, Plus, Trash2, Award } from 'lucide-react';
+import {
+  Target,
+  X,
+  Check,
+  ShieldAlert,
+  Sparkles,
+  Plus,
+  Trash2,
+  Award,
+} from 'lucide-react';
 import {
   ObjectiveMarker,
   ObjectiveEvaluation,
@@ -140,12 +149,23 @@ export const ObjectivesModal: React.FC<ObjectivesModalProps> = ({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Target size={20} color="#f59e0b" />
-            <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#f8fafc', letterSpacing: '0.5px' }}>
+            <span
+              style={{
+                fontWeight: 800,
+                fontSize: '1.05rem',
+                color: '#f8fafc',
+                letterSpacing: '0.5px',
+              }}
+            >
               OBJECTIVE CONTROL & AUTO-SCORING
             </span>
           </div>
 
-          <button className="btn-icon" onClick={onClose} title="Close Objectives Manager">
+          <button
+            className="btn-icon"
+            onClick={onClose}
+            title="Close Objectives Manager"
+          >
             <X size={18} />
           </button>
         </div>
@@ -162,7 +182,7 @@ export const ObjectivesModal: React.FC<ObjectivesModalProps> = ({
           }}
         >
           <button
-            className="btn-glass"
+            className="btn btn-glass"
             onClick={onDeployStandardObjectives}
             style={{
               display: 'flex',
@@ -176,7 +196,7 @@ export const ObjectivesModal: React.FC<ObjectivesModalProps> = ({
           </button>
 
           <button
-            className="btn-primary"
+            className="btn btn-primary"
             onClick={onScoreObjectives}
             disabled={objectives.length === 0}
             style={{
@@ -195,15 +215,41 @@ export const ObjectivesModal: React.FC<ObjectivesModalProps> = ({
         </div>
 
         {/* Content Body */}
-        <div style={{ padding: '16px 18px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div
+          style={{
+            padding: '16px 18px',
+            overflowY: 'auto',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}
+        >
           {objectives.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-secondary)' }}>
-              <Target size={36} color="rgba(255,255,255,0.2)" style={{ marginBottom: '8px' }} />
-              <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#f8fafc' }}>
+            <div
+              style={{
+                textAlign: 'center',
+                padding: '40px 20px',
+                color: 'var(--text-secondary)',
+              }}
+            >
+              <Target
+                size={36}
+                color="rgba(255,255,255,0.2)"
+                style={{ marginBottom: '8px' }}
+              />
+              <div
+                style={{
+                  fontWeight: 700,
+                  fontSize: '0.95rem',
+                  color: '#f8fafc',
+                }}
+              >
                 No Objective Markers On Table
               </div>
               <p style={{ fontSize: '0.8rem', marginTop: '4px' }}>
-                Click "Deploy Standard 5 Objectives" above to deploy 40mm markers with 3″ control auras.
+                Click "Deploy Standard 5 Objectives" above to deploy 40mm
+                markers with 3″ control auras.
               </p>
             </div>
           ) : (
@@ -220,35 +266,74 @@ export const ObjectivesModal: React.FC<ObjectivesModalProps> = ({
                   justifyContent: 'space-between',
                 }}
               >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
                     <Target size={16} color="#f59e0b" />
-                    <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#f8fafc' }}>
+                    <span
+                      style={{
+                        fontWeight: 800,
+                        fontSize: '0.88rem',
+                        color: '#f8fafc',
+                      }}
+                    >
                       {ev.marker.label}
                     </span>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                    <span
+                      style={{
+                        fontSize: '0.7rem',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
                       (40mm base • 3″ aura • {ev.marker.vpValue} VP)
                     </span>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.75rem', marginTop: '2px' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      fontSize: '0.75rem',
+                      marginTop: '2px',
+                    }}
+                  >
                     <span style={{ color: '#38bdf8' }}>
-                      {p1Name}: <strong>{ev.p1OcTotal} OC</strong> ({ev.p1ModelsInZone} models)
+                      {p1Name}: <strong>{ev.p1OcTotal} OC</strong> (
+                      {ev.p1ModelsInZone} models)
                     </span>
                     <span style={{ color: 'rgba(255, 255, 255, 0.2)' }}>|</span>
                     <span style={{ color: '#ec4899' }}>
-                      {p2Name}: <strong>{ev.p2OcTotal} OC</strong> ({ev.p2ModelsInZone} models)
+                      {p2Name}: <strong>{ev.p2OcTotal} OC</strong> (
+                      {ev.p2ModelsInZone} models)
                     </span>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                >
                   {getStatusBadge(ev)}
 
                   <button
                     className="btn-icon"
                     onClick={() => onRemoveObjective(ev.marker.id)}
-                    style={{ width: '26px', height: '26px', color: 'var(--text-secondary)' }}
+                    style={{
+                      width: '26px',
+                      height: '26px',
+                      color: 'var(--text-secondary)',
+                    }}
                     title="Remove Objective"
                   >
                     <Trash2 size={13} />
@@ -274,7 +359,11 @@ export const ObjectivesModal: React.FC<ObjectivesModalProps> = ({
             {evaluation.auditSummary.replace(/\*\*/g, '')}
           </div>
 
-          <button className="btn-primary" onClick={onClose} style={{ fontSize: '0.78rem', padding: '5px 14px' }}>
+          <button
+            className="btn btn-primary"
+            onClick={onClose}
+            style={{ fontSize: '0.78rem', padding: '5px 14px' }}
+          >
             Done
           </button>
         </div>

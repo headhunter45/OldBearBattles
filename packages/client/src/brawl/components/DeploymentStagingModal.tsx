@@ -45,7 +45,8 @@ export const DeploymentStagingModal: React.FC<DeploymentStagingModalProps> = ({
   onRecordCasualties,
   onShowToast,
 }) => {
-  const [selectedPreset, setSelectedPreset] = useState<DeploymentPresetType>('dawn_of_war');
+  const [selectedPreset, setSelectedPreset] =
+    useState<DeploymentPresetType>('dawn_of_war');
   const [includeCasualty, setIncludeCasualty] = useState(true);
   const [includeReserves, setIncludeReserves] = useState(true);
   const [includeTransports, setIncludeTransports] = useState(false);
@@ -61,7 +62,9 @@ export const DeploymentStagingModal: React.FC<DeploymentStagingModalProps> = ({
       includeTransports: includeTransports,
     });
     onUpdateMap(updatedMap);
-    onShowToast(`Applied ${DEPLOYMENT_PRESETS[selectedPreset].name} tournament deployment layout`);
+    onShowToast(
+      `Applied ${DEPLOYMENT_PRESETS[selectedPreset].name} tournament deployment layout`,
+    );
   };
 
   const handleAddSubmap = (creator: (m: GameMap) => SubmapConfig) => {
@@ -88,14 +91,16 @@ export const DeploymentStagingModal: React.FC<DeploymentStagingModalProps> = ({
     const { updatedMap, updatedTokens, slainCount } = sendTokensToCasualtyTray(
       selectedTokenIds,
       map,
-      tokens
+      tokens,
     );
     onUpdateMap(updatedMap);
     onUpdateTokens(updatedTokens);
 
     if (onRecordCasualties && slainCount > 0) {
       // Determine player from first token ringColor or default 1
-      const isP2 = selectedTokens[0]?.ringColor?.includes('f43f5e') || selectedTokens[0]?.ringColor?.includes('ec4899');
+      const isP2 =
+        selectedTokens[0]?.ringColor?.includes('f43f5e') ||
+        selectedTokens[0]?.ringColor?.includes('ec4899');
       onRecordCasualties(isP2 ? 2 : 1, slainCount, 'Moved to Casualty Tray');
     }
 
@@ -107,7 +112,7 @@ export const DeploymentStagingModal: React.FC<DeploymentStagingModalProps> = ({
     const { updatedMap, updatedTokens, count } = sendTokensToStrategicReserves(
       selectedTokenIds,
       map,
-      tokens
+      tokens,
     );
     onUpdateMap(updatedMap);
     onUpdateTokens(updatedTokens);
@@ -120,9 +125,15 @@ export const DeploymentStagingModal: React.FC<DeploymentStagingModalProps> = ({
       x: (map.width || 3000) / 2 - 100,
       y: (map.height || 2200) / 2 - 100,
     };
-    const updated = reviveTokensToBattlefield(selectedTokenIds, targetCoords, tokens);
+    const updated = reviveTokensToBattlefield(
+      selectedTokenIds,
+      targetCoords,
+      tokens,
+    );
     onUpdateTokens(updated);
-    onShowToast(`Revived and deployed ${selectedTokenIds.length} model(s) onto battlefield`);
+    onShowToast(
+      `Revived and deployed ${selectedTokenIds.length} model(s) onto battlefield`,
+    );
   };
 
   return (
@@ -159,7 +170,8 @@ export const DeploymentStagingModal: React.FC<DeploymentStagingModalProps> = ({
         <div
           style={{
             padding: '1rem 1.25rem',
-            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(14, 165, 233, 0.05))',
+            background:
+              'linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(14, 165, 233, 0.05))',
             borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
             display: 'flex',
             justifyContent: 'space-between',
@@ -169,58 +181,134 @@ export const DeploymentStagingModal: React.FC<DeploymentStagingModalProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <Compass size={20} style={{ color: '#38bdf8' }} />
             <div>
-              <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#f8fafc' }}>
+              <div
+                style={{
+                  fontWeight: 800,
+                  fontSize: '1.05rem',
+                  color: '#f8fafc',
+                }}
+              >
                 Deployment Zones & Staging Submaps
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                Mission pack deployment presets, casualty trays, and reserves staging
+              <div
+                style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}
+              >
+                Mission pack deployment presets, casualty trays, and reserves
+                staging
               </div>
             </div>
           </div>
-          <button className="btn-icon" onClick={onClose} style={{ width: '28px', height: '28px' }}>
+          <button
+            className="btn-icon"
+            onClick={onClose}
+            style={{ width: '28px', height: '28px' }}
+          >
             <X size={16} />
           </button>
         </div>
 
         {/* Content */}
-        <div style={{ padding: '1.25rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div
+          style={{
+            padding: '1.25rem',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.25rem',
+          }}
+        >
           {/* Section 1: Tournament Presets */}
-          <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-            <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Layers size={15} style={{ color: '#38bdf8' }} /> Tournament Mission Deployment
+          <div
+            style={{
+              background: 'rgba(0, 0, 0, 0.25)',
+              padding: '1rem',
+              borderRadius: '8px',
+              border: '1px solid rgba(255, 255, 255, 0.06)',
+            }}
+          >
+            <div
+              style={{
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                marginBottom: '0.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <Layers size={15} style={{ color: '#38bdf8' }} /> Tournament
+              Mission Deployment
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '0.75rem' }}>
-              {(Object.keys(DEPLOYMENT_PRESETS) as DeploymentPresetType[]).map((key) => {
-                const info = DEPLOYMENT_PRESETS[key];
-                const isSelected = selectedPreset === key;
-                return (
-                  <button
-                    key={key}
-                    onClick={() => setSelectedPreset(key)}
-                    style={{
-                      padding: '8px 10px',
-                      borderRadius: '6px',
-                      background: isSelected ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.03)',
-                      border: `1px solid ${isSelected ? '#38bdf8' : 'rgba(255, 255, 255, 0.08)'}`,
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: isSelected ? '#38bdf8' : '#f8fafc' }}>
-                      {info.name}
-                    </div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                      {info.description}
-                    </div>
-                  </button>
-                );
-              })}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '8px',
+                marginBottom: '0.75rem',
+              }}
+            >
+              {(Object.keys(DEPLOYMENT_PRESETS) as DeploymentPresetType[]).map(
+                (key) => {
+                  const info = DEPLOYMENT_PRESETS[key];
+                  const isSelected = selectedPreset === key;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setSelectedPreset(key)}
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        background: isSelected
+                          ? 'rgba(56, 189, 248, 0.2)'
+                          : 'rgba(255, 255, 255, 0.03)',
+                        border: `1px solid ${isSelected ? '#38bdf8' : 'rgba(255, 255, 255, 0.08)'}`,
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontWeight: 700,
+                          fontSize: '0.85rem',
+                          color: isSelected ? '#38bdf8' : '#f8fafc',
+                        }}
+                      >
+                        {info.name}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '0.7rem',
+                          color: 'var(--text-secondary)',
+                          marginTop: '2px',
+                        }}
+                      >
+                        {info.description}
+                      </div>
+                    </button>
+                  );
+                },
+              )}
             </div>
 
             {/* Checkboxes */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', fontSize: '0.8rem', marginBottom: '0.75rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '1rem',
+                fontSize: '0.8rem',
+                marginBottom: '0.75rem',
+              }}
+            >
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                }}
+              >
                 <input
                   type="checkbox"
                   checked={includeCasualty}
@@ -228,7 +316,14 @@ export const DeploymentStagingModal: React.FC<DeploymentStagingModalProps> = ({
                 />
                 <span>Include Casualty Tray / Graveyard</span>
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                }}
+              >
                 <input
                   type="checkbox"
                   checked={includeReserves}
@@ -236,7 +331,14 @@ export const DeploymentStagingModal: React.FC<DeploymentStagingModalProps> = ({
                 />
                 <span>Include Strategic Reserves</span>
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                }}
+              >
                 <input
                   type="checkbox"
                   checked={includeTransports}
@@ -247,7 +349,7 @@ export const DeploymentStagingModal: React.FC<DeploymentStagingModalProps> = ({
             </div>
 
             <button
-              className="btn-primary"
+              className="btn btn-primary"
               style={{
                 width: '100%',
                 padding: '8px',
@@ -266,20 +368,54 @@ export const DeploymentStagingModal: React.FC<DeploymentStagingModalProps> = ({
           </div>
 
           {/* Section 2: One-Click Model Transfers */}
-          <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-            <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <ArrowRight size={15} style={{ color: '#f59e0b' }} /> One-Click Model Transfers
+          <div
+            style={{
+              background: 'rgba(0, 0, 0, 0.25)',
+              padding: '1rem',
+              borderRadius: '8px',
+              border: '1px solid rgba(255, 255, 255, 0.06)',
+            }}
+          >
+            <div
+              style={{
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                marginBottom: '0.4rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <ArrowRight size={15} style={{ color: '#f59e0b' }} /> One-Click
+              Model Transfers
             </div>
 
             {selectedTokens.length > 0 ? (
               <div>
-                <div style={{ fontSize: '0.75rem', color: '#93c5fd', marginBottom: '0.6rem' }}>
-                  Selected: <strong>{selectedTokens.map((t) => t.name).join(', ')}</strong> ({selectedTokens.length} model{selectedTokens.length > 1 ? 's' : ''})
+                <div
+                  style={{
+                    fontSize: '0.75rem',
+                    color: '#93c5fd',
+                    marginBottom: '0.6rem',
+                  }}
+                >
+                  Selected:{' '}
+                  <strong>
+                    {selectedTokens.map((t) => t.name).join(', ')}
+                  </strong>{' '}
+                  ({selectedTokens.length} model
+                  {selectedTokens.length > 1 ? 's' : ''})
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '8px',
+                  }}
+                >
                   <button
-                    className="btn-secondary"
+                    className="btn btn-secondary"
                     style={{
                       padding: '8px 10px',
                       fontSize: '0.75rem',
@@ -298,7 +434,7 @@ export const DeploymentStagingModal: React.FC<DeploymentStagingModalProps> = ({
                   </button>
 
                   <button
-                    className="btn-secondary"
+                    className="btn btn-secondary"
                     style={{
                       padding: '8px 10px',
                       fontSize: '0.75rem',
@@ -317,7 +453,7 @@ export const DeploymentStagingModal: React.FC<DeploymentStagingModalProps> = ({
                   </button>
 
                   <button
-                    className="btn-secondary"
+                    className="btn btn-secondary"
                     style={{
                       padding: '8px 10px',
                       fontSize: '0.75rem',
@@ -337,35 +473,61 @@ export const DeploymentStagingModal: React.FC<DeploymentStagingModalProps> = ({
                 </div>
               </div>
             ) : (
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                Select one or more models on the battlemap to instantly send them to the Casualty Tray, Reserves, or revive them onto the battlefield.
+              <div
+                style={{
+                  fontSize: '0.75rem',
+                  color: 'var(--text-secondary)',
+                  fontStyle: 'italic',
+                }}
+              >
+                Select one or more models on the battlemap to instantly send
+                them to the Casualty Tray, Reserves, or revive them onto the
+                battlefield.
               </div>
             )}
           </div>
 
           {/* Section 3: Active Submaps List */}
-          <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-            <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div
+            style={{
+              background: 'rgba(0, 0, 0, 0.25)',
+              padding: '1rem',
+              borderRadius: '8px',
+              border: '1px solid rgba(255, 255, 255, 0.06)',
+            }}
+          >
+            <div
+              style={{
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                marginBottom: '0.5rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
               <span>Active Submaps & Areas ({activeSubmaps.length})</span>
               <div style={{ display: 'flex', gap: '6px' }}>
                 <button
-                  className="btn-secondary"
+                  className="btn btn-secondary"
                   style={{ fontSize: '0.7rem', padding: '3px 6px' }}
                   onClick={() => handleAddSubmap(createCasualtyTraySubmap)}
                 >
                   + Casualty Tray
                 </button>
                 <button
-                  className="btn-secondary"
+                  className="btn btn-secondary"
                   style={{ fontSize: '0.7rem', padding: '3px 6px' }}
                   onClick={() => handleAddSubmap(createStrategicReservesSubmap)}
                 >
                   + Reserves
                 </button>
                 <button
-                  className="btn-secondary"
+                  className="btn btn-secondary"
                   style={{ fontSize: '0.7rem', padding: '3px 6px' }}
-                  onClick={() => handleAddSubmap(createEmbarkedTransportsSubmap)}
+                  onClick={() =>
+                    handleAddSubmap(createEmbarkedTransportsSubmap)
+                  }
                 >
                   + Transports
                 </button>
@@ -373,7 +535,9 @@ export const DeploymentStagingModal: React.FC<DeploymentStagingModalProps> = ({
             </div>
 
             {activeSubmaps.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div
+                style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}
+              >
                 {activeSubmaps.map((sub) => (
                   <div
                     key={sub.id}
@@ -389,14 +553,25 @@ export const DeploymentStagingModal: React.FC<DeploymentStagingModalProps> = ({
                     }}
                   >
                     <div>
-                      <div style={{ fontWeight: 600 }}>{sub.label || sub.name}</div>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                      <div style={{ fontWeight: 600 }}>
+                        {sub.label || sub.name}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '0.7rem',
+                          color: 'var(--text-secondary)',
+                        }}
+                      >
                         Type: {sub.type} | Size: {sub.width} × {sub.height}px
                       </div>
                     </div>
                     <button
                       className="btn-icon"
-                      style={{ width: '22px', height: '22px', color: '#f87171' }}
+                      style={{
+                        width: '22px',
+                        height: '22px',
+                        color: '#f87171',
+                      }}
                       onClick={() => handleRemoveSubmap(sub.id)}
                       title="Delete Submap"
                     >
@@ -406,8 +581,11 @@ export const DeploymentStagingModal: React.FC<DeploymentStagingModalProps> = ({
                 ))}
               </div>
             ) : (
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                No active submaps configured. Use presets or quick add buttons above.
+              <div
+                style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}
+              >
+                No active submaps configured. Use presets or quick add buttons
+                above.
               </div>
             )}
           </div>

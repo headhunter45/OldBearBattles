@@ -279,7 +279,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-156 | Unit Coherency Graph Engine & Real-Time Warning Halos                                                                                                                                                                                                                                                                                                                                                                                                                                | Old Bear Brawl | Done     | [Feature](#ob-156) |
 | OB-157 | Battle Round Stepper & Wargaming Phase Engine                                                                                                                                                                                                                                                                                                                                                                                                                                        | Old Bear Brawl | Done     | [Feature](#ob-157) |
 | OB-158 | Dual-Player Chess Clocks with Turn Countdown & Active Switching                                                                                                                                                                                                                                                                                                                                                                                                                      | Old Bear Brawl | Testing  | [Feature](#ob-158) |
-| OB-159 | Scoreboard & Resource Tracker (VP, CP, Casualties) with Audit Trail                                                                                                                                                                                                                                                                                                                                                                                                                  | Old Bear Brawl | Testing  | [Feature](#ob-159) |
+| OB-159 | Scoreboard & Resource Tracker (VP, CP, Casualties) with Audit Trail                                                                                                                                                                                                                                                                                                                                                                                                                  | Old Bear Brawl | Done     | [Feature](#ob-159) |
 | OB-160 | Objective Marker Control Zone Calculation & Auto-Scoring                                                                                                                                                                                                                                                                                                                                                                                                                             | Old Bear Brawl | Testing  | [Feature](#ob-160) |
 | OB-161 | Roster Ingestion Pipeline: NewRecruit JSON & BattleScribe `.rosz`                                                                                                                                                                                                                                                                                                                                                                                                                    | Old Bear Brawl | Testing  | [Chore](#ob-161)   |
 | OB-162 | Deployment Zones, Casualty Trays & Staging Submap Templates                                                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear Brawl | Testing  | [Feature](#ob-162) |
@@ -2769,16 +2769,14 @@ Dedicated wargaming chess clock system for competitive matches:
 - Pause/resume controls, audible chime alerts on player switches and low time thresholds.
 - Draggable, floating HUD widget with compact minimization.
 
-<a id="ob-159" class="task" data-project="brawl" data-status="testing" data-task-type="feature"></a>
+<a id="ob-159" class="task" data-project="brawl" data-status="done" data-task-type="feature"></a>
 ### Scoreboard & Resource Tracker (VP, CP, Casualties) with Audit Trail
 **ID:** OB-159
 **Project:** Old Bear Brawl
-**Status:** Testing
+**Status:** Done
 **Type:** Feature
 
-
 **Description:**
-
 **Depends On:** [OB-154](#ob-154)
 
 Multi-metric match scoreboard and game resource tracker:

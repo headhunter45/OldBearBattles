@@ -12,7 +12,6 @@ This document provides step-by-step instructions for manually verifying all feat
 | Task ID | Feature Title | Domain | Status |
 | :------ | :------------ | :----- | :----- |
 
-| **[OB-159](#ob-159---scoreboard--resource-tracker-vp-cp-casualties-with-audit-trail)** | Scoreboard & Resource Tracker (VP, CP, Casualties) with Audit Trail | Wargaming / Brawl | Testing |
 | **[OB-160](#ob-160---objective-marker-control-zone-calculation--auto-scoring)** | Objective Marker Control Zone Calculation & Auto-Scoring | Wargaming / Brawl | Testing |
 | **[OB-161](#ob-161---roster-ingestion-pipeline-newrecruit-json--battlescribe-rosz)** | Roster Ingestion Pipeline: NewRecruit JSON & BattleScribe `.rosz` | Wargaming / Brawl | Testing |
 | **[OB-162](#ob-162---deployment-zones-casualty-trays--staging-submap-templates)** | Deployment Zones, Casualty Trays & Staging Submap Templates | Wargaming / Brawl | Testing |
@@ -222,54 +221,6 @@ This document provides step-by-step instructions for manually verifying all feat
 ---
 
 ## Old Bear Brawl (Tabletop Wargaming Platform)
-
-### OB-156 - Unit Coherency Graph Engine & Real-Time Warning Halos
-
-- **Reference in tasks.md:** [tasks.md: OB-156](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-156)
-- **Primary Source Code:** [coherencyEngine.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/brawl/domain/coherencyEngine.ts), [TokenRenderer.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/engine/TokenRenderer.ts)
-- **Where to find it:** Canvas tokens deployed as a unit in Brawl mode (`?mode=brawl`).
-
-#### Step-by-Step Instructions:
-
-1. In Brawl mode, deploy a multi-model unit (e.g. 5 models) to the canvas.
-2. Arrange models within 2 inches of at least one other model (or two models for units of 7+).
-   - Verify tokens have clean, normal rings without warning indicators.
-3. Drag one model farther away (> 2 inches base-to-base):
-   - Notice the out-of-coherency model immediately renders a pulsing **Orange/Red warning halo**.
-   - Notice a dotted line indicates the distance to the nearest unit member.
-4. Drag the model back within 2 inches:
-   - Notice the warning halo disappears immediately.
-
-#### Expected Result (Pass Criteria):
-
-- Coherency graph calculates real-time base-to-base distances.
-- Out-of-coherency models immediately display warning halos.
-- Moving models back into range clears warnings seamlessly.
-
----
-
-### OB-159 - Scoreboard & Resource Tracker (VP, CP, Casualties) with Audit Trail
-
-- **Reference in tasks.md:** [tasks.md: OB-159](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-159)
-- **Primary Source Code:** [scoreboardEngine.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/brawl/domain/scoreboardEngine.ts), [ScoreboardModal.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/brawl/components/ScoreboardModal.tsx)
-- **Where to find it:** Top bar Scoreboard button (Trophy icon) in Brawl mode.
-
-#### Step-by-Step Instructions:
-
-1. Click the **Trophy** icon to open the Scoreboard modal.
-2. Adjust Primary Victory Points (VP) for Player 1 (`+4 VP`).
-3. Adjust Secondary VP and Command Points (CP) (`-1 CP for Stratagem`).
-4. Switch to the **Audit Log** tab.
-   - Verify every score modification is logged with a timestamp, delta, and modifier name.
-5. Close the modal; verify the top bar displays current score: `P1: 4 VP | P2: 0 VP`.
-
-#### Expected Result (Pass Criteria):
-
-- VP and CP track cleanly with upper and lower bounds.
-- Audit log records all adjustments with timestamps and player attributions.
-- Top bar score displays update instantaneously.
-
----
 
 ### OB-160 - Objective Marker Control Zone Calculation & Auto-Scoring
 

@@ -211,7 +211,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
 
         {!isSingleGameModeEnforced() && (
           <button
-            className="btn-glass"
+            className="btn btn-glass"
             onClick={() => switchGameMode('vtt')}
             title="Switch to Tabletop RPG Mode (VTT)"
             style={{
@@ -681,7 +681,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
         {clockEnabled &&
           (onToggleChessClockHUD || onToggleChessClockEnabled) && (
             <button
-              className="btn-glass"
+              className="btn btn-glass"
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -722,7 +722,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
         {/* Scoreboard Button (OB-159) */}
         {onOpenScoreboard && (
           <button
-            className="btn-glass"
+            className="btn btn-glass"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -751,7 +751,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
         {/* Objectives Button (OB-160) */}
         {onOpenObjectives && (
           <button
-            className="btn-glass"
+            className="btn btn-glass"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -778,7 +778,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
         {/* Deployment & Staging Button (OB-162) */}
         {onOpenStaging && (
           <button
-            className="btn-glass"
+            className="btn btn-glass"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -805,7 +805,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
         {/* TO & Spectator Button (OB-163) */}
         {onOpenToModal && (
           <button
-            className="btn-glass"
+            className="btn btn-glass"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -851,7 +851,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
 
         {/* Army Roster Button */}
         <button
-          className="btn-primary"
+          className="btn btn-primary"
           style={{
             fontSize: '0.75rem',
             padding: '4px 10px',

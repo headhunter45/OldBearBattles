@@ -14,7 +14,10 @@ import {
   Send,
   Lock,
 } from 'lucide-react';
-import { ScoreboardState, ScoreAuditEntry } from '../domain/scoreboardEngine.js';
+import {
+  ScoreboardState,
+  ScoreAuditEntry,
+} from '../domain/scoreboardEngine.js';
 import {
   BrawlUserRole,
   OfficialRuling,
@@ -36,7 +39,10 @@ interface TournamentOrganizerModalProps {
   rulings: OfficialRuling[];
   privacySettings: MatchPrivacySettings;
   onRoleChange: (role: BrawlUserRole) => void;
-  onUpdateScoreboard: (newScoreboard: ScoreboardState, audit: ScoreAuditEntry) => void;
+  onUpdateScoreboard: (
+    newScoreboard: ScoreboardState,
+    audit: ScoreAuditEntry,
+  ) => void;
   onAdjustClock: (player: 1 | 2, deltaSeconds: number) => void;
   onToggleClockRunning: () => void;
   onIssueRuling: (ruling: OfficialRuling) => void;
@@ -45,7 +51,9 @@ interface TournamentOrganizerModalProps {
   onShowToast: (msg: string) => void;
 }
 
-export const TournamentOrganizerModal: React.FC<TournamentOrganizerModalProps> = ({
+export const TournamentOrganizerModal: React.FC<
+  TournamentOrganizerModalProps
+> = ({
   currentRole,
   scoreboard,
   battleRound,
@@ -64,7 +72,9 @@ export const TournamentOrganizerModal: React.FC<TournamentOrganizerModalProps> =
   onClose,
   onShowToast,
 }) => {
-  const [activeTab, setActiveTab] = useState<'admin' | 'rulings' | 'privacy' | 'export'>('admin');
+  const [activeTab, setActiveTab] = useState<
+    'admin' | 'rulings' | 'privacy' | 'export'
+  >('admin');
   const [toName, setToName] = useState('Head Judge');
 
   // Official Ruling Form
@@ -73,10 +83,16 @@ export const TournamentOrganizerModal: React.FC<TournamentOrganizerModalProps> =
 
   // Score Override Form
   const [overridePlayer, setOverridePlayer] = useState<1 | 2>(1);
-  const [overridePrimaryVp, setOverridePrimaryVp] = useState(scoreboard.p1.primaryVp);
-  const [overrideSecondaryVp, setOverrideSecondaryVp] = useState(scoreboard.p1.secondaryVp);
+  const [overridePrimaryVp, setOverridePrimaryVp] = useState(
+    scoreboard.p1.primaryVp,
+  );
+  const [overrideSecondaryVp, setOverrideSecondaryVp] = useState(
+    scoreboard.p1.secondaryVp,
+  );
   const [overrideCp, setOverrideCp] = useState(scoreboard.p1.commandPoints);
-  const [overrideCasualties, setOverrideCasualties] = useState(scoreboard.p1.casualties);
+  const [overrideCasualties, setOverrideCasualties] = useState(
+    scoreboard.p1.casualties,
+  );
   const [overrideReason, setOverrideReason] = useState('');
 
   // Report Export
@@ -102,11 +118,13 @@ export const TournamentOrganizerModal: React.FC<TournamentOrganizerModalProps> =
         casualties: overrideCasualties,
       },
       overrideReason || 'Administrative TO adjustment',
-      toName
+      toName,
     );
 
     onUpdateScoreboard(updatedScoreboard, auditEntry);
-    onShowToast(`Applied score override for ${overridePlayer === 1 ? scoreboard.p1Name : scoreboard.p2Name}`);
+    onShowToast(
+      `Applied score override for ${overridePlayer === 1 ? scoreboard.p1Name : scoreboard.p2Name}`,
+    );
   };
 
   const handleSubmitRuling = (e: React.FormEvent) => {
@@ -141,7 +159,9 @@ export const TournamentOrganizerModal: React.FC<TournamentOrganizerModalProps> =
   const reportText = formatMatchReportAsText(currentReport);
 
   const handleDownloadReportJson = () => {
-    const blob = new Blob([JSON.stringify(currentReport, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(currentReport, null, 2)], {
+      type: 'application/json',
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -192,7 +212,8 @@ export const TournamentOrganizerModal: React.FC<TournamentOrganizerModalProps> =
         <div
           style={{
             padding: '1rem 1.25rem',
-            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.05))',
+            background:
+              'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.05))',
             borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
             display: 'flex',
             justifyContent: 'space-between',
@@ -202,15 +223,28 @@ export const TournamentOrganizerModal: React.FC<TournamentOrganizerModalProps> =
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <Gavel size={20} style={{ color: '#f59e0b' }} />
             <div>
-              <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#f8fafc' }}>
+              <div
+                style={{
+                  fontWeight: 800,
+                  fontSize: '1.05rem',
+                  color: '#f8fafc',
+                }}
+              >
                 Tournament Organizer (TO) & Spectator Controls
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                Official referee rulings, administrative score overrides, match privacy & report export
+              <div
+                style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}
+              >
+                Official referee rulings, administrative score overrides, match
+                privacy & report export
               </div>
             </div>
           </div>
-          <button className="btn-icon" onClick={onClose} style={{ width: '28px', height: '28px' }}>
+          <button
+            className="btn-icon"
+            onClick={onClose}
+            style={{ width: '28px', height: '28px' }}
+          >
             <X size={16} />
           </button>
         </div>
@@ -228,8 +262,17 @@ export const TournamentOrganizerModal: React.FC<TournamentOrganizerModalProps> =
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Current Role:</span>
-            <div style={{ display: 'inline-flex', borderRadius: '6px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+            <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>
+              Current Role:
+            </span>
+            <div
+              style={{
+                display: 'inline-flex',
+                borderRadius: '6px',
+                overflow: 'hidden',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+              }}
+            >
               {(['player', 'to', 'spectator'] as BrawlUserRole[]).map((r) => {
                 const isCurrent = currentRole === r;
                 const labels: Record<BrawlUserRole, string> = {
@@ -246,7 +289,9 @@ export const TournamentOrganizerModal: React.FC<TournamentOrganizerModalProps> =
                     }}
                     style={{
                       padding: '4px 10px',
-                      background: isCurrent ? 'rgba(245, 158, 11, 0.25)' : 'transparent',
+                      background: isCurrent
+                        ? 'rgba(245, 158, 11, 0.25)'
+                        : 'transparent',
                       color: isCurrent ? '#f59e0b' : 'var(--text-secondary)',
                       fontWeight: isCurrent ? 700 : 500,
                       border: 'none',
@@ -263,7 +308,11 @@ export const TournamentOrganizerModal: React.FC<TournamentOrganizerModalProps> =
 
           {currentRole === 'to' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>TO Handle:</span>
+              <span
+                style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}
+              >
+                TO Handle:
+              </span>
               <input
                 type="text"
                 value={toName}
@@ -283,7 +332,13 @@ export const TournamentOrganizerModal: React.FC<TournamentOrganizerModalProps> =
         </div>
 
         {/* Tab Navigation */}
-        <div style={{ display: 'flex', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(0, 0, 0, 0.2)' }}>
+        <div
+          style={{
+            display: 'flex',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            background: 'rgba(0, 0, 0, 0.2)',
+          }}
+        >
           <button
             onClick={() => setActiveTab('admin')}
             style={{
@@ -291,10 +346,15 @@ export const TournamentOrganizerModal: React.FC<TournamentOrganizerModalProps> =
               padding: '8px',
               fontSize: '0.8rem',
               fontWeight: 700,
-              background: activeTab === 'admin' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
-              color: activeTab === 'admin' ? '#f59e0b' : 'var(--text-secondary)',
+              background:
+                activeTab === 'admin'
+                  ? 'rgba(245, 158, 11, 0.15)'
+                  : 'transparent',
+              color:
+                activeTab === 'admin' ? '#f59e0b' : 'var(--text-secondary)',
               border: 'none',
-              borderBottom: activeTab === 'admin' ? '2px solid #f59e0b' : 'none',
+              borderBottom:
+                activeTab === 'admin' ? '2px solid #f59e0b' : 'none',
               cursor: 'pointer',
             }}
           >
@@ -307,10 +367,15 @@ export const TournamentOrganizerModal: React.FC<TournamentOrganizerModalProps> =
               padding: '8px',
               fontSize: '0.8rem',
               fontWeight: 700,
-              background: activeTab === 'rulings' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
-              color: activeTab === 'rulings' ? '#f59e0b' : 'var(--text-secondary)',
+              background:
+                activeTab === 'rulings'
+                  ? 'rgba(245, 158, 11, 0.15)'
+                  : 'transparent',
+              color:
+                activeTab === 'rulings' ? '#f59e0b' : 'var(--text-secondary)',
               border: 'none',
-              borderBottom: activeTab === 'rulings' ? '2px solid #f59e0b' : 'none',
+              borderBottom:
+                activeTab === 'rulings' ? '2px solid #f59e0b' : 'none',
               cursor: 'pointer',
             }}
           >
@@ -323,10 +388,15 @@ export const TournamentOrganizerModal: React.FC<TournamentOrganizerModalProps> =
               padding: '8px',
               fontSize: '0.8rem',
               fontWeight: 700,
-              background: activeTab === 'privacy' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
-              color: activeTab === 'privacy' ? '#f59e0b' : 'var(--text-secondary)',
+              background:
+                activeTab === 'privacy'
+                  ? 'rgba(245, 158, 11, 0.15)'
+                  : 'transparent',
+              color:
+                activeTab === 'privacy' ? '#f59e0b' : 'var(--text-secondary)',
               border: 'none',
-              borderBottom: activeTab === 'privacy' ? '2px solid #f59e0b' : 'none',
+              borderBottom:
+                activeTab === 'privacy' ? '2px solid #f59e0b' : 'none',
               cursor: 'pointer',
             }}
           >
@@ -339,10 +409,15 @@ export const TournamentOrganizerModal: React.FC<TournamentOrganizerModalProps> =
               padding: '8px',
               fontSize: '0.8rem',
               fontWeight: 700,
-              background: activeTab === 'export' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
-              color: activeTab === 'export' ? '#f59e0b' : 'var(--text-secondary)',
+              background:
+                activeTab === 'export'
+                  ? 'rgba(245, 158, 11, 0.15)'
+                  : 'transparent',
+              color:
+                activeTab === 'export' ? '#f59e0b' : 'var(--text-secondary)',
               border: 'none',
-              borderBottom: activeTab === 'export' ? '2px solid #f59e0b' : 'none',
+              borderBottom:
+                activeTab === 'export' ? '2px solid #f59e0b' : 'none',
               cursor: 'pointer',
             }}
           >
@@ -351,109 +426,254 @@ export const TournamentOrganizerModal: React.FC<TournamentOrganizerModalProps> =
         </div>
 
         {/* Content Body */}
-        <div style={{ padding: '1.25rem', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div
+          style={{
+            padding: '1.25rem',
+            overflowY: 'auto',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem',
+          }}
+        >
           {/* TAB 1: Scores & Clocks */}
           {activeTab === 'admin' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+            >
               {/* Score Overrides */}
-              <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Trophy size={15} style={{ color: '#f59e0b' }} /> Score & Resource Overrides
+              <div
+                style={{
+                  background: 'rgba(0, 0, 0, 0.25)',
+                  padding: '1rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                }}
+              >
+                <div
+                  style={{
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    marginBottom: '0.6rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <Trophy size={15} style={{ color: '#f59e0b' }} /> Score &
+                  Resource Overrides
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '0.75rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '8px',
+                    marginBottom: '0.75rem',
+                  }}
+                >
                   <button
-                    className="btn-secondary"
+                    className="btn btn-secondary"
                     style={{
                       flex: 1,
                       padding: '6px',
                       fontSize: '0.8rem',
                       fontWeight: 700,
-                      background: overridePlayer === 1 ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.03)',
-                      borderColor: overridePlayer === 1 ? '#38bdf8' : 'rgba(255, 255, 255, 0.1)',
+                      background:
+                        overridePlayer === 1
+                          ? 'rgba(56, 189, 248, 0.2)'
+                          : 'rgba(255, 255, 255, 0.03)',
+                      borderColor:
+                        overridePlayer === 1
+                          ? '#38bdf8'
+                          : 'rgba(255, 255, 255, 0.1)',
                       color: overridePlayer === 1 ? '#38bdf8' : '#fff',
                     }}
                     onClick={() => handlePlayerSelect(1)}
                   >
-                    Player 1: {scoreboard.p1Name} (Total: {scoreboard.p1.totalVp} VP)
+                    Player 1: {scoreboard.p1Name} (Total:{' '}
+                    {scoreboard.p1.totalVp} VP)
                   </button>
                   <button
-                    className="btn-secondary"
+                    className="btn btn-secondary"
                     style={{
                       flex: 1,
                       padding: '6px',
                       fontSize: '0.8rem',
                       fontWeight: 700,
-                      background: overridePlayer === 2 ? 'rgba(244, 63, 94, 0.2)' : 'rgba(255, 255, 255, 0.03)',
-                      borderColor: overridePlayer === 2 ? '#f43f5e' : 'rgba(255, 255, 255, 0.1)',
+                      background:
+                        overridePlayer === 2
+                          ? 'rgba(244, 63, 94, 0.2)'
+                          : 'rgba(255, 255, 255, 0.03)',
+                      borderColor:
+                        overridePlayer === 2
+                          ? '#f43f5e'
+                          : 'rgba(255, 255, 255, 0.1)',
                       color: overridePlayer === 2 ? '#f43f5e' : '#fff',
                     }}
                     onClick={() => handlePlayerSelect(2)}
                   >
-                    Player 2: {scoreboard.p2Name} (Total: {scoreboard.p2.totalVp} VP)
+                    Player 2: {scoreboard.p2Name} (Total:{' '}
+                    {scoreboard.p2.totalVp} VP)
                   </button>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '0.75rem' }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gap: '8px',
+                    marginBottom: '0.75rem',
+                  }}
+                >
                   <div>
-                    <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Primary VP</label>
+                    <label
+                      style={{
+                        fontSize: '0.7rem',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      Primary VP
+                    </label>
                     <input
                       type="number"
                       min={0}
                       max={100}
                       value={overridePrimaryVp}
-                      onChange={(e) => setOverridePrimaryVp(parseInt(e.target.value, 10) || 0)}
-                      style={{ width: '100%', padding: '4px 6px', fontSize: '0.85rem', background: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '4px', color: '#fff' }}
+                      onChange={(e) =>
+                        setOverridePrimaryVp(parseInt(e.target.value, 10) || 0)
+                      }
+                      style={{
+                        width: '100%',
+                        padding: '4px 6px',
+                        fontSize: '0.85rem',
+                        background: 'rgba(0, 0, 0, 0.4)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        borderRadius: '4px',
+                        color: '#fff',
+                      }}
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Secondary VP</label>
+                    <label
+                      style={{
+                        fontSize: '0.7rem',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      Secondary VP
+                    </label>
                     <input
                       type="number"
                       min={0}
                       max={100}
                       value={overrideSecondaryVp}
-                      onChange={(e) => setOverrideSecondaryVp(parseInt(e.target.value, 10) || 0)}
-                      style={{ width: '100%', padding: '4px 6px', fontSize: '0.85rem', background: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '4px', color: '#fff' }}
+                      onChange={(e) =>
+                        setOverrideSecondaryVp(
+                          parseInt(e.target.value, 10) || 0,
+                        )
+                      }
+                      style={{
+                        width: '100%',
+                        padding: '4px 6px',
+                        fontSize: '0.85rem',
+                        background: 'rgba(0, 0, 0, 0.4)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        borderRadius: '4px',
+                        color: '#fff',
+                      }}
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Command Points</label>
+                    <label
+                      style={{
+                        fontSize: '0.7rem',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      Command Points
+                    </label>
                     <input
                       type="number"
                       min={0}
                       max={20}
                       value={overrideCp}
-                      onChange={(e) => setOverrideCp(parseInt(e.target.value, 10) || 0)}
-                      style={{ width: '100%', padding: '4px 6px', fontSize: '0.85rem', background: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '4px', color: '#fff' }}
+                      onChange={(e) =>
+                        setOverrideCp(parseInt(e.target.value, 10) || 0)
+                      }
+                      style={{
+                        width: '100%',
+                        padding: '4px 6px',
+                        fontSize: '0.85rem',
+                        background: 'rgba(0, 0, 0, 0.4)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        borderRadius: '4px',
+                        color: '#fff',
+                      }}
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Casualties</label>
+                    <label
+                      style={{
+                        fontSize: '0.7rem',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      Casualties
+                    </label>
                     <input
                       type="number"
                       min={0}
                       value={overrideCasualties}
-                      onChange={(e) => setOverrideCasualties(parseInt(e.target.value, 10) || 0)}
-                      style={{ width: '100%', padding: '4px 6px', fontSize: '0.85rem', background: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '4px', color: '#fff' }}
+                      onChange={(e) =>
+                        setOverrideCasualties(parseInt(e.target.value, 10) || 0)
+                      }
+                      style={{
+                        width: '100%',
+                        padding: '4px 6px',
+                        fontSize: '0.85rem',
+                        background: 'rgba(0, 0, 0, 0.4)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        borderRadius: '4px',
+                        color: '#fff',
+                      }}
                     />
                   </div>
                 </div>
 
                 <div style={{ marginBottom: '0.75rem' }}>
-                  <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Adjustment Reason / Reference</label>
+                  <label
+                    style={{
+                      fontSize: '0.7rem',
+                      color: 'var(--text-secondary)',
+                    }}
+                  >
+                    Adjustment Reason / Reference
+                  </label>
                   <input
                     type="text"
                     placeholder="e.g. Corrected miscalculated tactical secondary"
                     value={overrideReason}
                     onChange={(e) => setOverrideReason(e.target.value)}
-                    style={{ width: '100%', padding: '4px 8px', fontSize: '0.8rem', background: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '4px', color: '#fff' }}
+                    style={{
+                      width: '100%',
+                      padding: '4px 8px',
+                      fontSize: '0.8rem',
+                      background: 'rgba(0, 0, 0, 0.4)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      borderRadius: '4px',
+                      color: '#fff',
+                    }}
                   />
                 </div>
 
                 <button
-                  className="btn-primary"
-                  style={{ width: '100%', padding: '6px', fontSize: '0.8rem', fontWeight: 700 }}
+                  className="btn btn-primary"
+                  style={{
+                    width: '100%',
+                    padding: '6px',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                  }}
                   onClick={handleApplyScoreOverride}
                 >
                   Apply Administrative Score Override
@@ -461,44 +681,151 @@ export const TournamentOrganizerModal: React.FC<TournamentOrganizerModalProps> =
               </div>
 
               {/* Clock Overrides */}
-              <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Clock size={15} style={{ color: '#38bdf8' }} /> Chess Clock Overrides
+              <div
+                style={{
+                  background: 'rgba(0, 0, 0, 0.25)',
+                  padding: '1rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                }}
+              >
+                <div
+                  style={{
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    marginBottom: '0.6rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <Clock size={15} style={{ color: '#38bdf8' }} /> Chess Clock
+                    Overrides
                   </div>
                   <button
-                    className="btn-secondary"
+                    className="btn btn-secondary"
                     style={{ fontSize: '0.75rem', padding: '3px 8px' }}
                     onClick={onToggleClockRunning}
                   >
-                    {isClockRunning ? '⏸️ Pause Match Clocks' : '▶️ Resume Match Clocks'}
+                    {isClockRunning
+                      ? '⏸️ Pause Match Clocks'
+                      : '▶️ Resume Match Clocks'}
                   </button>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '10px',
+                  }}
+                >
                   {/* P1 Adjust */}
-                  <div style={{ padding: '8px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '6px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#38bdf8', marginBottom: '4px' }}>
+                  <div
+                    style={{
+                      padding: '8px',
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      borderRadius: '6px',
+                      border: '1px solid rgba(56, 189, 248, 0.2)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        color: '#38bdf8',
+                        marginBottom: '4px',
+                      }}
+                    >
                       Player 1: {scoreboard.p1Name}
                     </div>
                     <div style={{ display: 'flex', gap: '4px' }}>
-                      <button className="btn-secondary" style={{ flex: 1, fontSize: '0.7rem', padding: '3px' }} onClick={() => onAdjustClock(1, 300)}>+5m</button>
-                      <button className="btn-secondary" style={{ flex: 1, fontSize: '0.7rem', padding: '3px' }} onClick={() => onAdjustClock(1, 60)}>+1m</button>
-                      <button className="btn-secondary" style={{ flex: 1, fontSize: '0.7rem', padding: '3px' }} onClick={() => onAdjustClock(1, -60)}>-1m</button>
-                      <button className="btn-secondary" style={{ flex: 1, fontSize: '0.7rem', padding: '3px' }} onClick={() => onAdjustClock(1, -300)}>-5m</button>
+                      <button
+                        className="btn btn-secondary"
+                        style={{ flex: 1, fontSize: '0.7rem', padding: '3px' }}
+                        onClick={() => onAdjustClock(1, 300)}
+                      >
+                        +5m
+                      </button>
+                      <button
+                        className="btn btn-secondary"
+                        style={{ flex: 1, fontSize: '0.7rem', padding: '3px' }}
+                        onClick={() => onAdjustClock(1, 60)}
+                      >
+                        +1m
+                      </button>
+                      <button
+                        className="btn btn-secondary"
+                        style={{ flex: 1, fontSize: '0.7rem', padding: '3px' }}
+                        onClick={() => onAdjustClock(1, -60)}
+                      >
+                        -1m
+                      </button>
+                      <button
+                        className="btn btn-secondary"
+                        style={{ flex: 1, fontSize: '0.7rem', padding: '3px' }}
+                        onClick={() => onAdjustClock(1, -300)}
+                      >
+                        -5m
+                      </button>
                     </div>
                   </div>
 
                   {/* P2 Adjust */}
-                  <div style={{ padding: '8px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '6px', border: '1px solid rgba(244, 63, 94, 0.2)' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#f43f5e', marginBottom: '4px' }}>
+                  <div
+                    style={{
+                      padding: '8px',
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      borderRadius: '6px',
+                      border: '1px solid rgba(244, 63, 94, 0.2)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        color: '#f43f5e',
+                        marginBottom: '4px',
+                      }}
+                    >
                       Player 2: {scoreboard.p2Name}
                     </div>
                     <div style={{ display: 'flex', gap: '4px' }}>
-                      <button className="btn-secondary" style={{ flex: 1, fontSize: '0.7rem', padding: '3px' }} onClick={() => onAdjustClock(2, 300)}>+5m</button>
-                      <button className="btn-secondary" style={{ flex: 1, fontSize: '0.7rem', padding: '3px' }} onClick={() => onAdjustClock(2, 60)}>+1m</button>
-                      <button className="btn-secondary" style={{ flex: 1, fontSize: '0.7rem', padding: '3px' }} onClick={() => onAdjustClock(2, -60)}>-1m</button>
-                      <button className="btn-secondary" style={{ flex: 1, fontSize: '0.7rem', padding: '3px' }} onClick={() => onAdjustClock(2, -300)}>-5m</button>
+                      <button
+                        className="btn btn-secondary"
+                        style={{ flex: 1, fontSize: '0.7rem', padding: '3px' }}
+                        onClick={() => onAdjustClock(2, 300)}
+                      >
+                        +5m
+                      </button>
+                      <button
+                        className="btn btn-secondary"
+                        style={{ flex: 1, fontSize: '0.7rem', padding: '3px' }}
+                        onClick={() => onAdjustClock(2, 60)}
+                      >
+                        +1m
+                      </button>
+                      <button
+                        className="btn btn-secondary"
+                        style={{ flex: 1, fontSize: '0.7rem', padding: '3px' }}
+                        onClick={() => onAdjustClock(2, -60)}
+                      >
+                        -1m
+                      </button>
+                      <button
+                        className="btn btn-secondary"
+                        style={{ flex: 1, fontSize: '0.7rem', padding: '3px' }}
+                        onClick={() => onAdjustClock(2, -300)}
+                      >
+                        -5m
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -508,60 +835,176 @@ export const TournamentOrganizerModal: React.FC<TournamentOrganizerModalProps> =
 
           {/* TAB 2: Official Rulings */}
           {activeTab === 'rulings' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <form onSubmit={handleSubmitRuling} style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Gavel size={15} style={{ color: '#f59e0b' }} /> Log Official Tournament Ruling
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+            >
+              <form
+                onSubmit={handleSubmitRuling}
+                style={{
+                  background: 'rgba(0, 0, 0, 0.25)',
+                  padding: '1rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                }}
+              >
+                <div
+                  style={{
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    marginBottom: '0.6rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <Gavel size={15} style={{ color: '#f59e0b' }} /> Log Official
+                  Tournament Ruling
                 </div>
 
                 <div style={{ marginBottom: '0.5rem' }}>
-                  <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Rule Dispute / Query Context (Optional)</label>
+                  <label
+                    style={{
+                      fontSize: '0.7rem',
+                      color: 'var(--text-secondary)',
+                    }}
+                  >
+                    Rule Dispute / Query Context (Optional)
+                  </label>
                   <input
                     type="text"
                     placeholder="e.g. Can unit advance and perform tactical action?"
                     value={rulingContext}
                     onChange={(e) => setRulingContext(e.target.value)}
-                    style={{ width: '100%', padding: '4px 8px', fontSize: '0.8rem', background: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '4px', color: '#fff' }}
+                    style={{
+                      width: '100%',
+                      padding: '4px 8px',
+                      fontSize: '0.8rem',
+                      background: 'rgba(0, 0, 0, 0.4)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      borderRadius: '4px',
+                      color: '#fff',
+                    }}
                   />
                 </div>
 
                 <div style={{ marginBottom: '0.75rem' }}>
-                  <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Official Ruling Text</label>
+                  <label
+                    style={{
+                      fontSize: '0.7rem',
+                      color: 'var(--text-secondary)',
+                    }}
+                  >
+                    Official Ruling Text
+                  </label>
                   <textarea
                     rows={3}
                     placeholder="Specify the referee's official determination and ruling..."
                     value={rulingText}
                     onChange={(e) => setRulingText(e.target.value)}
-                    style={{ width: '100%', padding: '6px 8px', fontSize: '0.8rem', background: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '4px', color: '#fff', resize: 'none' }}
+                    style={{
+                      width: '100%',
+                      padding: '6px 8px',
+                      fontSize: '0.8rem',
+                      background: 'rgba(0, 0, 0, 0.4)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      borderRadius: '4px',
+                      color: '#fff',
+                      resize: 'none',
+                    }}
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="btn-primary"
-                  style={{ width: '100%', padding: '6px', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                  className="btn btn-primary"
+                  style={{
+                    width: '100%',
+                    padding: '6px',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                  }}
                 >
                   <Send size={13} /> Broadcast Official Ruling to Table Chat
                 </button>
               </form>
 
               {/* Rulings History */}
-              <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+              <div
+                style={{
+                  background: 'rgba(0, 0, 0, 0.25)',
+                  padding: '1rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                }}
+              >
+                <div
+                  style={{
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    marginBottom: '0.5rem',
+                  }}
+                >
                   Ruling History ({rulings.length})
                 </div>
                 {rulings.length === 0 ? (
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>No official rulings recorded for this match yet.</div>
+                  <div
+                    style={{
+                      fontSize: '0.75rem',
+                      color: 'var(--text-secondary)',
+                    }}
+                  >
+                    No official rulings recorded for this match yet.
+                  </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px',
+                    }}
+                  >
                     {rulings.map((r) => (
-                      <div key={r.id} style={{ padding: '6px 8px', background: 'rgba(245, 158, 11, 0.08)', borderLeft: '3px solid #f59e0b', borderRadius: '4px', fontSize: '0.75rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#f59e0b', fontWeight: 700 }}>
+                      <div
+                        key={r.id}
+                        style={{
+                          padding: '6px 8px',
+                          background: 'rgba(245, 158, 11, 0.08)',
+                          borderLeft: '3px solid #f59e0b',
+                          borderRadius: '4px',
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            color: '#f59e0b',
+                            fontWeight: 700,
+                          }}
+                        >
                           <span>TO: {r.toName}</span>
-                          <span>{new Date(r.timestamp).toLocaleTimeString()}</span>
+                          <span>
+                            {new Date(r.timestamp).toLocaleTimeString()}
+                          </span>
                         </div>
-                        {r.context && <div style={{ color: 'var(--text-secondary)', fontStyle: 'italic', marginTop: '2px' }}>Query: {r.context}</div>}
-                        <div style={{ marginTop: '2px', fontWeight: 600 }}>{r.ruling}</div>
+                        {r.context && (
+                          <div
+                            style={{
+                              color: 'var(--text-secondary)',
+                              fontStyle: 'italic',
+                              marginTop: '2px',
+                            }}
+                          >
+                            Query: {r.context}
+                          </div>
+                        )}
+                        <div style={{ marginTop: '2px', fontWeight: 600 }}>
+                          {r.ruling}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -572,34 +1015,95 @@ export const TournamentOrganizerModal: React.FC<TournamentOrganizerModalProps> =
 
           {/* TAB 3: Match Privacy */}
           {activeTab === 'privacy' && (
-            <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.06)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.2rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Lock size={15} style={{ color: '#38bdf8' }} /> Match Privacy & Spectator Restrictions
+            <div
+              style={{
+                background: 'rgba(0, 0, 0, 0.25)',
+                padding: '1rem',
+                borderRadius: '8px',
+                border: '1px solid rgba(255, 255, 255, 0.06)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem',
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: 700,
+                  fontSize: '0.9rem',
+                  marginBottom: '0.2rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <Lock size={15} style={{ color: '#38bdf8' }} /> Match Privacy &
+                Spectator Restrictions
               </div>
 
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', cursor: 'pointer' }}>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                }}
+              >
                 <input
                   type="checkbox"
                   checked={privacySettings.allowSpectators}
-                  onChange={(e) => onUpdatePrivacy({ ...privacySettings, allowSpectators: e.target.checked })}
+                  onChange={(e) =>
+                    onUpdatePrivacy({
+                      ...privacySettings,
+                      allowSpectators: e.target.checked,
+                    })
+                  }
                 />
                 <span>Allow Spectators to join room in read-only mode</span>
               </label>
 
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', cursor: 'pointer' }}>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                }}
+              >
                 <input
                   type="checkbox"
                   checked={privacySettings.hideSecretObjectives}
-                  onChange={(e) => onUpdatePrivacy({ ...privacySettings, hideSecretObjectives: e.target.checked })}
+                  onChange={(e) =>
+                    onUpdatePrivacy({
+                      ...privacySettings,
+                      hideSecretObjectives: e.target.checked,
+                    })
+                  }
                 />
-                <span>Hide secret secondary objective cards from spectators</span>
+                <span>
+                  Hide secret secondary objective cards from spectators
+                </span>
               </label>
 
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', cursor: 'pointer' }}>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                }}
+              >
                 <input
                   type="checkbox"
                   checked={privacySettings.hideReservesFromSpectators}
-                  onChange={(e) => onUpdatePrivacy({ ...privacySettings, hideReservesFromSpectators: e.target.checked })}
+                  onChange={(e) =>
+                    onUpdatePrivacy({
+                      ...privacySettings,
+                      hideReservesFromSpectators: e.target.checked,
+                    })
+                  }
                 />
                 <span>Hide off-table Strategic Reserves from spectators</span>
               </label>
@@ -608,21 +1112,42 @@ export const TournamentOrganizerModal: React.FC<TournamentOrganizerModalProps> =
 
           {/* TAB 4: Export Match Report */}
           {activeTab === 'export' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+            >
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
-                  className="btn-primary"
-                  style={{ flex: 1, padding: '8px', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                  className="btn btn-primary"
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                  }}
                   onClick={handleDownloadReportJson}
                 >
                   <Download size={14} /> Download Match Report (JSON)
                 </button>
                 <button
-                  className="btn-secondary"
-                  style={{ flex: 1, padding: '8px', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                  className="btn btn-secondary"
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                  }}
                   onClick={handleCopyReportText}
                 >
-                  {copiedReport ? <Check size={14} /> : <Copy size={14} />} {copiedReport ? 'Copied!' : 'Copy Printable Match Card'}
+                  {copiedReport ? <Check size={14} /> : <Copy size={14} />}{' '}
+                  {copiedReport ? 'Copied!' : 'Copy Printable Match Card'}
                 </button>
               </div>
 

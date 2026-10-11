@@ -1,5 +1,18 @@
 import React, { useState } from 'react';
-import { Shield, X, Plus, Trash2, Swords, Crosshair, Users, ChevronDown, ChevronUp, Upload, CheckCircle, AlertCircle } from 'lucide-react';
+import {
+  Shield,
+  X,
+  Plus,
+  Trash2,
+  Swords,
+  Crosshair,
+  Users,
+  ChevronDown,
+  ChevronUp,
+  Upload,
+  CheckCircle,
+  AlertCircle,
+} from 'lucide-react';
 import { useDraggableWindow } from '../../common/hooks/useDraggableWindow.js';
 import { WargameArmy, WargameUnit } from '../types/brawl.js';
 import { disambiguateArmy, getUnitColor } from '../domain/armyManager.js';
@@ -10,12 +23,16 @@ interface ArmyRosterFlyoutProps {
   onDeployUnit?: (unit: WargameUnit, army: WargameArmy) => void;
 }
 
-export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({ onClose, onDeployUnit }) => {
-  const { position, isDragging, handleMouseDown, windowRef, zIndex } = useDraggableWindow({
-    initialX: typeof window !== 'undefined' ? window.innerWidth - 380 : 500,
-    initialY: 70,
-    defaultZIndex: 50,
-  });
+export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({
+  onClose,
+  onDeployUnit,
+}) => {
+  const { position, isDragging, handleMouseDown, windowRef, zIndex } =
+    useDraggableWindow({
+      initialX: typeof window !== 'undefined' ? window.innerWidth - 380 : 500,
+      initialY: 70,
+      defaultZIndex: 50,
+    });
 
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
@@ -33,7 +50,9 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({ onClose, onD
       }
       const result = await parseRosterFile(file.name, content);
       setRawArmy(result.army);
-      setImportStatus(`Imported ${result.army.name} (${result.army.units.length} units)`);
+      setImportStatus(
+        `Imported ${result.army.name} (${result.army.units.length} units)`,
+      );
       setTimeout(() => setImportStatus(null), 4000);
     } catch (err: any) {
       setImportError(err.message || 'Failed to parse roster file');
@@ -57,15 +76,144 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({ onClose, onD
         points: 80,
         coherencyDistanceInches: 2.0,
         models: [
-          { id: 'm1', name: 'Intercessor Sergeant', unitId: 'unit_1', x: 0, y: 0, baseShape: { type: 'circle', widthMm: 32 }, actionOverrides: [{ id: 'w1', name: 'Astartes Chainsword', type: 'melee', attacks: 4, skill: '3+', strength: 4, ap: -1, damage: 1 }, { id: 'w2', name: 'Bolt Rifle', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: -1, damage: 1 }] },
-          { id: 'm2', name: 'Intercessor 1', unitId: 'unit_1', x: 0, y: 0, baseShape: { type: 'circle', widthMm: 32 }, actionOverrides: [{ id: 'w3', name: 'Bolt Rifle', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: -1, damage: 1 }] },
-          { id: 'm3', name: 'Intercessor 2', unitId: 'unit_1', x: 0, y: 0, baseShape: { type: 'circle', widthMm: 32 }, actionOverrides: [{ id: 'w4', name: 'Bolt Rifle', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: -1, damage: 1 }] },
-          { id: 'm4', name: 'Intercessor 3', unitId: 'unit_1', x: 0, y: 0, baseShape: { type: 'circle', widthMm: 32 }, actionOverrides: [{ id: 'w5', name: 'Bolt Rifle', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: -1, damage: 1 }] },
-          { id: 'm5', name: 'Intercessor 4', unitId: 'unit_1', x: 0, y: 0, baseShape: { type: 'circle', widthMm: 32 }, actionOverrides: [{ id: 'w6', name: 'Bolt Rifle', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: -1, damage: 1 }] },
+          {
+            id: 'm1',
+            name: 'Intercessor Sergeant',
+            unitId: 'unit_1',
+            x: 0,
+            y: 0,
+            baseShape: { type: 'circle', widthMm: 32 },
+            actionOverrides: [
+              {
+                id: 'w1',
+                name: 'Astartes Chainsword',
+                type: 'melee',
+                attacks: 4,
+                skill: '3+',
+                strength: 4,
+                ap: -1,
+                damage: 1,
+              },
+              {
+                id: 'w2',
+                name: 'Bolt Rifle',
+                type: 'ranged',
+                rangeInches: 24,
+                attacks: 2,
+                skill: '3+',
+                strength: 4,
+                ap: -1,
+                damage: 1,
+              },
+            ],
+          },
+          {
+            id: 'm2',
+            name: 'Intercessor 1',
+            unitId: 'unit_1',
+            x: 0,
+            y: 0,
+            baseShape: { type: 'circle', widthMm: 32 },
+            actionOverrides: [
+              {
+                id: 'w3',
+                name: 'Bolt Rifle',
+                type: 'ranged',
+                rangeInches: 24,
+                attacks: 2,
+                skill: '3+',
+                strength: 4,
+                ap: -1,
+                damage: 1,
+              },
+            ],
+          },
+          {
+            id: 'm3',
+            name: 'Intercessor 2',
+            unitId: 'unit_1',
+            x: 0,
+            y: 0,
+            baseShape: { type: 'circle', widthMm: 32 },
+            actionOverrides: [
+              {
+                id: 'w4',
+                name: 'Bolt Rifle',
+                type: 'ranged',
+                rangeInches: 24,
+                attacks: 2,
+                skill: '3+',
+                strength: 4,
+                ap: -1,
+                damage: 1,
+              },
+            ],
+          },
+          {
+            id: 'm4',
+            name: 'Intercessor 3',
+            unitId: 'unit_1',
+            x: 0,
+            y: 0,
+            baseShape: { type: 'circle', widthMm: 32 },
+            actionOverrides: [
+              {
+                id: 'w5',
+                name: 'Bolt Rifle',
+                type: 'ranged',
+                rangeInches: 24,
+                attacks: 2,
+                skill: '3+',
+                strength: 4,
+                ap: -1,
+                damage: 1,
+              },
+            ],
+          },
+          {
+            id: 'm5',
+            name: 'Intercessor 4',
+            unitId: 'unit_1',
+            x: 0,
+            y: 0,
+            baseShape: { type: 'circle', widthMm: 32 },
+            actionOverrides: [
+              {
+                id: 'w6',
+                name: 'Bolt Rifle',
+                type: 'ranged',
+                rangeInches: 24,
+                attacks: 2,
+                skill: '3+',
+                strength: 4,
+                ap: -1,
+                damage: 1,
+              },
+            ],
+          },
         ],
         baseActions: [
-          { id: 'a1', name: 'Bolt Rifle', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: -1, damage: 1 },
-          { id: 'a2', name: 'Close Combat Weapon', type: 'melee', attacks: 3, skill: '3+', strength: 4, ap: 0, damage: 1 },
+          {
+            id: 'a1',
+            name: 'Bolt Rifle',
+            type: 'ranged',
+            rangeInches: 24,
+            attacks: 2,
+            skill: '3+',
+            strength: 4,
+            ap: -1,
+            damage: 1,
+          },
+          {
+            id: 'a2',
+            name: 'Close Combat Weapon',
+            type: 'melee',
+            attacks: 3,
+            skill: '3+',
+            strength: 4,
+            ap: 0,
+            damage: 1,
+          },
         ],
         datasheet: {
           movementInches: 6,
@@ -91,8 +239,27 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({ onClose, onD
             y: 0,
             baseShape: { type: 'circle', widthMm: 40 },
             actionOverrides: [
-              { id: 'wpn_pw', name: 'Power Weapon', type: 'melee', attacks: 4, skill: '3+', strength: 5, ap: -2, damage: 1 },
-              { id: 'wpn_sb', name: 'Storm Bolter', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: 0, damage: 1 },
+              {
+                id: 'wpn_pw',
+                name: 'Power Weapon',
+                type: 'melee',
+                attacks: 4,
+                skill: '3+',
+                strength: 5,
+                ap: -2,
+                damage: 1,
+              },
+              {
+                id: 'wpn_sb',
+                name: 'Storm Bolter',
+                type: 'ranged',
+                rangeInches: 24,
+                attacks: 2,
+                skill: '3+',
+                strength: 4,
+                ap: 0,
+                damage: 1,
+              },
             ],
           },
           {
@@ -103,8 +270,27 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({ onClose, onD
             y: 0,
             baseShape: { type: 'circle', widthMm: 40 },
             actionOverrides: [
-              { id: 'wpn_cf', name: 'Chainfist', type: 'melee', attacks: 3, skill: '3+', strength: 8, ap: -2, damage: 2 },
-              { id: 'wpn_hf', name: 'Heavy Flamer', type: 'ranged', rangeInches: 12, attacks: 'D6', skill: 'N/A', strength: 5, ap: -1, damage: 1 },
+              {
+                id: 'wpn_cf',
+                name: 'Chainfist',
+                type: 'melee',
+                attacks: 3,
+                skill: '3+',
+                strength: 8,
+                ap: -2,
+                damage: 2,
+              },
+              {
+                id: 'wpn_hf',
+                name: 'Heavy Flamer',
+                type: 'ranged',
+                rangeInches: 12,
+                attacks: 'D6',
+                skill: 'N/A',
+                strength: 5,
+                ap: -1,
+                damage: 1,
+              },
             ],
           },
           {
@@ -115,8 +301,27 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({ onClose, onD
             y: 0,
             baseShape: { type: 'circle', widthMm: 40 },
             actionOverrides: [
-              { id: 'wpn_pf1', name: 'Power Fist', type: 'melee', attacks: 3, skill: '3+', strength: 8, ap: -2, damage: 2 },
-              { id: 'wpn_sb1', name: 'Storm Bolter', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: 0, damage: 1 },
+              {
+                id: 'wpn_pf1',
+                name: 'Power Fist',
+                type: 'melee',
+                attacks: 3,
+                skill: '3+',
+                strength: 8,
+                ap: -2,
+                damage: 2,
+              },
+              {
+                id: 'wpn_sb1',
+                name: 'Storm Bolter',
+                type: 'ranged',
+                rangeInches: 24,
+                attacks: 2,
+                skill: '3+',
+                strength: 4,
+                ap: 0,
+                damage: 1,
+              },
             ],
           },
           {
@@ -127,8 +332,27 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({ onClose, onD
             y: 0,
             baseShape: { type: 'circle', widthMm: 40 },
             actionOverrides: [
-              { id: 'wpn_pf2', name: 'Power Fist', type: 'melee', attacks: 3, skill: '3+', strength: 8, ap: -2, damage: 2 },
-              { id: 'wpn_sb2', name: 'Storm Bolter', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: 0, damage: 1 },
+              {
+                id: 'wpn_pf2',
+                name: 'Power Fist',
+                type: 'melee',
+                attacks: 3,
+                skill: '3+',
+                strength: 8,
+                ap: -2,
+                damage: 2,
+              },
+              {
+                id: 'wpn_sb2',
+                name: 'Storm Bolter',
+                type: 'ranged',
+                rangeInches: 24,
+                attacks: 2,
+                skill: '3+',
+                strength: 4,
+                ap: 0,
+                damage: 1,
+              },
             ],
           },
           {
@@ -139,14 +363,52 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({ onClose, onD
             y: 0,
             baseShape: { type: 'circle', widthMm: 40 },
             actionOverrides: [
-              { id: 'wpn_pf3', name: 'Power Fist', type: 'melee', attacks: 3, skill: '3+', strength: 8, ap: -2, damage: 2 },
-              { id: 'wpn_sb3', name: 'Storm Bolter', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: 0, damage: 1 },
+              {
+                id: 'wpn_pf3',
+                name: 'Power Fist',
+                type: 'melee',
+                attacks: 3,
+                skill: '3+',
+                strength: 8,
+                ap: -2,
+                damage: 2,
+              },
+              {
+                id: 'wpn_sb3',
+                name: 'Storm Bolter',
+                type: 'ranged',
+                rangeInches: 24,
+                attacks: 2,
+                skill: '3+',
+                strength: 4,
+                ap: 0,
+                damage: 1,
+              },
             ],
           },
         ],
         baseActions: [
-          { id: 'a_sb', name: 'Storm Bolter', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: 0, damage: 1 },
-          { id: 'a_pf', name: 'Power Fist', type: 'melee', attacks: 3, skill: '3+', strength: 8, ap: -2, damage: 2 },
+          {
+            id: 'a_sb',
+            name: 'Storm Bolter',
+            type: 'ranged',
+            rangeInches: 24,
+            attacks: 2,
+            skill: '3+',
+            strength: 4,
+            ap: 0,
+            damage: 1,
+          },
+          {
+            id: 'a_pf',
+            name: 'Power Fist',
+            type: 'melee',
+            attacks: 3,
+            skill: '3+',
+            strength: 8,
+            ap: -2,
+            damage: 2,
+          },
         ],
         datasheet: {
           movementInches: 5,
@@ -190,7 +452,8 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({ onClose, onD
         onMouseDown={handleMouseDown}
         style={{
           padding: '0.75rem 1rem',
-          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.05))',
+          background:
+            'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.05))',
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           display: 'flex',
           justifyContent: 'space-between',
@@ -201,26 +464,52 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({ onClose, onD
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Shield size={16} style={{ color: '#f59e0b' }} />
-          <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#f59e0b' }}>
+          <span
+            style={{ fontWeight: 700, fontSize: '0.9rem', color: '#f59e0b' }}
+          >
             Army Roster ({totalPoints} / {activeArmy.pointsLimit} pts)
           </span>
         </div>
-        <button className="btn-icon" onClick={onClose} style={{ width: '24px', height: '24px' }}>
+        <button
+          className="btn-icon"
+          onClick={onClose}
+          style={{ width: '24px', height: '24px' }}
+        >
           <X size={14} />
         </button>
       </div>
 
       {/* Army Meta & Import Controls */}
-      <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', fontSize: '0.8rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+      <div
+        style={{
+          padding: '0.75rem 1rem',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+          fontSize: '0.8rem',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '0.4rem',
+          }}
+        >
           <div>
-            <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{activeArmy.name}</div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
-              Faction: {activeArmy.faction} {activeArmy.detachment ? `• Detachment: ${activeArmy.detachment}` : ''}
+            <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>
+              {activeArmy.name}
+            </div>
+            <div
+              style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}
+            >
+              Faction: {activeArmy.faction}{' '}
+              {activeArmy.detachment
+                ? `• Detachment: ${activeArmy.detachment}`
+                : ''}
             </div>
           </div>
           <label
-            className="btn-secondary"
+            className="btn btn-secondary"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -285,7 +574,16 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({ onClose, onD
       </div>
 
       {/* Units List */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '0.75rem 1rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.5rem',
+        }}
+      >
         {activeArmy.units.map((unit) => {
           const isExpanded = expandedUnitId === unit.id;
           return (
@@ -312,40 +610,109 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({ onClose, onD
               >
                 <div>
                   {unit.name}{' '}
-                  <span style={{ fontSize: '0.75rem', color: '#38bdf8', fontWeight: 700 }}>
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      color: '#38bdf8',
+                      fontWeight: 700,
+                    }}
+                  >
                     ({unit.points} pts)
                   </span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.3rem',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: '0.7rem',
+                      color: 'var(--text-secondary)',
+                    }}
+                  >
                     {unit.models.length} models
                   </span>
-                  {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  {isExpanded ? (
+                    <ChevronUp size={14} />
+                  ) : (
+                    <ChevronDown size={14} />
+                  )}
                 </div>
               </div>
 
               {isExpanded && (
-                <div style={{ padding: '0.5rem 0.75rem', borderTop: '1px solid rgba(255, 255, 255, 0.05)', fontSize: '0.75rem' }}>
+                <div
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+                    fontSize: '0.75rem',
+                  }}
+                >
                   {unit.datasheet && (
-                    <div style={{ display: 'flex', gap: '8px', marginBottom: '0.5rem', opacity: 0.85 }}>
-                      <span>M: <strong>{unit.datasheet.movementInches}&quot;</strong></span>
-                      <span>T: <strong>{unit.datasheet.toughness}</strong></span>
-                      <span>Sv: <strong>{unit.datasheet.armorSave}</strong></span>
-                      <span>W: <strong>{unit.datasheet.woundsPerModel}</strong></span>
-                      <span>Ld: <strong>{unit.datasheet.leadership}</strong></span>
-                      <span>OC: <strong>{unit.datasheet.objectiveControl}</strong></span>
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: '8px',
+                        marginBottom: '0.5rem',
+                        opacity: 0.85,
+                      }}
+                    >
+                      <span>
+                        M:{' '}
+                        <strong>{unit.datasheet.movementInches}&quot;</strong>
+                      </span>
+                      <span>
+                        T: <strong>{unit.datasheet.toughness}</strong>
+                      </span>
+                      <span>
+                        Sv: <strong>{unit.datasheet.armorSave}</strong>
+                      </span>
+                      <span>
+                        W: <strong>{unit.datasheet.woundsPerModel}</strong>
+                      </span>
+                      <span>
+                        Ld: <strong>{unit.datasheet.leadership}</strong>
+                      </span>
+                      <span>
+                        OC: <strong>{unit.datasheet.objectiveControl}</strong>
+                      </span>
                     </div>
                   )}
 
-                  <div style={{ fontWeight: 600, marginTop: '0.3rem', marginBottom: '0.2rem' }}>Weapons:</div>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      marginTop: '0.3rem',
+                      marginBottom: '0.2rem',
+                    }}
+                  >
+                    Weapons:
+                  </div>
                   {unit.baseActions.map((act) => (
-                    <div key={act.id} style={{ opacity: 0.8, marginLeft: '4px' }}>
-                      • {act.name} {act.rangeInches ? `(${act.rangeInches}")` : '(Melee)'}: A{act.attacks} S{act.strength} AP{act.ap} D{act.damage}
+                    <div
+                      key={act.id}
+                      style={{ opacity: 0.8, marginLeft: '4px' }}
+                    >
+                      • {act.name}{' '}
+                      {act.rangeInches ? `(${act.rangeInches}")` : '(Melee)'}: A
+                      {act.attacks} S{act.strength} AP{act.ap} D{act.damage}
                     </div>
                   ))}
 
                   {/* Models Roster & Disambiguation */}
-                  <div style={{ fontWeight: 600, marginTop: '0.6rem', marginBottom: '0.3rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      marginTop: '0.6rem',
+                      marginBottom: '0.3rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
                     <span
                       style={{
                         width: '8px',
@@ -358,11 +725,19 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({ onClose, onD
                     />
                     <span>Models ({unit.models.length}):</span>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                    }}
+                  >
                     {unit.models.map((model) => {
-                      const gearList = model.actionOverrides && model.actionOverrides.length > 0
-                        ? model.actionOverrides.map((a) => a.name).join(', ')
-                        : unit.baseActions.map((a) => a.name).join(', ');
+                      const gearList =
+                        model.actionOverrides &&
+                        model.actionOverrides.length > 0
+                          ? model.actionOverrides.map((a) => a.name).join(', ')
+                          : unit.baseActions.map((a) => a.name).join(', ');
                       return (
                         <div
                           key={model.id}
@@ -377,14 +752,34 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({ onClose, onD
                             gap: '2px',
                           }}
                         >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontWeight: 600, color: '#f8fafc' }}>{model.name}</span>
-                            <span style={{ fontSize: '0.65rem', color: '#94a3b8', fontFamily: 'monospace' }}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                            }}
+                          >
+                            <span style={{ fontWeight: 600, color: '#f8fafc' }}>
+                              {model.name}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: '0.65rem',
+                                color: '#94a3b8',
+                                fontFamily: 'monospace',
+                              }}
+                            >
                               {model.baseShape.widthMm}mm • #{model.id}
                             </span>
                           </div>
                           {gearList && (
-                            <div style={{ color: '#38bdf8', fontSize: '0.68rem', fontStyle: 'italic' }}>
+                            <div
+                              style={{
+                                color: '#38bdf8',
+                                fontSize: '0.68rem',
+                                fontStyle: 'italic',
+                              }}
+                            >
                               [{gearList}]
                             </div>
                           )}
@@ -395,7 +790,7 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({ onClose, onD
 
                   {onDeployUnit && (
                     <button
-                      className="btn-primary"
+                      className="btn btn-primary"
                       style={{
                         marginTop: '0.6rem',
                         width: '100%',
