@@ -209,6 +209,7 @@ This document provides step-by-step instructions for manually verifying all feat
    - **Brawl Modules**: In console with `brawl_mode` enabled, run `__oldbear_features.set('scoreboard', false)` or `__oldbear_features.set('army_roster', false)`. Observe that the corresponding top bar buttons hide and their modals cannot be opened.
    - **Fog of War**: As GM in VTT, run `__oldbear_features.set('fog_of_war', false)` in console. Observe that the Fog of War button in the toolbar disappears.
    - **Dice Roller / Soundboard / Voice**: Run `__oldbear_features.set('dice_roller', false)`. Observe that the Dice buttons disappear from the top bar and mobile drawer.
+   - **Compound Flags**: Verify `submaps_and_regions` evaluates to true only when at least one submap flag is enabled (`multiple_floors`, `connected_dungeons`, or `brawl_mode` + brawl submaps), defaults to false, and cannot be set directly via environment variables.
 5. **Verify URL Query Override**:
    - Navigate to `http://localhost:3000/?enable_feature=brawl_mode&mode=brawl`.
    - Verify that Brawl mode opens cleanly with URL feature flag activation.
@@ -218,10 +219,11 @@ This document provides step-by-step instructions for manually verifying all feat
 
 #### Expected Result (Pass Criteria):
 
-- All 12 supported feature flags have explicit defaults documented in `.env.example`.
+- All supported feature flags have explicit defaults documented in `.env.example`.
 - When `brawl_mode` is false (default), Brawl mode is unavailable, all links/references to Brawl mode are hidden, and attempts to set Brawl mode route to VTT.
 - In production, flags can be toggled via host/container environment variables without rebuilding the static frontend bundle.
 - In development, flags can be set in `.env` using standard naming (`FEATURE_<NAME>=true|false`).
+- Compound flags (e.g. `submaps_and_regions`) are strictly computed from dependent flags, protected against direct env overrides, and typed via `isCompoundFlagEnabled`.
 - Frontend components reactively update when flags change without full page reloads.
 
 ---

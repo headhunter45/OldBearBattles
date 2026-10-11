@@ -728,7 +728,7 @@ export const AppBrawl: React.FC = () => {
       }
     });
 
-    network.connect(currentRoomId, initialPlayerName, '#f59e0b', '');
+    network.connect(currentRoomId, initialPlayerName, '#f59e0b', '', undefined, 'brawl');
 
     return () => {
       window.removeEventListener('resize', handleResize);

@@ -4,17 +4,41 @@ import { createSession, getSession, updateSession, getAllSessions, removeSession
 import { fetchDnDCharacter } from './dndbeyond.js';
 
 describe('Session Management & In-Memory Fallback', () => {
-  it('creates a session with default map and tokens', () => {
+  it('creates a session with default map and clean empty tokens by default', () => {
     const { session, gmKey } = createSession('Test Room');
     assert.ok(session.id, 'Session has an ID');
     assert.ok(gmKey, 'GM key generated');
     assert.strictEqual(session.maps.length, 1, 'Has default map');
-    assert.ok(session.tokens['token-fighter'], 'Has fighter token');
-    assert.ok(session.tokens['token-goblin'], 'Has goblin token');
-    assert.strictEqual(session.initiative.items.length, 2, 'Has initiative items');
+    assert.strictEqual(session.maps[0].name, 'Ancient Stone Ruins');
+    assert.deepStrictEqual(session.tokens, {}, 'Default tokens disabled when default_vtt_tokens flag is off');
+    assert.strictEqual(session.initiative.items.length, 0, 'No initiative items when tokens disabled');
 
     const fetched = getSession(session.id);
     assert.deepStrictEqual(fetched, session);
+  });
+
+  it('creates default VTT tokens when default_vtt_tokens feature flag is enabled', () => {
+    const { session } = createSession('VTT Room', undefined, 'vtt', { default_vtt_tokens: true });
+    assert.strictEqual(session.maps[0].name, 'Ancient Stone Ruins');
+    assert.ok(session.tokens['token-fighter'], 'Has fighter token');
+    assert.ok(session.tokens['token-goblin'], 'Has goblin token');
+    assert.strictEqual(session.initiative.items.length, 2, 'Has initiative items');
+  });
+
+  it('initializes Brawl mode with tactical battlefield and respects default_brawl_tokens flag', () => {
+    // Default brawl mode without tokens
+    const { session: cleanBrawl } = createSession('Brawl Table', undefined, 'brawl');
+    assert.strictEqual(cleanBrawl.maps[0].name, 'Tactical Battlefield');
+    assert.strictEqual(cleanBrawl.maps[0].scaleFtPerCell, 1, 'Brawl map scale is 1 in/ft per cell');
+    assert.deepStrictEqual(cleanBrawl.tokens, {}, 'Empty tokens by default');
+
+    // Brawl mode with default_brawl_tokens enabled
+    const { session: seededBrawl } = createSession('Brawl Seeded', undefined, 'brawl', { default_brawl_tokens: true });
+    assert.strictEqual(seededBrawl.maps[0].name, 'Tactical Battlefield');
+    assert.ok(seededBrawl.tokens['token-brawl-unit-1'], 'Has brawl unit 1 token');
+    assert.ok(seededBrawl.tokens['token-brawl-unit-2'], 'Has brawl unit 2 token');
+    assert.strictEqual(seededBrawl.tokens['token-brawl-unit-1'].unitHaloColor, '#38bdf8');
+    assert.strictEqual(seededBrawl.initiative.items.length, 0, 'No RPG initiative items in brawl mode');
   });
 
   it('updates and lists sessions in in-memory mode without errors', () => {

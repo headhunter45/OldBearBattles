@@ -38,29 +38,29 @@ export type FeatureFlagKey = KnownFeatureFlag | (string & {});
  * or VITE_FEATURE_<FLAG_NAME>=true|false.
  */
 export const DEFAULT_FEATURE_FLAGS: Record<KnownFeatureFlag, boolean> = {
-  chess_clock: false, // Chess clock disabled by default per user request
-  voice_chat: true,
-  soundboard: true,
-  dice_roller: true,
-  scoreboard: true,
-  objectives: true,
-  to_mode: true,
-  dndbeyond: true,
-  pathbuilder: true,
-  army_roster: true,
-  fog_of_war: true,
+  army_roster: false,
   brawl_mode: false,
-  multiple_floors: false,
-  connected_dungeons: false,
-  deployment_zones: false,
   casualty_tray: false,
-  staging_area: false,
-  default_vtt_tokens: false,
+  chess_clock: false, // Chess clock disabled by default per user request
+  connected_dungeons: false,
   default_brawl_tokens: false,
   default_map_tiles: false,
-  search_open5e: false,
+  default_vtt_tokens: false,
+  deployment_zones: false,
+  dice_roller: true,
+  dndbeyond: true,
+  fog_of_war: true,
+  multiple_floors: false,
+  objectives: false,
+  pathbuilder: false,
+  scoreboard: false,
+  search_open5e: true,
   search_pf2e: false,
+  soundboard: true,
+  staging_area: false,
   sync_dndbeyond: false,
+  to_mode: true,
+  voice_chat: true,
 };
 
 /**
@@ -169,7 +169,7 @@ export const COMPOUND_FEATURE_FLAGS: Record<
       (flags['brawl_mode'] &&
         (flags['deployment_zones'] ||
           flags['casualty_tray'] ||
-          flags['staging_area']))
+          flags['staging_area'])),
     ),
 };
 
@@ -180,7 +180,10 @@ export function isCompoundFeatureFlag(
   flag: string,
 ): flag is CompoundFeatureFlag {
   const normalized = normalizeFeatureKey(flag);
-  return Object.prototype.hasOwnProperty.call(COMPOUND_FEATURE_FLAGS, normalized);
+  return Object.prototype.hasOwnProperty.call(
+    COMPOUND_FEATURE_FLAGS,
+    normalized,
+  );
 }
 
 /**

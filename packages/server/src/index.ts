@@ -73,8 +73,8 @@ app.get('/api/sessions', (_req, res) => {
 
 // Create new game session
 app.post('/api/sessions', (req, res) => {
-  const { name } = req.body || {};
-  const { session, gmKey } = createSession(name);
+  const { name, mode } = req.body || {};
+  const { session, gmKey } = createSession(name, undefined, mode);
   res.json({
     roomId: session.id,
     gmKey,

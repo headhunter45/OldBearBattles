@@ -681,7 +681,7 @@ export const AppVtt: React.FC = () => {
     };
     window.addEventListener('click', handleFirstGesture);
     const savedPlayerId = localStorage.getItem('oldbear_player_id') || undefined;
-    net.connect(roomId, savedName, savedColor, savedGmKey, savedPlayerId);
+    net.connect(roomId, savedName, savedColor, savedGmKey, savedPlayerId, 'vtt');
 
     return () => {
       unsubVoiceState();
@@ -3120,7 +3120,7 @@ export const AppVtt: React.FC = () => {
                       const savedName = localStorage.getItem('oldbear_player_name') || generateRandomName();
                       const savedColor = localStorage.getItem('oldbear_player_color') || '#6366f1';
                       const savedGmKey = localStorage.getItem(`oldbear_gmkey_${roomId}`) || undefined;
-                      net.connect(roomId, savedName, savedColor, savedGmKey);
+                      net.connect(roomId, savedName, savedColor, savedGmKey, undefined, 'vtt');
                     } else {
                       window.location.reload();
                     }

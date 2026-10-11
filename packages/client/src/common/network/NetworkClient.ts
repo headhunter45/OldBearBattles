@@ -57,7 +57,7 @@ export class NetworkClient {
     });
   }
 
-  connect(roomId: string, playerName: string, playerColor: string, gmKey?: string, playerId?: string) {
+  connect(roomId: string, playerName: string, playerColor: string, gmKey?: string, playerId?: string, mode?: 'vtt' | 'brawl') {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
     const wsUrl = `${protocol}//${host}/ws`;
@@ -87,6 +87,7 @@ export class NetworkClient {
         playerColor,
         gmKey,
         playerId: resolvedPlayerId,
+        mode,
       };
       this.sendWs(joinMsg);
     };

@@ -90,15 +90,16 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
         playerName,
         playerColor,
         gmKey,
-        playerId: requestedPlayerId
+        playerId: requestedPlayerId,
+        mode = 'vtt',
       } = msg;
       let session = getSession(roomId);
       let sessionGmKey = getSessionGmKey(roomId);
 
       const isNewRoom = !session;
-      // If room doesn't exist, create it with this exact roomId
+      // If room doesn't exist, create it with this exact roomId and mode
       if (!session) {
-        const created = createSession(`Session ${roomId}`, roomId);
+        const created = createSession(`Session ${roomId}`, roomId, mode);
         session = created.session;
         sessionGmKey = created.gmKey;
       }

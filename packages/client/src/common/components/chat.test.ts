@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { addBlockToTokenOrCharacter, parseDiceExpression, processSlashCommand } from './ChatPanel.js';
+import { updateActiveFlags } from '../config/featureFlags.js';
 
 describe('Dice Parser & Slash Command Utilities', () => {
   it('correctly parses standard single and multi-dice expressions', () => {
@@ -684,6 +685,7 @@ describe('Dice Parser & Slash Command Utilities', () => {
   });
 
   it('handles /import command for PF2e pack JSON and Open5e URLs (OB-177, OB-153)', async () => {
+    updateActiveFlags({ search_open5e: true });
     const testPlayer = {
       id: 'p-import',
       name: 'GameMaster',

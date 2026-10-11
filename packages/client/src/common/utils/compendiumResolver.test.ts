@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
+import { updateActiveFlags } from '../config/featureFlags.js';
 import {
   parseCompendiumQuery,
   fetchCompendiumEntry,
@@ -8,6 +9,8 @@ import {
 } from './compendiumResolver.js';
 
 describe('Multi-System Compendium Resolver & Variants (OB-212)', () => {
+  updateActiveFlags({ search_open5e: true });
+
   it('normalizes system aliases correctly', () => {
     assert.strictEqual(normalizeSystemAlias('2024'), '5e-2024');
     assert.strictEqual(normalizeSystemAlias('5e-2024'), '5e-2024');

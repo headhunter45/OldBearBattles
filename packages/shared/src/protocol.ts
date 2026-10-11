@@ -13,7 +13,7 @@ import {
 } from './types.js';
 
 export type ClientToServerMessage =
-  | { type: 'join'; roomId: string; playerName: string; playerColor: string; gmKey?: string; playerId?: string }
+  | { type: 'join'; roomId: string; playerName: string; playerColor: string; gmKey?: string; playerId?: string; mode?: 'vtt' | 'brawl' }
   | { type: 'rtc-offer'; toPeerId: string; sdp: RTCSessionDescriptionInit }
   | { type: 'rtc-answer'; toPeerId: string; sdp: RTCSessionDescriptionInit }
   | { type: 'rtc-ice'; toPeerId: string; candidate: RTCIceCandidateInit }

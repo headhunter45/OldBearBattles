@@ -1,5 +1,6 @@
 import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
+import { updateActiveFlags } from '../config/featureFlags.js';
 import {
   fetchOpen5eSpell,
   fetchOpen5eMonster,
@@ -8,6 +9,8 @@ import {
 } from './open5eFetcher.js';
 
 describe('Open5e Client-Side Reference Fetcher & Cache (OB-141, OB-142, OB-180)', () => {
+  updateActiveFlags({ search_open5e: true });
+
   it('correctly maps spell response to EntityStatBlock with traits and action cost', async () => {
     // Mock global fetch for spell
     const originalFetch = globalThis.fetch;
