@@ -96,7 +96,22 @@ export const ObjectivesModal: React.FC<ObjectivesModalProps> = ({
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 110 }}>
+    <div
+      className="modal-backdrop"
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
+        zIndex: 110,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1rem',
+      }}
+    >
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}

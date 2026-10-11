@@ -167,7 +167,7 @@ describe('BrawlTopBar Active Scene Settings (OB-209)', () => {
     assert.ok(markup.includes('Round 1 - Player 1'), 'Displays round and active player');
   });
 
-  it('hides chess clocks by default and displays Clock toggle button in top-bar-right', () => {
+  it('hides chess clocks when disabled', () => {
     const markup = renderToStaticMarkup(
       React.createElement(BrawlTopBar, {
         roomName: 'Test Room',
@@ -199,8 +199,41 @@ describe('BrawlTopBar Active Scene Settings (OB-209)', () => {
     );
 
     assert.ok(!markup.includes('Pass Turn'), 'Does not render inline clock Pass Turn button when disabled');
-    assert.ok(markup.includes('title="Enable Match Chess Clocks"'), 'Renders Clock button to enable clocks');
-    assert.ok(markup.includes('>Clock<'), 'Renders Clock button label in top bar');
+  });
+
+  it('renders Scoreboard trophy button in BrawlTopBar (OB-159)', () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(BrawlTopBar, {
+        roomName: 'Test Room',
+        activeMapName: 'Wargame Ruins',
+        isOrganizer: true,
+        players: [],
+        localPlayer: null,
+        activePlayerIndex: 1,
+        currentRound: 1,
+        currentPhase: 'Command',
+        p1ClockSeconds: 300,
+        p2ClockSeconds: 300,
+        isClockRunning: false,
+        p1TotalVp: 4,
+        p2TotalVp: 2,
+        onToggleClock: () => {},
+        onNextPhase: () => {},
+        onSwitchActivePlayer: () => {},
+        onOpenScoreboard: () => {},
+        onOpenArmyRoster: () => {},
+        onOpenDice: () => {},
+        onOpenMaps: () => {},
+        onOpenSceneSettings: () => {},
+        onOpenSoundboard: () => {},
+        onOpenBackup: () => {},
+        onAddNewModel: () => {},
+        onToggleMobileDrawer: () => {},
+      })
+    );
+
+    assert.ok(markup.includes('title="Open Match Scoreboard (VP, CP, Casualties)"'), 'Renders Scoreboard trophy button');
+    assert.ok(markup.includes('VP: 4 - 2'), 'Displays VP values in Scoreboard button');
   });
 
   it('renders inline chess clock bar when isChessClockEnabled is true', () => {

@@ -12,8 +12,6 @@ This document provides step-by-step instructions for manually verifying all feat
 | Task ID | Feature Title | Domain | Status |
 | :------ | :------------ | :----- | :----- |
 
-| **[OB-157](#ob-157---battle-round-stepper--wargaming-phase-engine)** | Battle Round Stepper & Wargaming Phase Engine | Wargaming / Brawl | Testing |
-| **[OB-158](#ob-158---dual-player-chess-clocks-with-turn-countdown--active-switching)** | Dual-Player Chess Clocks with Turn Countdown & Active Switching | Wargaming / Brawl | Testing |
 | **[OB-159](#ob-159---scoreboard--resource-tracker-vp-cp-casualties-with-audit-trail)** | Scoreboard & Resource Tracker (VP, CP, Casualties) with Audit Trail | Wargaming / Brawl | Testing |
 | **[OB-160](#ob-160---objective-marker-control-zone-calculation--auto-scoring)** | Objective Marker Control Zone Calculation & Auto-Scoring | Wargaming / Brawl | Testing |
 | **[OB-161](#ob-161---roster-ingestion-pipeline-newrecruit-json--battlescribe-rosz)** | Roster Ingestion Pipeline: NewRecruit JSON & BattleScribe `.rosz` | Wargaming / Brawl | Testing |
@@ -247,62 +245,6 @@ This document provides step-by-step instructions for manually verifying all feat
 - Coherency graph calculates real-time base-to-base distances.
 - Out-of-coherency models immediately display warning halos.
 - Moving models back into range clears warnings seamlessly.
-
----
-
-### OB-157 - Battle Round Stepper & Wargaming Phase Engine
-
-- **Reference in tasks.md:** [tasks.md: OB-157](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-157)
-- **Primary Source Code:** [phaseEngine.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/brawl/domain/phaseEngine.ts), [BrawlTopBar.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/brawl/components/BrawlTopBar.tsx)
-- **Where to find it:** Top navigation bar in Brawl mode (`?mode=brawl`).
-
-#### Step-by-Step Instructions:
-
-1. In Brawl mode, observe the center phase stepper in the top bar: `Round 1 - Player 1 - Command Phase`.
-2. Click **Next Phase (`>`)** or press Spacebar.
-   - Verify the phase advances: `Movement` -> `Shooting` -> `Charge` -> `Fight`.
-3. After the Fight phase, click **Next Phase**:
-   - Verify turn transitions to `Player 2 - Command Phase`.
-4. Cycle through Player 2's turn:
-   - Verify battle advances to `Round 2 - Player 1 - Command Phase`.
-5. Click the phase name to open the phase quick-jump menu and jump directly to any round/phase.
-
-#### Expected Result (Pass Criteria):
-
-- Stepper advances sequentially through standard wargaming phases.
-- Round, active player, and phase transition accurately.
-- Phase transitions broadcast announcements to table chat.
-
----
-
-### OB-158 - Dual-Player Chess Clocks with Turn Countdown & Active Switching
-
-- **Reference in tasks.md:** [tasks.md: OB-158](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-158)
-- **Primary Source Code:** [chessClock.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/brawl/domain/chessClock.ts), [ChessClockWidget.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/brawl/components/ChessClockWidget.tsx)
-- **Where to find it:** The floating Chess Clock widget in Brawl mode (`?mode=brawl`).
-
-#### Step-by-Step Instructions:
-
-1. In Brawl mode, click the Clock icon in the top bar to open the **Dual Chess Clock** widget.
-2. Select time control: e.g. `1h 30m` per player.
-3. Click **Start Clock**:
-   - Player 1's timer begins counting down in real time.
-4. Click **Switch Player (Pass Turn)**:
-   - Player 1's timer pauses; Player 2's timer begins counting down immediately.
-5. Click **Pause**:
-   - Both timers pause cleanly.
-6. Verify disabling / hiding clocks:
-   - Click the `X` button on the top-bar clock strip (or **Disable Clocks** in the widget config) to hide the clock strip and pause timers.
-   - Click **Clock** in the top bar again to re-enable them on demand.
-7. Verify synchronization across two browser windows connected to the same room.
-
-#### Expected Result (Pass Criteria):
-
-- Clocks are disabled by default on load, keeping the top bar clean and spacious.
-- Clicking the **Clock** button in the top bar activates match clocks and opens the widget on demand.
-- Dual clocks count down accurately with smooth sub-second precision.
-- Passing turn switches active countdown instantaneously.
-- Clocks synchronize across all connected peers in real time.
 
 ---
 
