@@ -118,7 +118,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
         zIndex: 30,
       }}
     >
-      <div className="top-bar-left" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+      <div className="top-bar-left" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'nowrap', minWidth: 0 }}>
         <button
           className="btn-icon"
           onClick={onToggleMobileDrawer}
@@ -129,12 +129,13 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
           <Menu size={18} />
         </button>
 
-        <div className="room-info" style={{ display: 'flex', flexDirection: 'column' }}>
+        <div className="room-info" style={{ display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
             <span className="room-name" style={{ fontWeight: 800, color: '#f59e0b', letterSpacing: '0.5px' }}>
               Old Bear Brawl
             </span>
             <span
+              className="topbar-desktop-only"
               style={{
                 fontSize: '0.65rem',
                 fontWeight: 700,
@@ -148,7 +149,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
               Wargame
             </span>
           </div>
-          <span style={{ fontSize: '0.65rem', opacity: 0.6, marginTop: '-2px' }}>
+          <span className="topbar-desktop-only" style={{ fontSize: '0.65rem', opacity: 0.6, marginTop: '-2px' }}>
             {FULL_VERSION_STRING}
           </span>
         </div>
@@ -170,17 +171,18 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
               padding: '3px 8px',
               borderRadius: '6px',
               cursor: 'pointer',
+              flexShrink: 0,
             }}
           >
             <span>🐻 VTT</span>
           </button>
         )}
 
-        <div className="topbar-map-label" style={{ width: '1px', height: '20px', background: 'var(--border-subtle)' }} />
+        <div className="topbar-map-label" style={{ width: '1px', height: '20px', background: 'var(--border-subtle)', flexShrink: 0 }} />
 
-        <div className="topbar-map-label" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.85rem' }}>
+        <div className="topbar-map-label" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.85rem', flexShrink: 0 }}>
           <span style={{ color: 'var(--text-muted)' }}>Scene:</span>
-          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{activeMapName}</span>
+          <span style={{ fontWeight: 600, color: 'var(--text-primary)', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeMapName}</span>
           {isOrganizer && onOpenSceneSettings && (
             <button
               className="btn-icon"
@@ -197,6 +199,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
                 color: 'var(--text-secondary)',
                 borderRadius: 'var(--radius-sm)',
                 cursor: 'pointer',
+                flexShrink: 0,
               }}
             >
               <Settings size={14} />
@@ -214,6 +217,8 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
             padding: '3px 8px',
             borderRadius: '6px',
             border: '1px solid rgba(255, 255, 255, 0.08)',
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
           }}
         >
           <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
@@ -265,6 +270,8 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
                 border: `1px solid ${isClockRunning ? 'rgba(16, 185, 129, 0.4)' : 'rgba(255, 255, 255, 0.08)'}`,
                 padding: '3px 8px',
                 borderRadius: '6px',
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
               }}
             >
               <Timer size={13} style={{ color: isClockRunning ? '#10b981' : 'var(--text-secondary)' }} />
@@ -308,7 +315,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
                 onClick={onSwitchActivePlayer}
                 title="Pass turn to opponent"
               >
-                Pass Turn
+                Pass
               </button>
               {onToggleChessClockHUD && (
                 <button
@@ -325,7 +332,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
         })()}
       </div>
 
-      <div className="top-bar-right" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+      <div className="top-bar-right" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'nowrap', minWidth: 0 }}>
         {/* Scoreboard Button (OB-159) */}
         {onOpenScoreboard && (
           <button
@@ -342,6 +349,8 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
               padding: '3px 8px',
               borderRadius: '6px',
               cursor: 'pointer',
+              flexShrink: 0,
+              whiteSpace: 'nowrap',
             }}
             onClick={onOpenScoreboard}
             title="Open Match Scoreboard (VP, CP, Casualties)"
@@ -367,12 +376,14 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
               padding: '3px 8px',
               borderRadius: '6px',
               cursor: 'pointer',
+              flexShrink: 0,
+              whiteSpace: 'nowrap',
             }}
             onClick={onOpenObjectives}
             title="Open Objective Markers & Control Zones"
           >
             <Target size={13} />
-            <span>Objectives</span>
+            <span className="brawl-topbar-btn-label">Objectives</span>
           </button>
         )}
 
@@ -392,12 +403,14 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
               padding: '3px 8px',
               borderRadius: '6px',
               cursor: 'pointer',
+              flexShrink: 0,
+              whiteSpace: 'nowrap',
             }}
             onClick={onOpenStaging}
             title="Open Deployment Zones & Staging Submaps"
           >
             <Compass size={13} />
-            <span>Deployment</span>
+            <span className="brawl-topbar-btn-label">Deployment</span>
           </button>
         )}
 
@@ -417,12 +430,14 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
               padding: '3px 8px',
               borderRadius: '6px',
               cursor: 'pointer',
+              flexShrink: 0,
+              whiteSpace: 'nowrap',
             }}
             onClick={onOpenToModal}
             title="Tournament Organizer & Spectator Settings"
           >
             {currentRole === 'spectator' ? <Eye size={13} /> : <Gavel size={13} />}
-            <span>{currentRole === 'to' ? 'TO Mode' : currentRole === 'spectator' ? 'Spectator' : 'TO / Admin'}</span>
+            <span className="brawl-topbar-btn-label">{currentRole === 'to' ? 'TO Mode' : currentRole === 'spectator' ? 'Spectator' : 'TO / Admin'}</span>
           </button>
         )}
 
@@ -437,6 +452,8 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
             display: 'flex',
             alignItems: 'center',
             gap: '5px',
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
           }}
           onClick={onOpenArmyRoster}
           title="Open Army Roster"
@@ -450,9 +467,9 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
           onClick={copyInviteLink}
           title={copied ? 'Link Copied!' : 'Copy Room Invite Link'}
           aria-label="Copy Room Invite Link"
-          style={{ color: copied ? '#10b981' : undefined }}
+          style={{ color: copied ? '#10b981' : undefined, width: '32px', height: '32px', minWidth: '32px', flexShrink: 0 }}
         >
-          {copied ? <Check size={18} /> : <Share2 size={18} />}
+          {copied ? <Check size={16} /> : <Share2 size={16} />}
         </button>
 
         {/* Feedback Link */}
@@ -463,13 +480,13 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
           className="btn-icon"
           title="Send Feedback"
           aria-label="Send Feedback"
-          style={{ textDecoration: 'none' }}
+          style={{ textDecoration: 'none', width: '32px', height: '32px', minWidth: '32px', flexShrink: 0 }}
         >
-          <MessageSquareHeart size={18} />
+          <MessageSquareHeart size={16} />
         </a>
 
         {/* Connected Players */}
-        <div className="player-avatars" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+        <div className="topbar-players-list player-avatars" style={{ display: 'flex', gap: '4px', alignItems: 'center', flexShrink: 0 }}>
           {players.map((p) => {
             const isSelf = p.id === localPlayer?.id;
             return (

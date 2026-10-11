@@ -101,5 +101,38 @@ describe('BrawlTopBar Active Scene Settings (OB-209)', () => {
 
     assert.ok(markup.includes('background-color:var(--accent-primary)'), 'Hamburger menu has accent-primary background');
   });
+
+  it('renders single-row nowrap layout to prevent left toolbar overlap', () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(BrawlTopBar, {
+        roomName: 'Test Room',
+        activeMapName: 'Wargame Ruins',
+        isOrganizer: true,
+        players: [],
+        localPlayer: null,
+        activePlayerIndex: 1,
+        currentRound: 1,
+        currentPhase: 'Command',
+        p1ClockSeconds: 300,
+        p2ClockSeconds: 300,
+        isClockRunning: false,
+        onToggleClock: () => {},
+        onNextPhase: () => {},
+        onSwitchActivePlayer: () => {},
+        onOpenArmyRoster: () => {},
+        onOpenDice: () => {},
+        onOpenMaps: () => {},
+        onOpenSceneSettings: () => {},
+        onOpenSoundboard: () => {},
+        onOpenBackup: () => {},
+        onAddNewModel: () => {},
+        onToggleMobileDrawer: () => {},
+      })
+    );
+
+    assert.ok(markup.includes('flex-wrap:nowrap'), 'TopBar elements use flex-wrap:nowrap');
+    assert.ok(markup.includes('topbar-players-list'), 'Player avatars use responsive topbar-players-list class');
+    assert.ok(!markup.includes('flex-wrap:wrap'), 'Does not use flex-wrap:wrap');
+  });
 });
 
