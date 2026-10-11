@@ -20,7 +20,12 @@ import {
 
 interface ScoreboardModalProps {
   scoreboard: ScoreboardState;
-  onUpdateResource: (player: 1 | 2, resource: ResourceType, delta: number, reason?: string) => void;
+  onUpdateResource: (
+    player: 1 | 2,
+    resource: ResourceType,
+    delta: number,
+    reason?: string,
+  ) => void;
   onResetScoreboard: () => void;
   auditTrail: ScoreAuditEntry[];
   onClose: () => void;
@@ -33,10 +38,16 @@ export const ScoreboardModal: React.FC<ScoreboardModalProps> = ({
   auditTrail,
   onClose,
 }) => {
-  const [activeTab, setActiveTab] = useState<'scoreboard' | 'audit'>('scoreboard');
+  const [activeTab, setActiveTab] = useState<'scoreboard' | 'audit'>(
+    'scoreboard',
+  );
   const [reasonInput, setReasonInput] = useState('');
 
-  const handleAdjust = (player: 1 | 2, resource: ResourceType, delta: number) => {
+  const handleAdjust = (
+    player: 1 | 2,
+    resource: ResourceType,
+    delta: number,
+  ) => {
     onUpdateResource(player, resource, delta, reasonInput.trim() || undefined);
     setReasonInput('');
   };
@@ -45,8 +56,12 @@ export const ScoreboardModal: React.FC<ScoreboardModalProps> = ({
     const data = isP1 ? scoreboard.p1 : scoreboard.p2;
     const name = isP1 ? scoreboard.p1Name : scoreboard.p2Name;
     const accentColor = isP1 ? '#38bdf8' : '#ec4899';
-    const bgTint = isP1 ? 'rgba(56, 189, 248, 0.06)' : 'rgba(236, 72, 153, 0.06)';
-    const borderTint = isP1 ? 'rgba(56, 189, 248, 0.25)' : 'rgba(236, 72, 153, 0.25)';
+    const bgTint = isP1
+      ? 'rgba(56, 189, 248, 0.06)'
+      : 'rgba(236, 72, 153, 0.06)';
+    const borderTint = isP1
+      ? 'rgba(56, 189, 248, 0.25)'
+      : 'rgba(236, 72, 153, 0.25)';
 
     return (
       <div
@@ -62,7 +77,13 @@ export const ScoreboardModal: React.FC<ScoreboardModalProps> = ({
         }}
       >
         {/* Player Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div
               style={{
@@ -73,11 +94,19 @@ export const ScoreboardModal: React.FC<ScoreboardModalProps> = ({
                 boxShadow: `0 0 8px ${accentColor}`,
               }}
             />
-            <span style={{ fontWeight: 800, fontSize: '1rem', color: '#f8fafc' }}>
+            <span
+              style={{ fontWeight: 800, fontSize: '1rem', color: '#f8fafc' }}
+            >
               {name}
             </span>
           </div>
-          <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+          <span
+            style={{
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              color: 'var(--text-secondary)',
+            }}
+          >
             Player {playerNum}
           </span>
         </div>
@@ -96,13 +125,33 @@ export const ScoreboardModal: React.FC<ScoreboardModalProps> = ({
             boxShadow: `0 4px 16px ${accentColor}1a`,
           }}
         >
-          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: accentColor, letterSpacing: '1px' }}>
+          <span
+            style={{
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              color: accentColor,
+              letterSpacing: '1px',
+            }}
+          >
             TOTAL VICTORY POINTS
           </span>
-          <span style={{ fontSize: '2.5rem', fontWeight: 900, color: '#f8fafc', lineHeight: 1.1 }}>
+          <span
+            style={{
+              fontSize: '2.5rem',
+              fontWeight: 900,
+              color: '#f8fafc',
+              lineHeight: 1.1,
+            }}
+          >
             {data.totalVp}
           </span>
-          <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+          <span
+            style={{
+              fontSize: '0.65rem',
+              color: 'var(--text-secondary)',
+              marginTop: '2px',
+            }}
+          >
             (Primary {data.primaryVp} + Secondary {data.secondaryVp})
           </span>
         </div>
@@ -122,21 +171,53 @@ export const ScoreboardModal: React.FC<ScoreboardModalProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Target size={15} color="#f59e0b" />
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#f8fafc' }}>Primary VP</span>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Objectives</span>
+              <span
+                style={{
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: '#f8fafc',
+                }}
+              >
+                Primary VP
+              </span>
+              <span
+                style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}
+              >
+                Objectives
+              </span>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f59e0b', minWidth: '24px', textAlign: 'center' }}>
+            <span
+              style={{
+                fontSize: '1.1rem',
+                fontWeight: 800,
+                color: '#f59e0b',
+                minWidth: '24px',
+                textAlign: 'center',
+              }}
+            >
               {data.primaryVp}
             </span>
-            <button className="btn-icon" style={{ width: '22px', height: '22px' }} onClick={() => handleAdjust(playerNum, 'primaryVp', -1)}>
+            <button
+              className="btn-icon"
+              style={{ width: '22px', height: '22px' }}
+              onClick={() => handleAdjust(playerNum, 'primaryVp', -1)}
+            >
               <Minus size={11} />
             </button>
-            <button className="btn-icon" style={{ width: '22px', height: '22px' }} onClick={() => handleAdjust(playerNum, 'primaryVp', 1)}>
+            <button
+              className="btn-icon"
+              style={{ width: '22px', height: '22px' }}
+              onClick={() => handleAdjust(playerNum, 'primaryVp', 1)}
+            >
               <Plus size={11} />
             </button>
-            <button className="btn-glass" style={{ fontSize: '0.65rem', padding: '2px 5px' }} onClick={() => handleAdjust(playerNum, 'primaryVp', 4)}>
+            <button
+              className="btn btn-glass"
+              style={{ fontSize: '0.65rem', padding: '2px 5px' }}
+              onClick={() => handleAdjust(playerNum, 'primaryVp', 4)}
+            >
               +4
             </button>
           </div>
@@ -157,24 +238,60 @@ export const ScoreboardModal: React.FC<ScoreboardModalProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Star size={15} color="#a855f7" />
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#f8fafc' }}>Secondary VP</span>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Mission Cards</span>
+              <span
+                style={{
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: '#f8fafc',
+                }}
+              >
+                Secondary VP
+              </span>
+              <span
+                style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}
+              >
+                Mission Cards
+              </span>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#a855f7', minWidth: '24px', textAlign: 'center' }}>
+            <span
+              style={{
+                fontSize: '1.1rem',
+                fontWeight: 800,
+                color: '#a855f7',
+                minWidth: '24px',
+                textAlign: 'center',
+              }}
+            >
               {data.secondaryVp}
             </span>
-            <button className="btn-icon" style={{ width: '22px', height: '22px' }} onClick={() => handleAdjust(playerNum, 'secondaryVp', -1)}>
+            <button
+              className="btn-icon"
+              style={{ width: '22px', height: '22px' }}
+              onClick={() => handleAdjust(playerNum, 'secondaryVp', -1)}
+            >
               <Minus size={11} />
             </button>
-            <button className="btn-icon" style={{ width: '22px', height: '22px' }} onClick={() => handleAdjust(playerNum, 'secondaryVp', 1)}>
+            <button
+              className="btn-icon"
+              style={{ width: '22px', height: '22px' }}
+              onClick={() => handleAdjust(playerNum, 'secondaryVp', 1)}
+            >
               <Plus size={11} />
             </button>
-            <button className="btn-glass" style={{ fontSize: '0.65rem', padding: '2px 5px' }} onClick={() => handleAdjust(playerNum, 'secondaryVp', 2)}>
+            <button
+              className="btn btn-glass"
+              style={{ fontSize: '0.65rem', padding: '2px 5px' }}
+              onClick={() => handleAdjust(playerNum, 'secondaryVp', 2)}
+            >
               +2
             </button>
-            <button className="btn-glass" style={{ fontSize: '0.65rem', padding: '2px 5px' }} onClick={() => handleAdjust(playerNum, 'secondaryVp', 5)}>
+            <button
+              className="btn btn-glass"
+              style={{ fontSize: '0.65rem', padding: '2px 5px' }}
+              onClick={() => handleAdjust(playerNum, 'secondaryVp', 5)}
+            >
               +5
             </button>
           </div>
@@ -195,25 +312,53 @@ export const ScoreboardModal: React.FC<ScoreboardModalProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Zap size={15} color="#38bdf8" />
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#f8fafc' }}>Command Points (CP)</span>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Stratagems</span>
+              <span
+                style={{
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: '#f8fafc',
+                }}
+              >
+                Command Points (CP)
+              </span>
+              <span
+                style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}
+              >
+                Stratagems
+              </span>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#38bdf8', minWidth: '24px', textAlign: 'center' }}>
+            <span
+              style={{
+                fontSize: '1.1rem',
+                fontWeight: 800,
+                color: '#38bdf8',
+                minWidth: '24px',
+                textAlign: 'center',
+              }}
+            >
               {data.commandPoints}
             </span>
             <button
-              className="btn-glass"
-              style={{ fontSize: '0.68rem', padding: '2px 6px', color: '#ef4444' }}
+              className="btn btn-glass"
+              style={{
+                fontSize: '0.68rem',
+                padding: '2px 6px',
+                color: '#ef4444',
+              }}
               onClick={() => handleAdjust(playerNum, 'commandPoints', -1)}
               title="Spend 1 CP"
             >
               -1 CP
             </button>
             <button
-              className="btn-glass"
-              style={{ fontSize: '0.68rem', padding: '2px 6px', color: '#10b981' }}
+              className="btn btn-glass"
+              style={{
+                fontSize: '0.68rem',
+                padding: '2px 6px',
+                color: '#10b981',
+              }}
               onClick={() => handleAdjust(playerNum, 'commandPoints', 1)}
               title="Grant 1 CP"
             >
@@ -237,23 +382,53 @@ export const ScoreboardModal: React.FC<ScoreboardModalProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Skull size={15} color="#ef4444" />
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#f8fafc' }}>Casualties Lost</span>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
+              <span
+                style={{
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: '#f8fafc',
+                }}
+              >
+                Casualties Lost
+              </span>
+              <span
+                style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}
+              >
                 {data.casualtiesPoints} pts lost
               </span>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ef4444', minWidth: '24px', textAlign: 'center' }}>
+            <span
+              style={{
+                fontSize: '1.1rem',
+                fontWeight: 800,
+                color: '#ef4444',
+                minWidth: '24px',
+                textAlign: 'center',
+              }}
+            >
               {data.casualtiesCount}
             </span>
-            <button className="btn-icon" style={{ width: '22px', height: '22px' }} onClick={() => handleAdjust(playerNum, 'casualtiesCount', -1)}>
+            <button
+              className="btn-icon"
+              style={{ width: '22px', height: '22px' }}
+              onClick={() => handleAdjust(playerNum, 'casualtiesCount', -1)}
+            >
               <Minus size={11} />
             </button>
-            <button className="btn-icon" style={{ width: '22px', height: '22px' }} onClick={() => handleAdjust(playerNum, 'casualtiesCount', 1)}>
+            <button
+              className="btn-icon"
+              style={{ width: '22px', height: '22px' }}
+              onClick={() => handleAdjust(playerNum, 'casualtiesCount', 1)}
+            >
               <Plus size={11} />
             </button>
-            <button className="btn-glass" style={{ fontSize: '0.65rem', padding: '2px 5px' }} onClick={() => handleAdjust(playerNum, 'casualtiesCount', 5)}>
+            <button
+              className="btn btn-glass"
+              style={{ fontSize: '0.65rem', padding: '2px 5px' }}
+              onClick={() => handleAdjust(playerNum, 'casualtiesCount', 5)}
+            >
               +5
             </button>
           </div>
@@ -307,38 +482,66 @@ export const ScoreboardModal: React.FC<ScoreboardModalProps> = ({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Trophy size={20} color="#f59e0b" />
-            <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#f8fafc', letterSpacing: '0.5px' }}>
+            <span
+              style={{
+                fontWeight: 800,
+                fontSize: '1.05rem',
+                color: '#f8fafc',
+                letterSpacing: '0.5px',
+              }}
+            >
               MATCH SCOREBOARD & RESOURCE TRACKER
             </span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ display: 'flex', background: 'rgba(0, 0, 0, 0.3)', borderRadius: '6px', padding: '2px' }}>
+            <div
+              style={{
+                display: 'flex',
+                background: 'rgba(0, 0, 0, 0.3)',
+                borderRadius: '6px',
+                padding: '2px',
+              }}
+            >
               <button
-                className={`btn-glass ${activeTab === 'scoreboard' ? 'active' : ''}`}
+                className={`btn btn-glass ${activeTab === 'scoreboard' ? 'active' : ''}`}
                 onClick={() => setActiveTab('scoreboard')}
                 style={{
                   fontSize: '0.72rem',
                   padding: '3px 10px',
-                  background: activeTab === 'scoreboard' ? 'rgba(255, 255, 255, 0.15)' : 'none',
+                  color: '#ffffff',
+                  fontWeight: activeTab === 'scoreboard' ? 700 : 500,
+                  background:
+                    activeTab === 'scoreboard'
+                      ? 'rgba(255, 255, 255, 0.15)'
+                      : 'none',
                 }}
               >
                 Scoreboard
               </button>
               <button
-                className={`btn-glass ${activeTab === 'audit' ? 'active' : ''}`}
+                className={`btn btn-glass ${activeTab === 'audit' ? 'active' : ''}`}
                 onClick={() => setActiveTab('audit')}
                 style={{
                   fontSize: '0.72rem',
                   padding: '3px 10px',
-                  background: activeTab === 'audit' ? 'rgba(255, 255, 255, 0.15)' : 'none',
+                  color: '#ffffff',
+                  fontWeight: activeTab === 'audit' ? 700 : 500,
+                  background:
+                    activeTab === 'audit'
+                      ? 'rgba(255, 255, 255, 0.15)'
+                      : 'none',
                 }}
               >
                 Audit Log ({auditTrail.length})
               </button>
             </div>
 
-            <button className="btn-icon" onClick={onClose} title="Close Scoreboard">
+            <button
+              className="btn-icon"
+              onClick={onClose}
+              title="Close Scoreboard"
+            >
               <X size={18} />
             </button>
           </div>
@@ -347,7 +550,9 @@ export const ScoreboardModal: React.FC<ScoreboardModalProps> = ({
         {/* Modal Body */}
         <div style={{ padding: '16px 18px', overflowY: 'auto', flex: 1 }}>
           {activeTab === 'scoreboard' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
+            >
               {/* Optional Reason Input Bar */}
               <div
                 style={{
@@ -360,7 +565,13 @@ export const ScoreboardModal: React.FC<ScoreboardModalProps> = ({
                   border: '1px solid rgba(255, 255, 255, 0.06)',
                 }}
               >
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                <span
+                  style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    color: 'var(--text-secondary)',
+                  }}
+                >
                   Audit Reason (optional):
                 </span>
                 <input
@@ -388,9 +599,18 @@ export const ScoreboardModal: React.FC<ScoreboardModalProps> = ({
             </div>
           ) : (
             /* Audit Log View */
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+            >
               {auditTrail.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                <div
+                  style={{
+                    textAlign: 'center',
+                    padding: '30px',
+                    color: 'var(--text-secondary)',
+                    fontSize: '0.85rem',
+                  }}
+                >
                   No score adjustments logged yet in this match.
                 </div>
               ) : (
@@ -408,9 +628,20 @@ export const ScoreboardModal: React.FC<ScoreboardModalProps> = ({
                       fontSize: '0.78rem',
                     }}
                   >
-                    <span style={{ color: '#f8fafc' }}>{entry.formattedMessage}</span>
-                    <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>
-                      {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    <span style={{ color: '#f8fafc' }}>
+                      {entry.formattedMessage}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '0.68rem',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      {new Date(entry.timestamp).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                      })}
                     </span>
                   </div>
                 ))
@@ -431,15 +662,25 @@ export const ScoreboardModal: React.FC<ScoreboardModalProps> = ({
           }}
         >
           <button
-            className="btn-glass"
+            className="btn btn-glass"
             onClick={onResetScoreboard}
-            style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: '#ef4444' }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              fontSize: '0.75rem',
+              color: '#ef4444',
+            }}
             title="Reset All Scores to 0"
           >
             <RotateCcw size={13} /> Reset Scores
           </button>
 
-          <button className="btn-primary" onClick={onClose} style={{ fontSize: '0.78rem', padding: '5px 14px' }}>
+          <button
+            className="btn btn-primary"
+            onClick={onClose}
+            style={{ fontSize: '0.78rem', padding: '5px 14px' }}
+          >
             Done
           </button>
         </div>
