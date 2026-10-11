@@ -6,7 +6,12 @@ import {
   parseFeatureFlagValue,
   normalizeFeatureKey,
   FeatureFlagKey,
+  CompoundFeatureFlag,
+  isCompoundFeatureFlag,
+  isCompoundFeatureActive,
 } from '@oldbear/shared';
+
+export type { CompoundFeatureFlag } from '@oldbear/shared';
 
 // Active in-memory feature flags store
 let currentFlags: Record<string, boolean> = { ...DEFAULT_FEATURE_FLAGS };
@@ -45,13 +50,16 @@ function getUrlOverrides(): Record<string, boolean> {
     for (const [key, value] of params.entries()) {
       if (key.startsWith('feature:')) {
         const flag = normalizeFeatureKey(key.slice('feature:'.length));
+        if (isCompoundFeatureFlag(flag)) continue;
         const parsed = parseFeatureFlagValue(value);
         if (parsed !== undefined) overrides[flag] = parsed;
       } else if (key === 'enable_feature') {
         const flag = normalizeFeatureKey(value);
+        if (isCompoundFeatureFlag(flag)) continue;
         overrides[flag] = true;
       } else if (key === 'disable_feature') {
         const flag = normalizeFeatureKey(value);
+        if (isCompoundFeatureFlag(flag)) continue;
         overrides[flag] = false;
       }
     }
@@ -76,6 +84,7 @@ function getStorageOverrides(): Record<string, boolean> {
       const key = window.sessionStorage.key(i);
       if (key && key.startsWith('oldbear_feature_override_')) {
         const flag = normalizeFeatureKey(key.slice('oldbear_feature_override_'.length));
+        if (isCompoundFeatureFlag(flag)) continue;
         const val = window.sessionStorage.getItem(key);
         const parsed = parseFeatureFlagValue(val);
         if (parsed !== undefined) overrides[flag] = parsed;
@@ -147,10 +156,28 @@ export async function fetchServerFeatureFlags(): Promise<Record<string, boolean>
 }
 
 /**
- * Check synchronously if a feature flag is currently active.
+ * Check synchronously if a compound (derived) feature flag is currently active.
+ * Strictly typed to Known CompoundFeatureFlag keys.
  */
-export function isFeatureEnabled(flag: FeatureFlagKey, fallback = false): boolean {
+export function isCompoundFlagEnabled(
+  flag: CompoundFeatureFlag,
+  fallback = false,
+): boolean {
+  return isCompoundFeatureActive(currentFlags, flag, fallback);
+}
+
+/**
+ * Check synchronously if a feature flag is currently active.
+ * Transparently supports primitive FeatureFlagKey and CompoundFeatureFlag.
+ */
+export function isFeatureEnabled(
+  flag: FeatureFlagKey | CompoundFeatureFlag,
+  fallback = false,
+): boolean {
   const normalized = normalizeFeatureKey(flag);
+  if (isCompoundFeatureFlag(normalized)) {
+    return isCompoundFlagEnabled(normalized, fallback);
+  }
   if (normalized in currentFlags) {
     return currentFlags[normalized];
   }
@@ -159,10 +186,19 @@ export function isFeatureEnabled(flag: FeatureFlagKey, fallback = false): boolea
 
 /**
  * Set an override for a feature flag (useful for testing or debugging in the browser).
- * Pass value = null to clear override.
+ * Pass value = null to clear override. Compound flags cannot be overridden directly.
  */
-export function setFeatureFlagOverride(flag: FeatureFlagKey, value: boolean | null): void {
+export function setFeatureFlagOverride(
+  flag: FeatureFlagKey,
+  value: boolean | null,
+): void {
   const normalized = normalizeFeatureKey(flag);
+  if (isCompoundFeatureFlag(normalized)) {
+    console.warn(
+      `[FeatureFlags] Cannot override compound flag "${flag}" directly. Toggle its underlying dependent flags instead.`,
+    );
+    return;
+  }
   if (typeof window !== 'undefined' && window.sessionStorage) {
     const key = `oldbear_feature_override_${normalized}`;
     if (value === null) {
@@ -194,6 +230,34 @@ export function useFeatureFlag(flag: FeatureFlagKey, fallback = false): boolean 
       listeners.delete(handleChange);
     };
   }, [normalized, fallback]);
+
+  return enabled;
+}
+
+/**
+ * React hook to observe a compound feature flag and reactively update if any
+ * of its underlying dependent feature flags change.
+ */
+export function useCompoundFeatureFlag(
+  flag: CompoundFeatureFlag,
+  fallback = false,
+): boolean {
+  const [enabled, setEnabled] = useState<boolean>(() =>
+    isCompoundFlagEnabled(flag, fallback),
+  );
+
+  useEffect(() => {
+    const handleChange = () => {
+      setEnabled(isCompoundFlagEnabled(flag, fallback));
+    };
+
+    listeners.add(handleChange);
+    handleChange();
+
+    return () => {
+      listeners.delete(handleChange);
+    };
+  }, [flag, fallback]);
 
   return enabled;
 }

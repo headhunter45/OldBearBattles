@@ -1,4 +1,9 @@
-import { EntityStatBlock, EntityAction, parseActionCost } from '@oldbear/shared';
+import {
+  EntityStatBlock,
+  EntityAction,
+  parseActionCost,
+} from '@oldbear/shared';
+import { isFeatureEnabled } from '../config/featureFlags';
 
 // In-memory cache for fast retrieval and offline resilience
 const memoryCache = new Map<string, EntityStatBlock>();
@@ -71,8 +76,12 @@ function extractName(val: any): string {
  */
 export async function fetchOpen5eSpell(
   query: string,
-  options: Open5eFetchOptions = {}
+  options: Open5eFetchOptions = {},
 ): Promise<EntityStatBlock | null> {
+  if (!isFeatureEnabled('search_open5e')) {
+    return Promise.resolve(null);
+  }
+
   const clean = query.trim();
   if (!clean) return null;
   const slug = slugify(clean);
@@ -105,8 +114,10 @@ export async function fetchOpen5eSpell(
     // 2. Search v2 spells
     if (!data) {
       let searchUrl = `${OPEN5E_API_BASE}/spells/?search=${encodeURIComponent(clean)}&limit=10`;
-      if (options.document) searchUrl += `&document=${encodeURIComponent(options.document)}`;
-      if (options.gamesystem) searchUrl += `&gamesystem=${encodeURIComponent(options.gamesystem)}`;
+      if (options.document)
+        searchUrl += `&document=${encodeURIComponent(options.document)}`;
+      if (options.gamesystem)
+        searchUrl += `&gamesystem=${encodeURIComponent(options.gamesystem)}`;
 
       const searchRes = await fetch(searchUrl);
       if (searchRes.ok) {
@@ -128,7 +139,9 @@ export async function fetchOpen5eSpell(
     // 3. Fallback to v1 search if still not found
     if (!data) {
       try {
-        const v1Res = await fetch(`${OPEN5E_API_V1_BASE}/spells/?search=${encodeURIComponent(clean)}&limit=5`);
+        const v1Res = await fetch(
+          `${OPEN5E_API_V1_BASE}/spells/?search=${encodeURIComponent(clean)}&limit=5`,
+        );
         if (v1Res.ok) {
           const v1Data = await v1Res.json();
           if (v1Data.results && v1Data.results.length > 0) {
@@ -145,17 +158,25 @@ export async function fetchOpen5eSpell(
       typeof data.level === 'number'
         ? data.level
         : typeof data.level_int === 'number'
-        ? data.level_int
-        : data.level === 'Cantrip'
-        ? 0
-        : parseInt(data.level, 10) || 0;
+          ? data.level_int
+          : data.level === 'Cantrip'
+            ? 0
+            : parseInt(data.level, 10) || 0;
 
     const traits: string[] = [];
     if (schoolName) traits.push(schoolName);
-    if (data.requires_concentration || data.concentration === 'yes' || data.concentration === true) {
+    if (
+      data.requires_concentration ||
+      data.concentration === 'yes' ||
+      data.concentration === true
+    ) {
       traits.push('Concentration');
     }
-    if (data.can_be_cast_as_ritual || data.ritual === 'yes' || data.ritual === true) {
+    if (
+      data.can_be_cast_as_ritual ||
+      data.ritual === 'yes' ||
+      data.ritual === true
+    ) {
       traits.push('Ritual');
     }
 
@@ -185,7 +206,10 @@ export async function fetchOpen5eSpell(
       level: levelInt,
       school: schoolName,
       castingTime: data.casting_time,
-      subtitle: levelInt === 0 ? `Cantrip (${schoolName || 'Magic'})` : `Level ${levelInt} (${schoolName || 'Magic'})`,
+      subtitle:
+        levelInt === 0
+          ? `Cantrip (${schoolName || 'Magic'})`
+          : `Level ${levelInt} (${schoolName || 'Magic'})`,
       sourceUrl: `https://open5e.com/spells/${itemKey}`,
       sourceSystem: '5e',
     };
@@ -203,8 +227,12 @@ export async function fetchOpen5eSpell(
  */
 export async function fetchOpen5eMonster(
   query: string,
-  options: Open5eFetchOptions = {}
+  options: Open5eFetchOptions = {},
 ): Promise<EntityStatBlock | null> {
+  if (!isFeatureEnabled('search_open5e')) {
+    return Promise.resolve(null);
+  }
+
   const clean = query.trim();
   if (!clean) return null;
   const slug = slugify(clean);
@@ -227,8 +255,10 @@ export async function fetchOpen5eMonster(
     // 2. Search v2 creatures
     if (!data) {
       let searchUrl = `${OPEN5E_API_BASE}/creatures/?search=${encodeURIComponent(clean)}&limit=10`;
-      if (options.document) searchUrl += `&document=${encodeURIComponent(options.document)}`;
-      if (options.gamesystem) searchUrl += `&gamesystem=${encodeURIComponent(options.gamesystem)}`;
+      if (options.document)
+        searchUrl += `&document=${encodeURIComponent(options.document)}`;
+      if (options.gamesystem)
+        searchUrl += `&gamesystem=${encodeURIComponent(options.gamesystem)}`;
 
       const searchRes = await fetch(searchUrl);
       if (searchRes.ok) {
@@ -254,7 +284,9 @@ export async function fetchOpen5eMonster(
         if (v1Direct.ok) {
           data = await v1Direct.json();
         } else {
-          const v1Search = await fetch(`${OPEN5E_API_V1_BASE}/monsters/?search=${encodeURIComponent(clean)}&limit=5`);
+          const v1Search = await fetch(
+            `${OPEN5E_API_V1_BASE}/monsters/?search=${encodeURIComponent(clean)}&limit=5`,
+          );
           if (v1Search.ok) {
             const v1Data = await v1Search.json();
             if (v1Data.results && v1Data.results.length > 0) {
@@ -350,8 +382,8 @@ export async function fetchOpen5eMonster(
     const hpStr = data.hit_dice
       ? `${data.hit_points} (${data.hit_dice})`
       : data.hit_points !== undefined
-      ? String(data.hit_points)
-      : '10';
+        ? String(data.hit_points)
+        : '10';
 
     const crVal = data.challenge_rating;
     const challenge =
@@ -399,8 +431,12 @@ export async function fetchOpen5eMonster(
  */
 export async function fetchOpen5eItem(
   query: string,
-  options: Open5eFetchOptions = {}
+  options: Open5eFetchOptions = {},
 ): Promise<EntityStatBlock | null> {
+  if (!isFeatureEnabled('search_open5e')) {
+    return Promise.resolve(null);
+  }
+
   const clean = query.trim();
   if (!clean) return null;
   const slug = slugify(clean);
@@ -417,7 +453,8 @@ export async function fetchOpen5eItem(
     if (isAttackCategory) {
       try {
         let weaponUrl = `${OPEN5E_API_BASE}/weapons/?search=${encodeURIComponent(clean)}&limit=5`;
-        if (options.document) weaponUrl += `&document=${encodeURIComponent(options.document)}`;
+        if (options.document)
+          weaponUrl += `&document=${encodeURIComponent(options.document)}`;
         const weaponRes = await fetch(weaponUrl);
         if (weaponRes.ok) {
           const weaponData = await weaponRes.json();
@@ -425,7 +462,10 @@ export async function fetchOpen5eItem(
             const w =
               weaponData.results.find((i: any) => {
                 const k = (i.slug || i.key || '').toLowerCase();
-                return k === slug || (i.name || '').toLowerCase() === clean.toLowerCase();
+                return (
+                  k === slug ||
+                  (i.name || '').toLowerCase() === clean.toLowerCase()
+                );
               }) || weaponData.results[0];
             data = {
               slug: w.slug || w.key,
@@ -456,7 +496,8 @@ export async function fetchOpen5eItem(
     // 3. Search magic items
     if (!data) {
       let searchUrl = `${OPEN5E_API_BASE}/magicitems/?search=${encodeURIComponent(clean)}&limit=5`;
-      if (options.document) searchUrl += `&document=${encodeURIComponent(options.document)}`;
+      if (options.document)
+        searchUrl += `&document=${encodeURIComponent(options.document)}`;
       const searchRes = await fetch(searchUrl);
       if (searchRes.ok) {
         const searchData = await searchRes.json();
@@ -477,7 +518,9 @@ export async function fetchOpen5eItem(
     // 4. Search items / weapons / armor
     if (!data) {
       try {
-        const itemRes = await fetch(`${OPEN5E_API_BASE}/items/?search=${encodeURIComponent(clean)}&limit=5`);
+        const itemRes = await fetch(
+          `${OPEN5E_API_BASE}/items/?search=${encodeURIComponent(clean)}&limit=5`,
+        );
         if (itemRes.ok) {
           const itemData = await itemRes.json();
           if (itemData.results && itemData.results.length > 0) {
@@ -491,7 +534,8 @@ export async function fetchOpen5eItem(
     if (!data) {
       try {
         let weaponUrl = `${OPEN5E_API_BASE}/weapons/?search=${encodeURIComponent(clean)}&limit=5`;
-        if (options.document) weaponUrl += `&document=${encodeURIComponent(options.document)}`;
+        if (options.document)
+          weaponUrl += `&document=${encodeURIComponent(options.document)}`;
         const weaponRes = await fetch(weaponUrl);
         if (weaponRes.ok) {
           const weaponData = await weaponRes.json();
@@ -499,7 +543,10 @@ export async function fetchOpen5eItem(
             const w =
               weaponData.results.find((i: any) => {
                 const k = (i.slug || i.key || '').toLowerCase();
-                return k === slug || (i.name || '').toLowerCase() === clean.toLowerCase();
+                return (
+                  k === slug ||
+                  (i.name || '').toLowerCase() === clean.toLowerCase()
+                );
               }) || weaponData.results[0];
             data = {
               slug: w.slug || w.key,
@@ -520,7 +567,9 @@ export async function fetchOpen5eItem(
     // 6. Try armor
     if (!data) {
       try {
-        const armorRes = await fetch(`${OPEN5E_API_BASE}/armor/?search=${encodeURIComponent(clean)}&limit=5`);
+        const armorRes = await fetch(
+          `${OPEN5E_API_BASE}/armor/?search=${encodeURIComponent(clean)}&limit=5`,
+        );
         if (armorRes.ok) {
           const armorData = await armorRes.json();
           if (armorData.results && armorData.results.length > 0) {
@@ -559,14 +608,19 @@ export async function fetchOpen5eItem(
       traits.push(...data.properties);
     }
 
-    const isWeapon = typeStr.toLowerCase().includes('weapon') || Boolean(data.damage_dice) || isAttackCategory;
+    const isWeapon =
+      typeStr.toLowerCase().includes('weapon') ||
+      Boolean(data.damage_dice) ||
+      isAttackCategory;
     let damageFormula = data.damage_dice || undefined;
     let damageType = data.damage_type || undefined;
     let range: string | undefined;
 
     if (!damageFormula && data.desc) {
       const dmgMatch =
-        data.desc.match(/(\d+d\d+(?:\s*[+-]\s*\d+)?)\s*(?:[a-zA-Z]+)?\s*damage/i) ||
+        data.desc.match(
+          /(\d+d\d+(?:\s*[+-]\s*\d+)?)\s*(?:[a-zA-Z]+)?\s*damage/i,
+        ) ||
         data.desc.match(/(?:damage:\s*)(\d+d\d+(?:\s*[+-]\s*\d+)?)/i) ||
         data.desc.match(/(\d+d\d+(?:\s*[+-]\s*\d+)?)/i);
       if (dmgMatch) {
@@ -574,7 +628,9 @@ export async function fetchOpen5eItem(
       }
     }
     if (!damageType && data.desc) {
-      const typeMatch = data.desc.match(/\b(slashing|piercing|bludgeoning|fire|cold|lightning|radiant|necrotic|poison|acid|force|psychic)\b/i);
+      const typeMatch = data.desc.match(
+        /\b(slashing|piercing|bludgeoning|fire|cold|lightning|radiant|necrotic|poison|acid|force|psychic)\b/i,
+      );
       if (typeMatch) {
         damageType = typeMatch[1].toLowerCase();
       }
@@ -585,7 +641,11 @@ export async function fetchOpen5eItem(
         data.desc.match(/range\s*(\d+)\s*(?:ft|feet)?/i);
       if (rangeMatch) {
         range = `${rangeMatch[1]} ft`;
-      } else if (isWeapon && (data.category?.toLowerCase().includes('ranged') || data.desc.toLowerCase().includes('ranged'))) {
+      } else if (
+        isWeapon &&
+        (data.category?.toLowerCase().includes('ranged') ||
+          data.desc.toLowerCase().includes('ranged'))
+      ) {
         range = '80/320 ft';
       } else if (isWeapon) {
         range = '5 ft';
@@ -605,7 +665,9 @@ export async function fetchOpen5eItem(
       damageFormula,
       damageType,
       range,
-      sourceUrl: isWeapon ? `https://open5e.com/weapons/${itemKey}` : `https://open5e.com/magicitems/${itemKey}`,
+      sourceUrl: isWeapon
+        ? `https://open5e.com/weapons/${itemKey}`
+        : `https://open5e.com/magicitems/${itemKey}`,
       sourceSystem: '5e',
     };
 
@@ -623,8 +685,12 @@ export async function fetchOpen5eItem(
 export async function fetchOpen5eReference(
   category: 'spell' | 'item' | 'monster' | 'attack' | 'ability',
   query: string,
-  options?: Open5eFetchOptions
+  options?: Open5eFetchOptions,
 ): Promise<EntityStatBlock | null> {
+  if (!isFeatureEnabled('search_open5e')) {
+    return Promise.resolve(null);
+  }
+
   switch (category) {
     case 'spell':
       return fetchOpen5eSpell(query, options);

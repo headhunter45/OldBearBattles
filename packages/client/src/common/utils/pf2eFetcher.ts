@@ -4,6 +4,7 @@ import {
   parseActionCost,
   ActionCostType,
 } from '@oldbear/shared';
+import { isFeatureEnabled } from '../config/featureFlags';
 
 // In-memory cache for fast retrieval and offline resilience
 const memoryCache = new Map<string, EntityStatBlock>();
@@ -41,7 +42,10 @@ export function formatPf2eDescription(rawText?: string): string {
   text = text.replace(/@UUID\[[^\]]+\]\{([^}]+)\}/g, '**$1**');
 
   // Replace @UUID[Compendium.pf2e.xxx.Item.Effect: Name] with **Name**
-  text = text.replace(/@UUID\[Compendium\.[^\]]*\.(?:Item|Effect|Action):?\s*([^\]]+)\]/g, '**$1**');
+  text = text.replace(
+    /@UUID\[Compendium\.[^\]]*\.(?:Item|Effect|Action):?\s*([^\]]+)\]/g,
+    '**$1**',
+  );
   text = text.replace(/@UUID\[[^\]]+\]/g, '');
 
   // Replace @Damage[...] or @Check[...] foundry rolls with inline text
@@ -60,9 +64,7 @@ export function formatPf2eDescription(rawText?: string): string {
     .replace(/<[^>]+>/g, '');
 
   // Normalize excessive newlines and spaces
-  return text
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+  return text.replace(/\n{3,}/g, '\n\n').trim();
 }
 
 /**
@@ -106,7 +108,10 @@ export function extractPf2eActionCost(system: any): ActionCostType | undefined {
 /**
  * Parses raw Foundry PF2e compendium pack JSON into a system-agnostic EntityStatBlock.
  */
-export function parseFoundryPF2eJson(data: any, sourceUrl?: string): EntityStatBlock {
+export function parseFoundryPF2eJson(
+  data: any,
+  sourceUrl?: string,
+): EntityStatBlock {
   if (!data || typeof data !== 'object') {
     throw new Error('Invalid Foundry PF2e data: root object expected.');
   }
@@ -117,7 +122,9 @@ export function parseFoundryPF2eJson(data: any, sourceUrl?: string): EntityStatB
   const description = formatPf2eDescription(system.description?.value);
 
   // Extract Traits & Rarity
-  const rawTraits: string[] = Array.isArray(system.traits?.value) ? system.traits.value : [];
+  const rawTraits: string[] = Array.isArray(system.traits?.value)
+    ? system.traits.value
+    : [];
   const traits: string[] = [];
 
   // Rarity first if uncommon/rare/unique
@@ -142,15 +149,18 @@ export function parseFoundryPF2eJson(data: any, sourceUrl?: string): EntityStatB
     typeof system.level?.value === 'number'
       ? system.level.value
       : typeof system.details?.level?.value === 'number'
-      ? system.details.level.value
-      : undefined;
+        ? system.details.level.value
+        : undefined;
 
   // Spell-specific fields
   if (type === 'spell') {
     const traditions = Array.isArray(system.traits?.traditions)
       ? system.traits.traditions.map(formatTrait).join(', ')
       : '';
-    const subtitle = level === 0 ? `Cantrip (${traditions || 'Spell'})` : `Rank ${level ?? 1} Spell (${traditions || 'Spell'})`;
+    const subtitle =
+      level === 0
+        ? `Cantrip (${traditions || 'Spell'})`
+        : `Rank ${level ?? 1} Spell (${traditions || 'Spell'})`;
 
     let damageFormula: string | undefined;
     let damageType: string | undefined;
@@ -164,7 +174,9 @@ export function parseFoundryPF2eJson(data: any, sourceUrl?: string): EntityStatB
 
     const saveStat = system.defense?.save?.statistic || system.save?.statistic;
     const saveBasic = system.defense?.save?.basic ? 'Basic ' : '';
-    const savingThrow = saveStat ? `${saveBasic}${formatTrait(saveStat)}` : undefined;
+    const savingThrow = saveStat
+      ? `${saveBasic}${formatTrait(saveStat)}`
+      : undefined;
 
     return {
       id: data._id ? `pf2e-${data._id}` : `pf2e-${crypto.randomUUID()}`,
@@ -173,7 +185,11 @@ export function parseFoundryPF2eJson(data: any, sourceUrl?: string): EntityStatB
       description,
       cost: cost || '2_actions', // Default spell casting in PF2e is 2 actions
       traits,
-      range: system.range?.value || (system.area?.value ? `${system.area.value}ft ${system.area.type}` : undefined),
+      range:
+        system.range?.value ||
+        (system.area?.value
+          ? `${system.area.value}ft ${system.area.type}`
+          : undefined),
       target: system.target?.value || undefined,
       duration: system.duration?.value || undefined,
       savingThrow,
@@ -187,7 +203,16 @@ export function parseFoundryPF2eJson(data: any, sourceUrl?: string): EntityStatB
   }
 
   // Weapon / Item / Equipment / Consumable
-  if (['weapon', 'armor', 'equipment', 'consumable', 'treasure', 'backpack'].includes(type)) {
+  if (
+    [
+      'weapon',
+      'armor',
+      'equipment',
+      'consumable',
+      'treasure',
+      'backpack',
+    ].includes(type)
+  ) {
     let damageFormula: string | undefined;
     let damageType: string | undefined;
 
@@ -225,7 +250,9 @@ export function parseFoundryPF2eJson(data: any, sourceUrl?: string): EntityStatB
 
   // Action or Feat
   if (type === 'action' || type === 'feat') {
-    const category = system.actionCategory?.value ? formatTrait(system.actionCategory.value) : '';
+    const category = system.actionCategory?.value
+      ? formatTrait(system.actionCategory.value)
+      : '';
     const subtitle = [
       level !== undefined ? `Level ${level}` : null,
       category,
@@ -253,10 +280,16 @@ export function parseFoundryPF2eJson(data: any, sourceUrl?: string): EntityStatB
     const hpVal = system.attributes?.hp?.value ?? 20;
     const hpMax = system.attributes?.hp?.max ?? hpVal;
     const ac = system.attributes?.ac?.value ?? 15;
-    const speed = system.attributes?.speed?.value ? `${system.attributes.speed.value} ft.` : '25 ft.';
+    const speed = system.attributes?.speed?.value
+      ? `${system.attributes.speed.value} ft.`
+      : '25 ft.';
     const alignment = system.details?.alignment?.value || '';
-    const size = system.traits?.size?.value ? formatTrait(system.traits.size.value) : 'Medium';
-    const subtitle = [size, alignment, `Creature ${level ?? 1}`].filter(Boolean).join(', ');
+    const size = system.traits?.size?.value
+      ? formatTrait(system.traits.size.value)
+      : 'Medium';
+    const subtitle = [size, alignment, `Creature ${level ?? 1}`]
+      .filter(Boolean)
+      .join(', ');
 
     // Convert ability modifiers to standard scores: score = 10 + (mod * 2)
     const stats = {
@@ -314,7 +347,9 @@ export function parseFoundryPF2eJson(data: any, sourceUrl?: string): EntityStatB
             type: 'ability',
             description: formatPf2eDescription(itemSys.description?.value),
             cost: itemCost,
-            traits: Array.isArray(itemSys.traits?.value) ? itemSys.traits.value.map(formatTrait) : [],
+            traits: Array.isArray(itemSys.traits?.value)
+              ? itemSys.traits.value.map(formatTrait)
+              : [],
             sourceSystem: 'pf2e',
           });
         }
@@ -358,7 +393,9 @@ export function parseFoundryPF2eJson(data: any, sourceUrl?: string): EntityStatB
 /**
  * Fetches and parses a Foundry PF2e pack JSON from a direct or GitHub URL.
  */
-export async function fetchPF2eFromUrl(rawUrl: string): Promise<EntityStatBlock | null> {
+export async function fetchPF2eFromUrl(
+  rawUrl: string,
+): Promise<EntityStatBlock | null> {
   const directUrl = normalizeFoundryUrl(rawUrl);
   if (!directUrl) return null;
 
@@ -383,7 +420,9 @@ export async function fetchPF2eFromUrl(rawUrl: string): Promise<EntityStatBlock 
   try {
     const res = await fetch(directUrl);
     if (!res.ok) {
-      console.warn(`[PF2e] Failed to fetch URL ${directUrl}: ${res.status} ${res.statusText}`);
+      console.warn(
+        `[PF2e] Failed to fetch URL ${directUrl}: ${res.status} ${res.statusText}`,
+      );
       return null;
     }
 
@@ -393,7 +432,10 @@ export async function fetchPF2eFromUrl(rawUrl: string): Promise<EntityStatBlock 
     memoryCache.set(cacheKey, statBlock);
     try {
       if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(`oldbear_pf2e_${cacheKey}`, JSON.stringify(statBlock));
+        localStorage.setItem(
+          `oldbear_pf2e_${cacheKey}`,
+          JSON.stringify(statBlock),
+        );
       }
     } catch {
       // Ignore storage errors
@@ -411,8 +453,11 @@ export async function fetchPF2eFromUrl(rawUrl: string): Promise<EntityStatBlock 
  */
 export async function fetchPF2eReference(
   category: 'spell' | 'item' | 'monster' | 'action' | 'feat',
-  query: string
+  query: string,
 ): Promise<EntityStatBlock | null> {
+  if (!isFeatureEnabled('search_pf2e')) {
+    return Promise.resolve(null);
+  }
   const clean = query.trim();
   if (!clean) return null;
 
@@ -443,30 +488,26 @@ export async function fetchPF2eReference(
         `${FOUNDRY_PF2E_RAW_BASE}/spells/3rd-rank/${slug}.json`,
         `${FOUNDRY_PF2E_RAW_BASE}/spells/4th-rank/${slug}.json`,
         `${FOUNDRY_PF2E_RAW_BASE}/spells/5th-rank/${slug}.json`,
-        `${FOUNDRY_PF2E_RAW_BASE}/spells/${slug}.json`
+        `${FOUNDRY_PF2E_RAW_BASE}/spells/${slug}.json`,
       );
       break;
     case 'item':
       packPaths.push(
         `${FOUNDRY_PF2E_RAW_BASE}/equipment/${slug}.json`,
-        `${FOUNDRY_PF2E_RAW_BASE}/equipment-srd/${slug}.json`
+        `${FOUNDRY_PF2E_RAW_BASE}/equipment-srd/${slug}.json`,
       );
       break;
     case 'action':
-      packPaths.push(
-        `${FOUNDRY_PF2E_RAW_BASE}/actions/${slug}.json`
-      );
+      packPaths.push(`${FOUNDRY_PF2E_RAW_BASE}/actions/${slug}.json`);
       break;
     case 'feat':
-      packPaths.push(
-        `${FOUNDRY_PF2E_RAW_BASE}/feats/${slug}.json`
-      );
+      packPaths.push(`${FOUNDRY_PF2E_RAW_BASE}/feats/${slug}.json`);
       break;
     case 'monster':
       packPaths.push(
         `${FOUNDRY_PF2E_RAW_BASE}/pathfinder-bestiary/${slug}.json`,
         `${FOUNDRY_PF2E_RAW_BASE}/menace-under-otari-bestiary/${slug}.json`,
-        `${FOUNDRY_PF2E_RAW_BASE}/lost-omens-bestiary/${slug}.json`
+        `${FOUNDRY_PF2E_RAW_BASE}/lost-omens-bestiary/${slug}.json`,
       );
       break;
   }

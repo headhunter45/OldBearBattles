@@ -14,7 +14,10 @@ import { createSubmapPreset } from '../engine/SubmapManager.js';
 import { SubmapEditorDrawer } from './SubmapEditorDrawer.js';
 import { getAssetsByType, StoredAsset } from '../storage/db.js';
 import { CustomStatusModal } from './CustomStatusModal.js';
-import { isFeatureEnabled } from '../../common/config/featureFlags';
+import {
+  isCompoundFlagEnabled,
+  isFeatureEnabled,
+} from '../../common/config/featureFlags';
 
 interface MapSettingsModalProps {
   map: GameMap;
@@ -852,79 +855,107 @@ export const MapSettingsModal: React.FC<MapSettingsModalProps> = ({
               </div>
 
               {/* Secondary Submaps & Layout Areas */}
-              {isFeatureEnabled('brawl_mode') && (
-                <div
-                  style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    color: 'var(--accent-primary)',
-                    borderBottom: '1px solid var(--border-subtle)',
-                    paddingBottom: '0.35rem',
-                  }}
-                >
-                  Secondary Submaps & Regions ({submaps.length})
-                </div>
-              )}
+              {isCompoundFlagEnabled('submaps_and_regions') && (
+                <>
+                  <div
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: 'var(--accent-primary)',
+                      borderBottom: '1px solid var(--border-subtle)',
+                      paddingBottom: '0.35rem',
+                    }}
+                  >
+                    Secondary Submaps & Regions ({submaps.length})
+                  </div>
 
-              {/* Submap Preset Buttons */}
-              {isFeatureEnabled('brawl_mode') && (
-                <div
-                  style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '0.35rem',
-                    padding: '0.75rem',
-                    justifyContent: 'space-evenly',
-                  }}
-                >
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{ fontSize: '0.72rem', padding: '0.3rem 0.5rem' }}
-                    onClick={() => handleAddPreset('building_floor')}
-                    title="Add an adjacent building floor (e.g. 2nd Floor, Attic)"
+                  {/* Submap Preset Buttons */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '0.35rem',
+                      padding: '0.75rem',
+                      justifyContent: 'space-evenly',
+                    }}
                   >
-                    <Plus size={12} /> + Floor
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{ fontSize: '0.72rem', padding: '0.3rem 0.5rem' }}
-                    onClick={() => handleAddPreset('connected_dungeon')}
-                    title="Add a connected portal dungeon or cavern"
-                  >
-                    <Plus size={12} /> + Dungeon
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{ fontSize: '0.72rem', padding: '0.3rem 0.5rem' }}
-                    onClick={() => handleAddPreset('deployment_zone')}
-                    title="Add a color-coded wargaming deployment zone"
-                  >
-                    <Plus size={12} /> + Deployment Zone
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{ fontSize: '0.72rem', padding: '0.3rem 0.5rem' }}
-                    onClick={() => handleAddPreset('casualty_tray')}
-                    title="Add an off-table casualty tray / graveyard for slain models"
-                  >
-                    <Plus size={12} /> + Casualty Tray
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{ fontSize: '0.72rem', padding: '0.3rem 0.5rem' }}
-                    onClick={() => handleAddPreset('staging_area')}
-                    title="Add an off-table staging area for reserves, deep strike, or embarked units"
-                  >
-                    <Plus size={12} /> + Staging Area
-                  </button>
-                </div>
+                    {isFeatureEnabled('multiple_floors') && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        style={{
+                          fontSize: '0.72rem',
+                          padding: '0.3rem 0.5rem',
+                        }}
+                        onClick={() => handleAddPreset('building_floor')}
+                        title="Add an adjacent building floor (e.g. 2nd Floor, Attic)"
+                      >
+                        <Plus size={12} /> + Floor
+                      </button>
+                    )}
+                    {isFeatureEnabled('connected_dungeons') && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        style={{
+                          fontSize: '0.72rem',
+                          padding: '0.3rem 0.5rem',
+                        }}
+                        onClick={() => handleAddPreset('connected_dungeon')}
+                        title="Add a connected portal dungeon or cavern"
+                      >
+                        <Plus size={12} /> + Dungeon
+                      </button>
+                    )}
+                    {isFeatureEnabled('brawl_mode') &&
+                      isFeatureEnabled('deployment_zones') && (
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          style={{
+                            fontSize: '0.72rem',
+                            padding: '0.3rem 0.5rem',
+                          }}
+                          onClick={() => handleAddPreset('deployment_zone')}
+                          title="Add a color-coded wargaming deployment zone"
+                        >
+                          <Plus size={12} /> + Deployment Zone
+                        </button>
+                      )}
+                    {isFeatureEnabled('brawl_mode') &&
+                      isFeatureEnabled('casualty_tray') && (
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          style={{
+                            fontSize: '0.72rem',
+                            padding: '0.3rem 0.5rem',
+                          }}
+                          onClick={() => handleAddPreset('casualty_tray')}
+                          title="Add an off-table casualty tray / graveyard for slain models"
+                        >
+                          <Plus size={12} /> + Casualty Tray
+                        </button>
+                      )}
+                    {isFeatureEnabled('brawl_mode') &&
+                      isFeatureEnabled('staging_area') && (
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          style={{
+                            fontSize: '0.72rem',
+                            padding: '0.3rem 0.5rem',
+                          }}
+                          onClick={() => handleAddPreset('staging_area')}
+                          title="Add an off-table staging area for reserves, deep strike, or embarked units"
+                        >
+                          <Plus size={12} /> + Staging Area
+                        </button>
+                      )}
+                  </div>
+                </>
               )}
 
               {/* Current Submaps List */}

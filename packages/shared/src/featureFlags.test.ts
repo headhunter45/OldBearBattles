@@ -6,6 +6,8 @@ import {
   normalizeFeatureKey,
   parseFeatureFlags,
   isFeatureFlagActive,
+  isCompoundFeatureActive,
+  isCompoundFeatureFlag,
 } from './featureFlags.js';
 
 describe('System-Wide Feature Flags (OB-232)', () => {
@@ -88,5 +90,63 @@ describe('System-Wide Feature Flags (OB-232)', () => {
     assert.strictEqual(isFeatureFlagActive(flags, 'soundboard'), false);
     assert.strictEqual(isFeatureFlagActive(flags, 'unknown_feature', false), false);
     assert.strictEqual(isFeatureFlagActive(flags, 'unknown_feature', true), true);
+  });
+
+  describe('Compound Feature Flags', () => {
+    it('defaults compound flags to false when flags object is empty or dependent flags missing', () => {
+      assert.strictEqual(isCompoundFeatureFlag('submaps_and_regions'), true);
+      assert.strictEqual(isCompoundFeatureFlag('brawl_mode'), false);
+
+      assert.strictEqual(isCompoundFeatureActive({}, 'submaps_and_regions'), false);
+      assert.strictEqual(isFeatureFlagActive({}, 'submaps_and_regions'), false);
+    });
+
+    it('evaluates submaps_and_regions to true when multiple_floors or connected_dungeons is true', () => {
+      assert.strictEqual(
+        isCompoundFeatureActive({ multiple_floors: true }, 'submaps_and_regions'),
+        true,
+      );
+      assert.strictEqual(
+        isCompoundFeatureActive({ connected_dungeons: true }, 'submaps_and_regions'),
+        true,
+      );
+      assert.strictEqual(
+        isCompoundFeatureActive({ multiple_floors: false, connected_dungeons: false }, 'submaps_and_regions'),
+        false,
+      );
+    });
+
+    it('evaluates brawl submap dependencies only when brawl_mode is active', () => {
+      // deployment_zones true without brawl_mode -> false
+      assert.strictEqual(
+        isCompoundFeatureActive({ brawl_mode: false, deployment_zones: true }, 'submaps_and_regions'),
+        false,
+      );
+      // deployment_zones true with brawl_mode -> true
+      assert.strictEqual(
+        isCompoundFeatureActive({ brawl_mode: true, deployment_zones: true }, 'submaps_and_regions'),
+        true,
+      );
+      assert.strictEqual(
+        isCompoundFeatureActive({ brawl_mode: true, casualty_tray: true }, 'submaps_and_regions'),
+        true,
+      );
+      assert.strictEqual(
+        isCompoundFeatureActive({ brawl_mode: true, staging_area: true }, 'submaps_and_regions'),
+        true,
+      );
+    });
+
+    it('does not allow setting compound flags via environment variables', () => {
+      const env = {
+        FEATURE_SUBMAPS_AND_REGIONS: 'true',
+        VITE_FEATURE_SUBMAPS_AND_REGIONS: 'true',
+      };
+      const parsed = parseFeatureFlags(env);
+      assert.strictEqual(parsed.submaps_and_regions, undefined);
+      // isCompoundFeatureActive still evaluates to false because dependencies are not set
+      assert.strictEqual(isCompoundFeatureActive(parsed, 'submaps_and_regions'), false);
+      assert.strictEqual(isFeatureFlagActive(parsed, 'submaps_and_regions'), false);
+    });
   });
 });

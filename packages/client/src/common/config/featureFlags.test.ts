@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import {
   isFeatureEnabled,
+  isCompoundFlagEnabled,
   updateActiveFlags,
   setFeatureFlagOverride,
   fetchServerFeatureFlags,
@@ -36,5 +37,31 @@ describe('Client Feature Flags Runtime (OB-232)', () => {
   it('handles unknown flags with fallback', () => {
     assert.strictEqual(isFeatureEnabled('non_existent_flag', false), false);
     assert.strictEqual(isFeatureEnabled('non_existent_flag', true), true);
+  });
+
+  it('evaluates compound flags via isCompoundFlagEnabled and isFeatureEnabled', () => {
+    // By default, multiple_floors, connected_dungeons, and brawl_mode are false
+    assert.strictEqual(isCompoundFlagEnabled('submaps_and_regions'), false);
+    assert.strictEqual(isFeatureEnabled('submaps_and_regions'), false);
+
+    // Turn on a VTT submap flag
+    updateActiveFlags({ multiple_floors: true });
+    assert.strictEqual(isCompoundFlagEnabled('submaps_and_regions'), true);
+    assert.strictEqual(isFeatureEnabled('submaps_and_regions'), true);
+
+    // Reset multiple_floors
+    updateActiveFlags({ multiple_floors: false });
+    assert.strictEqual(isCompoundFlagEnabled('submaps_and_regions'), false);
+
+    // Brawl submap flag only activates when brawl_mode is also true
+    updateActiveFlags({ deployment_zones: true });
+    assert.strictEqual(isCompoundFlagEnabled('submaps_and_regions'), false);
+
+    updateActiveFlags({ brawl_mode: true, deployment_zones: true });
+    assert.strictEqual(isCompoundFlagEnabled('submaps_and_regions'), true);
+
+    // Reset back
+    updateActiveFlags({ brawl_mode: false, deployment_zones: false });
+    assert.strictEqual(isCompoundFlagEnabled('submaps_and_regions'), false);
   });
 });

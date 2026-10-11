@@ -6,29 +6,29 @@
  */
 
 export type KnownFeatureFlag =
-  | 'chess_clock'
-  | 'voice_chat'
-  | 'soundboard'
-  | 'dice_roller'
-  | 'scoreboard'
-  | 'objectives'
-  | 'to_mode'
-  | 'dndbeyond'
-  | 'pathbuilder'
   | 'army_roster'
-  | 'fog_of_war'
   | 'brawl_mode'
-  | 'multiple_floors'
-  | 'connected_dungeons'
-  | 'deployment_zones'
   | 'casualty_tray'
-  | 'staging_area'
-  | 'default_vtt_tokens'
+  | 'chess_clock'
+  | 'connected_dungeons'
   | 'default_brawl_tokens'
   | 'default_map_tiles'
+  | 'default_vtt_tokens'
+  | 'deployment_zones'
+  | 'dice_roller'
+  | 'dndbeyond'
+  | 'fog_of_war'
+  | 'multiple_floors'
+  | 'objectives'
+  | 'pathbuilder'
+  | 'scoreboard'
   | 'search_open5e'
   | 'search_pf2e'
-  | 'sync_dndbeyond';
+  | 'soundboard'
+  | 'staging_area'
+  | 'sync_dndbeyond'
+  | 'to_mode'
+  | 'voice_chat';
 
 export type FeatureFlagKey = KnownFeatureFlag | (string & {});
 
@@ -121,6 +121,9 @@ export function parseFeatureFlags(
     const upper = rawKey.toUpperCase();
     if (upper.startsWith('FEATURE_') || upper.startsWith('VITE_FEATURE_')) {
       const normalized = normalizeFeatureKey(rawKey);
+      // Compound flags cannot be set directly via environment variables
+      if (isCompoundFeatureFlag(normalized)) continue;
+
       const parsed = parseFeatureFlagValue(rawVal);
       if (parsed !== undefined) {
         flags[normalized] = parsed;
@@ -130,6 +133,9 @@ export function parseFeatureFlags(
 
   // Second pass: explicit check for all known flags in case env was passed with direct keys
   for (const knownKey of Object.keys(defaults)) {
+    // Compound flags cannot be set directly via environment variables
+    if (isCompoundFeatureFlag(knownKey)) continue;
+
     const directVal = env[knownKey];
     if (directVal !== undefined && directVal !== '') {
       const parsed = parseFeatureFlagValue(directVal);
@@ -143,7 +149,61 @@ export function parseFeatureFlags(
 }
 
 /**
- * Check if a specific feature flag is enabled in the flags object.
+ * Union of all compound (derived) feature flags.
+ * Compound flags are computed from primitive flags and cannot be set directly via env.
+ */
+export type CompoundFeatureFlag = 'submaps_and_regions';
+
+/**
+ * Registry of compound feature flag evaluators.
+ * If dependent flags do not exist in the active flags object, they default to false.
+ */
+export const COMPOUND_FEATURE_FLAGS: Record<
+  CompoundFeatureFlag,
+  (flags: Record<string, boolean>) => boolean
+> = {
+  submaps_and_regions: (flags: Record<string, boolean>) =>
+    Boolean(
+      flags['multiple_floors'] ||
+      flags['connected_dungeons'] ||
+      (flags['brawl_mode'] &&
+        (flags['deployment_zones'] ||
+          flags['casualty_tray'] ||
+          flags['staging_area']))
+    ),
+};
+
+/**
+ * Type guard to check if a flag key corresponds to a compound feature flag.
+ */
+export function isCompoundFeatureFlag(
+  flag: string,
+): flag is CompoundFeatureFlag {
+  const normalized = normalizeFeatureKey(flag);
+  return Object.prototype.hasOwnProperty.call(COMPOUND_FEATURE_FLAGS, normalized);
+}
+
+/**
+ * Evaluates a compound (derived) feature flag against an active flags map.
+ * Compound flags cannot be set directly by environment variables; they are
+ * dynamically calculated based on the state of their dependent flags.
+ * If any dependent flags are missing or undefined, they are treated as false.
+ */
+export function isCompoundFeatureActive(
+  flags: Record<string, boolean>,
+  flag: CompoundFeatureFlag,
+  fallback = false,
+): boolean {
+  const normalized = normalizeFeatureKey(flag) as CompoundFeatureFlag;
+  const evaluator = COMPOUND_FEATURE_FLAGS[normalized];
+  if (evaluator) {
+    return evaluator(flags);
+  }
+  return fallback;
+}
+
+/**
+ * Check if a specific feature flag (primitive or compound) is enabled in the flags object.
  */
 export function isFeatureFlagActive(
   flags: Record<string, boolean>,
@@ -151,6 +211,9 @@ export function isFeatureFlagActive(
   fallback = false,
 ): boolean {
   const normalized = normalizeFeatureKey(flag);
+  if (isCompoundFeatureFlag(normalized)) {
+    return isCompoundFeatureActive(flags, normalized, fallback);
+  }
   if (normalized in flags) {
     return flags[normalized];
   }
