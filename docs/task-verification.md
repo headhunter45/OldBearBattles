@@ -30,6 +30,7 @@ This document provides step-by-step instructions for manually verifying all feat
 | **[OB-207](#ob-207---unbound-token-resets-character-sheet-form-state)**                           | Unbound Token Resets Character Sheet Form State                                  | VTT / Character Sheet | Testing |
 | **[OB-211](#ob-211---remove-excess-display-from-info-commands)**                                  | Remove Excess Display from Info Commands                                         | Common / Chat         | Testing |
 | **[OB-232](#ob-232---system-feature-flags-environment-toggles--runtime-configuration)**           | System Feature Flags: Environment Toggles & Runtime Configuration                | Common / Config       | Testing |
+| **[OB-233](#ob-233---create-scene-from-map-asset-uses-natural-image-dimensions)**                | Create Scene from Map Asset Uses Natural Image Dimensions                        | Common / Maps         | Testing |
 
 ---
 
@@ -222,6 +223,44 @@ This document provides step-by-step instructions for manually verifying all feat
 - In production, flags can be toggled via host/container environment variables without rebuilding the static frontend bundle.
 - In development, flags can be set in `.env` using standard naming (`FEATURE_<NAME>=true|false`).
 - Frontend components reactively update when flags change without full page reloads.
+
+---
+
+### OB-233 - Create Scene from Map Asset Uses Natural Image Dimensions
+
+- **Reference in tasks.md:** [tasks.md: OB-233](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-233)
+- **Primary Source Code:** [imageUtils.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/utils/imageUtils.ts), [DataBackupModal.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/DataBackupModal.tsx), [MapManagerModal.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/components/MapManagerModal.tsx), [BinderPipeline.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/storage/BinderPipeline.ts)
+- **Where to find it:** Asset Manager / Storage (`DataBackupModal` -> Maps tab) and Map Manager modal.
+
+#### Step-by-Step Instructions:
+
+1. **Verify Scene Creation from Existing / Legacy Map Asset**:
+   - Open Asset Manager / Storage (`DataBackupModal`) from the top bar or menu.
+   - Switch to the **Maps** tab.
+   - Locate any imported map asset (e.g. `sunderstone_canyon` or any non-square/custom resolution map).
+   - Click the **Make Scene** button on the map card (or select the map and click **Make Scene from Selected**).
+   - Verify that the notification states: `Created new scene "<Map Name> Scene" (<width>x<height>) from map asset!`.
+   - Open **Scene Settings** (`MapSettingsModal`) for the newly created scene.
+   - Verify that the map dimensions match the actual image resolution (e.g., `1024x1536`), not the previous fallback default of `2000x1500`.
+   - Verify that the grid columns and rows (`tilesX` and `tilesY`) and `gridSize` were calculated proportionally based on the true resolution.
+
+2. **Verify Scene Creation from Map Manager Modal**:
+   - Open the **Map Manager** (`MapManagerModal`).
+   - Under "Create Scene from Map", select the map asset from the library dropdown.
+   - Enter a scene name (or leave default) and click create.
+   - Switch to that newly created scene and open Scene Settings.
+   - Verify the width and height match the map image's natural dimensions.
+
+3. **Verify Map File Upload Dimension Persistence**:
+   - In Asset Manager -> Maps tab, upload or drag-and-drop a new map image (e.g. 1024x1536).
+   - Click "Make Scene" from this newly uploaded map.
+   - Verify the scene is created with the image's dimensions.
+
+#### Expected Result (Pass Criteria):
+
+- Scenes created from map assets (imported via binder, backup, or manual upload) automatically inspect the image data and use its natural resolution (e.g. 1024x1536).
+- The default `2000x1500` fallback is only used if image loading completely fails or no image data exists.
+- The detected width and height are backfilled and saved to IndexedDB for the asset so subsequent scene creations are instantaneous.
 
 ---
 

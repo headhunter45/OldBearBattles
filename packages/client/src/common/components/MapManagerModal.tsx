@@ -4,6 +4,7 @@ import { Map, Plus, Upload, Check, Eye, Trash2, X, Settings, Sliders, Grid, Arro
 import { saveAsset, getAssetsByType, StoredAsset } from '../storage/db.js';
 import { MapSettingsModal } from './MapSettingsModal.js';
 import { duplicateSceneAsTemplate } from '../engine/SubmapManager.js';
+import { calculateDefaultTiles, getImageDimensions } from '../utils/imageUtils.js';
 
 interface MapManagerModalProps {
   maps: GameMap[];
@@ -73,7 +74,7 @@ export const MapManagerModal: React.FC<MapManagerModalProps> = ({
     onSelectGmPreviewMap(templated.id);
   };
 
-  const handleCreateSceneFromSelectedMap = () => {
+  const handleCreateSceneFromSelectedMap = async () => {
     const asset = mapAssets.find((a) => a.id === selectedAssetId);
     const existingMap = maps.find((m) => m.id === selectedAssetId);
 
@@ -81,9 +82,23 @@ export const MapManagerModal: React.FC<MapManagerModalProps> = ({
 
     const sourceName = asset?.name || existingMap?.name || 'Map';
     const imageUrl = asset?.dataUrl || existingMap?.imageUrl || '';
-    const width = asset?.width || existingMap?.width || 2000;
-    const height = asset?.height || existingMap?.height || 1500;
-    const gridSize = existingMap?.gridSize || 50;
+    let width = asset?.width || existingMap?.width;
+    let height = asset?.height || existingMap?.height;
+
+    if ((!width || !height) && imageUrl) {
+      try {
+        const dims = await getImageDimensions(imageUrl);
+        width = dims.width;
+        height = dims.height;
+        if (asset && width && height && (width !== asset.width || height !== asset.height)) {
+          await saveAsset({ ...asset, width, height });
+        }
+      } catch (_) {}
+    }
+    width = width || 2000;
+    height = height || 1500;
+    const { tilesX, tilesY, gridSize: defaultGridSize } = calculateDefaultTiles(width, height);
+    const gridSize = existingMap?.gridSize || defaultGridSize;
     const gridType = existingMap?.gridType || 'square';
     const gridColor = existingMap?.gridColor || '#ffffff';
     const gridOpacity = existingMap?.gridOpacity ?? 0.4;
@@ -101,6 +116,10 @@ export const MapManagerModal: React.FC<MapManagerModalProps> = ({
       height,
       scaleFtPerCell: 5,
       showGrid: true,
+      tilesX: existingMap?.tilesX || tilesX,
+      tilesY: existingMap?.tilesY || tilesY,
+      gridOffsetX: existingMap?.gridOffsetX ?? 0,
+      gridOffsetY: existingMap?.gridOffsetY ?? 0,
       baseMapId: asset?.id || existingMap?.id,
       baseMapName: sourceName,
       backgroundColor,

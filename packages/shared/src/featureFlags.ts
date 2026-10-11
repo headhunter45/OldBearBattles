@@ -17,7 +17,18 @@ export type KnownFeatureFlag =
   | 'pathbuilder'
   | 'army_roster'
   | 'fog_of_war'
-  | 'brawl_mode';
+  | 'brawl_mode'
+  | 'multiple_floors'
+  | 'connected_dungeons'
+  | 'deployment_zones'
+  | 'casualty_tray'
+  | 'staging_area'
+  | 'default_vtt_tokens'
+  | 'default_brawl_tokens'
+  | 'default_map_tiles'
+  | 'search_open5e'
+  | 'search_pf2e'
+  | 'sync_dndbeyond';
 
 export type FeatureFlagKey = KnownFeatureFlag | (string & {});
 
@@ -39,6 +50,17 @@ export const DEFAULT_FEATURE_FLAGS: Record<KnownFeatureFlag, boolean> = {
   army_roster: true,
   fog_of_war: true,
   brawl_mode: false,
+  multiple_floors: false,
+  connected_dungeons: false,
+  deployment_zones: false,
+  casualty_tray: false,
+  staging_area: false,
+  default_vtt_tokens: false,
+  default_brawl_tokens: false,
+  default_map_tiles: false,
+  search_open5e: false,
+  search_pf2e: false,
+  sync_dndbeyond: false,
 };
 
 /**

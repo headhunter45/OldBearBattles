@@ -1,6 +1,7 @@
 import {GameSession} from '@oldbear/shared';
 
 import {getDB, StoredAsset} from './db.js';
+import {getImageDimensions} from '../utils/imageUtils.js';
 
 export const BINDER_SCHEMA_ID = 'https://schemas.ttrpgwith.me/v1/binder.json';
 export const BINDER_JSON_SCHEMA =
@@ -445,6 +446,18 @@ export async function importBinderData(jsonStringOrObject: string|object):
     if (typeof indexedDB !== 'undefined' && Array.isArray(vtt.assets) &&
         vtt.assets.length > 0) {
       try {
+        if (typeof Image !== 'undefined') {
+          for (const asset of vtt.assets) {
+            if (asset && asset.id && asset.type === 'map' && asset.dataUrl && (!asset.width || !asset.height)) {
+              try {
+                const dims = await getImageDimensions(asset.dataUrl);
+                asset.width = dims.width;
+                asset.height = dims.height;
+              } catch (_) {}
+            }
+          }
+        }
+
         const db = await getDB();
         const tx = db.transaction('assets', 'readwrite');
         for (const asset of vtt.assets) {

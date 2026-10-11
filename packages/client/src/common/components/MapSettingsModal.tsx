@@ -14,6 +14,7 @@ import { createSubmapPreset } from '../engine/SubmapManager.js';
 import { SubmapEditorDrawer } from './SubmapEditorDrawer.js';
 import { getAssetsByType, StoredAsset } from '../storage/db.js';
 import { CustomStatusModal } from './CustomStatusModal.js';
+import { isFeatureEnabled } from '../../common/config/featureFlags';
 
 interface MapSettingsModalProps {
   map: GameMap;
@@ -163,7 +164,7 @@ export const MapSettingsModal: React.FC<MapSettingsModalProps> = ({
 
   const handleUpdateSubmap = (id: string, updates: Partial<SubmapConfig>) => {
     setSubmaps((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
+      prev.map((s) => (s.id === id ? { ...s, ...updates } : s)),
     );
   };
 
@@ -221,95 +222,215 @@ export const MapSettingsModal: React.FC<MapSettingsModalProps> = ({
   return (
     <>
       <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        backdropFilter: 'blur(10px)',
-        zIndex: 60,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1rem',
-      }}
-      onClick={onClose}
-    >
-      <div
-        className="glass-panel-elevated animate-fade-in"
         style={{
-          width: '100%',
-          maxWidth: '760px',
-          maxHeight: '92vh',
-          overflowY: 'auto',
-          padding: '1.5rem',
-          backgroundColor: 'rgba(15, 23, 42, 0.98)',
-          border: '1px solid var(--border-strong)',
-          borderRadius: 'var(--radius-lg)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75)',
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(10px)',
+          zIndex: 60,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem',
         }}
-        onClick={(e) => e.stopPropagation()}
+        onClick={onClose}
       >
-        {/* Header */}
         <div
+          className="glass-panel-elevated animate-fade-in"
           style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '1.25rem',
+            width: '100%',
+            maxWidth: '760px',
+            maxHeight: '92vh',
+            overflowY: 'auto',
+            padding: '1.5rem',
+            backgroundColor: 'rgba(15, 23, 42, 0.98)',
+            border: '1px solid var(--border-strong)',
+            borderRadius: 'var(--radius-lg)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75)',
           }}
+          onClick={(e) => e.stopPropagation()}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <Sliders size={22} color="var(--accent-primary)" />
-            <h2
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: '1.25rem',
-                color: '#f8fafc',
-              }}
-            >
-              Edit Scene Settings
-            </h2>
-          </div>
-          <button className="btn-icon" onClick={onClose} title="Close">
-            <X size={18} />
-          </button>
-        </div>
-
-        {error && (
+          {/* Header */}
           <div
             style={{
               display: 'flex',
+              justifyContent: 'space-between',
               alignItems: 'center',
-              gap: '0.5rem',
-              backgroundColor: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.4)',
-              color: '#f87171',
-              padding: '0.6rem 0.85rem',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.85rem',
-              marginBottom: '1rem',
+              marginBottom: '1.25rem',
             }}
           >
-            <AlertCircle size={16} />
-            <span>{error}</span>
+            <div
+              style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}
+            >
+              <Sliders size={22} color="var(--accent-primary)" />
+              <h2
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 800,
+                  fontSize: '1.25rem',
+                  color: '#f8fafc',
+                }}
+              >
+                Edit Scene Settings
+              </h2>
+            </div>
+            <button className="btn-icon" onClick={onClose} title="Close">
+              <X size={18} />
+            </button>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit}>
-          <div
-            style={{
-              gap: '1.5rem',
-            }}
-          >
-            {/* Grid Styling & Visibility */}
+          {error && (
             <div
               style={{
                 display: 'flex',
-                flexDirection: 'column',
-                gap: '1.1rem',
+                alignItems: 'center',
+                gap: '0.5rem',
+                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                color: '#f87171',
+                padding: '0.6rem 0.85rem',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.85rem',
+                marginBottom: '1rem',
               }}
             >
+              <AlertCircle size={16} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <div
+              style={{
+                gap: '1.5rem',
+              }}
+            >
+              {/* Grid Styling & Visibility */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1.1rem',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    color: 'var(--accent-primary)',
+                    borderBottom: '1px solid var(--border-subtle)',
+                    paddingBottom: '0.35rem',
+                  }}
+                >
+                  Scene Info
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: '0.65rem',
+                    padding: '0.5rem 0.75rem',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  {/* Map Name */}
+                  <div>
+                    <label
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        color: 'var(--text-secondary)',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Map Name
+                    </label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      onClick={handleFocusSelect}
+                      onFocus={handleFocusSelect}
+                      placeholder="Enter map name..."
+                      style={{
+                        width: '100%',
+                        padding: '0.5rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        marginTop: '0.3rem',
+                        fontSize: '0.85rem',
+                      }}
+                    />
+                  </div>
+                  {/* Map Background Color */}
+                  <div
+                    style={{
+                      padding: '0.5rem 0.75rem',
+                    }}
+                  >
+                    <label
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        color: 'var(--text-secondary)',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Scene Background Color
+                    </label>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        marginTop: '0.35rem',
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      {PRESET_BG_COLORS.map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => setBackgroundColor(c)}
+                          style={{
+                            width: '26px',
+                            height: '26px',
+                            borderRadius: '4px',
+                            backgroundColor: c,
+                            border:
+                              backgroundColor === c
+                                ? '2px solid var(--accent-primary)'
+                                : '1px solid var(--border-strong)',
+                            cursor: 'pointer',
+                            transform:
+                              backgroundColor === c ? 'scale(1.15)' : 'none',
+                            transition: 'transform 0.1s ease',
+                          }}
+                          title={c}
+                        />
+                      ))}
+                      <input
+                        type="color"
+                        value={backgroundColor}
+                        onChange={(e) => setBackgroundColor(e.target.value)}
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          border: 'none',
+                          background: 'transparent',
+                          cursor: 'pointer',
+                        }}
+                        title="Custom Background Color"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div
                 style={{
                   fontSize: '0.75rem',
@@ -321,18 +442,101 @@ export const MapSettingsModal: React.FC<MapSettingsModalProps> = ({
                   paddingBottom: '0.35rem',
                 }}
               >
-                Scene Info
+                Grid Display & Appearance
               </div>
+
+              {/* Checkbox First */}
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'baseline',
                   gap: '0.65rem',
-                  padding: '0.5rem 0.75rem',
+                  backgroundColor: 'var(--bg-surface)',
                   justifyContent: 'space-between',
                 }}
               >
-                {/* Map Name */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: '0.65rem',
+                    padding: '0.5rem 0.75rem',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    id="modalShowGrid"
+                    checked={showGrid}
+                    onChange={(e) => setShowGrid(e.target.checked)}
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      accentColor: 'var(--accent-primary)',
+                      cursor: 'pointer',
+                    }}
+                  />
+                  <label
+                    htmlFor="modalShowGrid"
+                    style={{
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      color: '#f8fafc',
+                    }}
+                  >
+                    Show Grid on Maps
+                  </label>
+                </div>
+                <div
+                  style={{
+                    flexGrow: 1,
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: '0.65rem',
+                    padding: '0.5rem 0.75rem',
+                  }}
+                >
+                  {/* Grid Type Next */}
+                  <label
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      color: 'var(--text-secondary)',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Grid Type
+                  </label>
+                  <select
+                    value={gridType}
+                    onChange={(e) => setGridType(e.target.value as GridType)}
+                    style={{
+                      flexGrow: 1,
+                      padding: '0.5rem',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'var(--bg-surface)',
+                      border: '1px solid var(--border-subtle)',
+                      color: 'white',
+                      marginTop: '0.3rem',
+                      fontSize: '0.85rem',
+                    }}
+                  >
+                    <option value="square">Square Grid</option>
+                    <option value="hex">Hexagonal Grid</option>
+                    <option value="none">No Grid</option>
+                  </select>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: '0.65rem',
+                  padding: '0.5rem 0.75rem 1rem 0.75rem',
+                }}
+              >
+                {/* Grid Color */}
                 <div>
                   <label
                     style={{
@@ -342,42 +546,7 @@ export const MapSettingsModal: React.FC<MapSettingsModalProps> = ({
                       textTransform: 'uppercase',
                     }}
                   >
-                    Map Name
-                  </label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    onClick={handleFocusSelect}
-                    onFocus={handleFocusSelect}
-                    placeholder="Enter map name..."
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      borderRadius: 'var(--radius-sm)',
-                      background: 'var(--bg-surface)',
-                      border: '1px solid var(--border-subtle)',
-                      color: 'white',
-                      marginTop: '0.3rem',
-                      fontSize: '0.85rem',
-                    }}
-                  />
-                </div>
-                {/* Map Background Color */}
-                <div
-                  style={{
-                    padding: '0.5rem 0.75rem',
-                  }}
-                >
-                  <label
-                    style={{
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      color: 'var(--text-secondary)',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    Scene Background Color
+                    Grid Color
                   </label>
                   <div
                     style={{
@@ -388,23 +557,22 @@ export const MapSettingsModal: React.FC<MapSettingsModalProps> = ({
                       flexWrap: 'wrap',
                     }}
                   >
-                    {PRESET_BG_COLORS.map((c) => (
+                    {PRESET_GRID_COLORS.map((c) => (
                       <button
                         key={c}
                         type="button"
-                        onClick={() => setBackgroundColor(c)}
+                        onClick={() => setGridColor(c)}
                         style={{
                           width: '26px',
                           height: '26px',
                           borderRadius: '4px',
                           backgroundColor: c,
                           border:
-                            backgroundColor === c
+                            gridColor === c
                               ? '2px solid var(--accent-primary)'
                               : '1px solid var(--border-strong)',
                           cursor: 'pointer',
-                          transform:
-                            backgroundColor === c ? 'scale(1.15)' : 'none',
+                          transform: gridColor === c ? 'scale(1.15)' : 'none',
                           transition: 'transform 0.1s ease',
                         }}
                         title={c}
@@ -412,8 +580,8 @@ export const MapSettingsModal: React.FC<MapSettingsModalProps> = ({
                     ))}
                     <input
                       type="color"
-                      value={backgroundColor}
-                      onChange={(e) => setBackgroundColor(e.target.value)}
+                      value={gridColor}
+                      onChange={(e) => setGridColor(e.target.value)}
                       style={{
                         width: '28px',
                         height: '28px',
@@ -421,662 +589,516 @@ export const MapSettingsModal: React.FC<MapSettingsModalProps> = ({
                         background: 'transparent',
                         cursor: 'pointer',
                       }}
-                      title="Custom Background Color"
+                      title="Custom Color"
                     />
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <div
-              style={{
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                color: 'var(--accent-primary)',
-                borderBottom: '1px solid var(--border-subtle)',
-                paddingBottom: '0.35rem',
-              }}
-            >
-              Grid Display & Appearance
-            </div>
-
-            {/* Checkbox First */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'baseline',
-                gap: '0.65rem',
-                backgroundColor: 'var(--bg-surface)',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'baseline',
-                  gap: '0.65rem',
-                  padding: '0.5rem 0.75rem',
-                }}
-              >
-                <input
-                  type="checkbox"
-                  id="modalShowGrid"
-                  checked={showGrid}
-                  onChange={(e) => setShowGrid(e.target.checked)}
-                  style={{
-                    width: '18px',
-                    height: '18px',
-                    accentColor: 'var(--accent-primary)',
-                    cursor: 'pointer',
-                  }}
-                />
-                <label
-                  htmlFor="modalShowGrid"
-                  style={{
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    color: '#f8fafc',
-                  }}
-                >
-                  Show Grid on Maps
-                </label>
-              </div>
-              <div
-                style={{
-                  flexGrow: 1,
-                  display: 'flex',
-                  alignItems: 'baseline',
-                  gap: '0.65rem',
-                  padding: '0.5rem 0.75rem',
-                }}
-              >
-                {/* Grid Type Next */}
-                <label
-                  style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    color: 'var(--text-secondary)',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Grid Type
-                </label>
-                <select
-                  value={gridType}
-                  onChange={(e) => setGridType(e.target.value as GridType)}
-                  style={{
-                    flexGrow: 1,
-                    padding: '0.5rem',
-                    borderRadius: 'var(--radius-sm)',
-                    background: 'var(--bg-surface)',
-                    border: '1px solid var(--border-subtle)',
-                    color: 'white',
-                    marginTop: '0.3rem',
-                    fontSize: '0.85rem',
-                  }}
-                >
-                  <option value="square">Square Grid</option>
-                  <option value="hex">Hexagonal Grid</option>
-                  <option value="none">No Grid</option>
-                </select>
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'baseline',
-                gap: '0.65rem',
-                padding: '0.5rem 0.75rem 1rem 0.75rem',
-              }}
-            >
-              {/* Grid Color */}
-              <div>
-                <label
-                  style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    color: 'var(--text-secondary)',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Grid Color
-                </label>
+                {/* Grid Opacity */}
                 <div
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    marginTop: '0.35rem',
-                    flexWrap: 'wrap',
+                    flexGrow: 1,
                   }}
                 >
-                  {PRESET_GRID_COLORS.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setGridColor(c)}
-                      style={{
-                        width: '26px',
-                        height: '26px',
-                        borderRadius: '4px',
-                        backgroundColor: c,
-                        border:
-                          gridColor === c
-                            ? '2px solid var(--accent-primary)'
-                            : '1px solid var(--border-strong)',
-                        cursor: 'pointer',
-                        transform: gridColor === c ? 'scale(1.15)' : 'none',
-                        transition: 'transform 0.1s ease',
-                      }}
-                      title={c}
-                    />
-                  ))}
-                  <input
-                    type="color"
-                    value={gridColor}
-                    onChange={(e) => setGridColor(e.target.value)}
+                  <div
                     style={{
-                      width: '28px',
-                      height: '28px',
-                      border: 'none',
-                      background: 'transparent',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      color: 'var(--text-secondary)',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    <span>Grid Opacity</span>
+                    <span
+                      style={{
+                        color: 'var(--accent-primary)',
+                        fontWeight: 800,
+                      }}
+                    >
+                      {Math.round(gridOpacity * 100)}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.05"
+                    max="1.0"
+                    step="0.05"
+                    value={gridOpacity}
+                    onChange={(e) => setGridOpacity(parseFloat(e.target.value))}
+                    style={{
+                      width: '100%',
+                      accentColor: 'var(--accent-primary)',
+                      marginTop: '0.8rem',
                       cursor: 'pointer',
                     }}
-                    title="Custom Color"
                   />
                 </div>
               </div>
 
-              {/* Grid Opacity */}
-              <div
-                style={{
-                  flexGrow: 1,
-                }}
-              >
-                <div
+              {/* Grid Math */}
+
+              <div style={{ padding: '0.5rem 0.75rem' }}>
+                <label
                   style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
                     fontSize: '0.75rem',
                     fontWeight: 700,
                     color: 'var(--text-secondary)',
+                    marginBottom: '0.35rem',
+                    display: 'block',
                     textTransform: 'uppercase',
                   }}
                 >
-                  <span>Grid Opacity</span>
-                  <span
+                  Layout
+                </label>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: '0.65rem',
+                  padding: '0.5rem 0.75rem 1rem 0.75rem',
+                  backgroundColor: 'var(--bg-surface)',
+                }}
+              >
+                {/* Width in Tiles */}
+                <div style={{ minWidth: 0 }}>
+                  <label
                     style={{
-                      color: 'var(--accent-primary)',
-                      fontWeight: 800,
+                      fontSize: '0.7rem',
+                      color: 'var(--text-muted)',
+                      textTransform: 'uppercase',
                     }}
                   >
-                    {Math.round(gridOpacity * 100)}%
-                  </span>
+                    Tiles Wide (X)
+                  </label>
+                  <input
+                    ref={tilesXInputRef}
+                    type="number"
+                    min={1}
+                    value={tilesXStr}
+                    onChange={(e) => handleTilesXChange(e.target.value)}
+                    onClick={handleFocusSelect}
+                    onFocus={handleFocusSelect}
+                    style={{
+                      padding: '0.45rem',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'var(--bg-surface)',
+                      border: '1px solid var(--border-subtle)',
+                      color: 'white',
+                      marginTop: '0.2rem',
+                      fontSize: '0.85rem',
+                      maxWidth: '5rem',
+                    }}
+                  />
                 </div>
-                <input
-                  type="range"
-                  min="0.05"
-                  max="1.0"
-                  step="0.05"
-                  value={gridOpacity}
-                  onChange={(e) => setGridOpacity(parseFloat(e.target.value))}
-                  style={{
-                    width: '100%',
-                    accentColor: 'var(--accent-primary)',
-                    marginTop: '0.8rem',
-                    cursor: 'pointer',
-                  }}
-                />
+
+                <div style={{ minWidth: 0 }}>
+                  <label
+                    style={{
+                      fontSize: '0.7rem',
+                      color: 'var(--text-muted)',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Tiles High (Y)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={tilesYStr}
+                    onChange={(e) => {
+                      setTilesYStr(e.target.value);
+                      setError(null);
+                    }}
+                    onClick={handleFocusSelect}
+                    onFocus={handleFocusSelect}
+                    style={{
+                      padding: '0.45rem',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'var(--bg-surface)',
+                      border: '1px solid var(--border-subtle)',
+                      color: 'white',
+                      marginTop: '0.2rem',
+                      fontSize: '0.85rem',
+                      maxWidth: '5rem',
+                    }}
+                  />
+                </div>
+
+                <div style={{ minWidth: 0 }}>
+                  <label
+                    style={{
+                      fontSize: '0.7rem',
+                      color: 'var(--text-muted)',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Tile Size (px)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={gridSizeStr}
+                    onChange={(e) => handleGridSizeChange(e.target.value)}
+                    onClick={handleFocusSelect}
+                    onFocus={handleFocusSelect}
+                    style={{
+                      padding: '0.45rem',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'var(--bg-surface)',
+                      border: '1px solid var(--border-subtle)',
+                      color: 'white',
+                      marginTop: '0.2rem',
+                      fontSize: '0.85rem',
+                      maxWidth: '5rem',
+                    }}
+                  />
+                </div>
+
+                <div style={{ minWidth: 0 }}>
+                  <label
+                    style={{
+                      fontSize: '0.7rem',
+                      color: 'var(--text-muted)',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Offset X (px)
+                  </label>
+                  <input
+                    type="number"
+                    value={gridOffsetXStr}
+                    onChange={(e) => setGridOffsetXStr(e.target.value)}
+                    onClick={handleFocusSelect}
+                    onFocus={handleFocusSelect}
+                    style={{
+                      padding: '0.45rem',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'var(--bg-surface)',
+                      border: '1px solid var(--border-subtle)',
+                      color: 'white',
+                      marginTop: '0.2rem',
+                      fontSize: '0.85rem',
+                      maxWidth: '5rem',
+                    }}
+                  />
+                </div>
+
+                <div style={{ minWidth: 0 }}>
+                  <label
+                    style={{
+                      fontSize: '0.7rem',
+                      color: 'var(--text-muted)',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Offset Y (px)
+                  </label>
+                  <input
+                    type="number"
+                    value={gridOffsetYStr}
+                    onChange={(e) => setGridOffsetYStr(e.target.value)}
+                    onClick={handleFocusSelect}
+                    onFocus={handleFocusSelect}
+                    style={{
+                      padding: '0.45rem',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'var(--bg-surface)',
+                      border: '1px solid var(--border-subtle)',
+                      color: 'white',
+                      marginTop: '0.2rem',
+                      fontSize: '0.85rem',
+                      maxWidth: '5rem',
+                    }}
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Grid Math */}
-
-            <div style={{ padding: '0.5rem 0.75rem' }}>
-              <label
+              {/* Custom Statuses Section */}
+              <div
                 style={{
                   fontSize: '0.75rem',
                   fontWeight: 700,
-                  color: 'var(--text-secondary)',
-                  marginBottom: '0.35rem',
-                  display: 'block',
                   textTransform: 'uppercase',
-                }}
-              >
-                Layout
-              </label>
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'baseline',
-                gap: '0.65rem',
-                padding: '0.5rem 0.75rem 1rem 0.75rem',
-                backgroundColor: 'var(--bg-surface)',
-              }}
-            >
-              {/* Width in Tiles */}
-              <div style={{ minWidth: 0 }}>
-                <label
-                  style={{
-                    fontSize: '0.7rem',
-                    color: 'var(--text-muted)',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Tiles Wide (X)
-                </label>
-                <input
-                  ref={tilesXInputRef}
-                  type="number"
-                  min={1}
-                  value={tilesXStr}
-                  onChange={(e) => handleTilesXChange(e.target.value)}
-                  onClick={handleFocusSelect}
-                  onFocus={handleFocusSelect}
-                  style={{
-                    padding: '0.45rem',
-                    borderRadius: 'var(--radius-sm)',
-                    background: 'var(--bg-surface)',
-                    border: '1px solid var(--border-subtle)',
-                    color: 'white',
-                    marginTop: '0.2rem',
-                    fontSize: '0.85rem',
-                    maxWidth: '5rem',
-                  }}
-                />
-              </div>
-
-              <div style={{ minWidth: 0 }}>
-                <label
-                  style={{
-                    fontSize: '0.7rem',
-                    color: 'var(--text-muted)',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Tiles High (Y)
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  value={tilesYStr}
-                  onChange={(e) => {
-                    setTilesYStr(e.target.value);
-                    setError(null);
-                  }}
-                  onClick={handleFocusSelect}
-                  onFocus={handleFocusSelect}
-                  style={{
-                    padding: '0.45rem',
-                    borderRadius: 'var(--radius-sm)',
-                    background: 'var(--bg-surface)',
-                    border: '1px solid var(--border-subtle)',
-                    color: 'white',
-                    marginTop: '0.2rem',
-                    fontSize: '0.85rem',
-                    maxWidth: '5rem',
-                  }}
-                />
-              </div>
-
-              <div style={{ minWidth: 0 }}>
-                <label
-                  style={{
-                    fontSize: '0.7rem',
-                    color: 'var(--text-muted)',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Tile Size (px)
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  value={gridSizeStr}
-                  onChange={(e) => handleGridSizeChange(e.target.value)}
-                  onClick={handleFocusSelect}
-                  onFocus={handleFocusSelect}
-                  style={{
-                    padding: '0.45rem',
-                    borderRadius: 'var(--radius-sm)',
-                    background: 'var(--bg-surface)',
-                    border: '1px solid var(--border-subtle)',
-                    color: 'white',
-                    marginTop: '0.2rem',
-                    fontSize: '0.85rem',
-                    maxWidth: '5rem',
-                  }}
-                />
-              </div>
-
-              <div style={{ minWidth: 0 }}>
-                <label
-                  style={{
-                    fontSize: '0.7rem',
-                    color: 'var(--text-muted)',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Offset X (px)
-                </label>
-                <input
-                  type="number"
-                  value={gridOffsetXStr}
-                  onChange={(e) => setGridOffsetXStr(e.target.value)}
-                  onClick={handleFocusSelect}
-                  onFocus={handleFocusSelect}
-                  style={{
-                    padding: '0.45rem',
-                    borderRadius: 'var(--radius-sm)',
-                    background: 'var(--bg-surface)',
-                    border: '1px solid var(--border-subtle)',
-                    color: 'white',
-                    marginTop: '0.2rem',
-                    fontSize: '0.85rem',
-                    maxWidth: '5rem',
-                  }}
-                />
-              </div>
-
-              <div style={{ minWidth: 0 }}>
-                <label
-                  style={{
-                    fontSize: '0.7rem',
-                    color: 'var(--text-muted)',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Offset Y (px)
-                </label>
-                <input
-                  type="number"
-                  value={gridOffsetYStr}
-                  onChange={(e) => setGridOffsetYStr(e.target.value)}
-                  onClick={handleFocusSelect}
-                  onFocus={handleFocusSelect}
-                  style={{
-                    padding: '0.45rem',
-                    borderRadius: 'var(--radius-sm)',
-                    background: 'var(--bg-surface)',
-                    border: '1px solid var(--border-subtle)',
-                    color: 'white',
-                    marginTop: '0.2rem',
-                    fontSize: '0.85rem',
-                    maxWidth: '5rem',
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Custom Statuses Section */}
-            <div
-              style={{
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                color: 'var(--accent-primary)',
-                borderBottom: '1px solid var(--border-subtle)',
-                paddingBottom: '0.35rem',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <span>Custom Statuses & Conditions</span>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setShowCustomStatusModal(true)}
-                style={{ fontSize: '0.7rem', padding: '0.25rem 0.5rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-              >
-                <Sparkles size={12} color="var(--accent-primary)" /> Manage Statuses ({Object.keys(map.customStatuses || {}).length} overrides)
-              </button>
-            </div>
-
-            {/* Secondary Submaps & Layout Areas */}
-            <div
-              style={{
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                color: 'var(--accent-primary)',
-                borderBottom: '1px solid var(--border-subtle)',
-                paddingBottom: '0.35rem',
-              }}
-            >
-              Secondary Submaps & Regions ({submaps.length})
-            </div>
-
-            {/* Submap Preset Buttons */}
-            <div
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: '0.35rem',
-                padding: '0.75rem',
-                justifyContent: 'space-evenly',
-              }}
-            >
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{ fontSize: '0.72rem', padding: '0.3rem 0.5rem' }}
-                onClick={() => handleAddPreset('building_floor')}
-                title="Add an adjacent building floor (e.g. 2nd Floor, Attic)"
-              >
-                <Plus size={12} /> + Floor
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{ fontSize: '0.72rem', padding: '0.3rem 0.5rem' }}
-                onClick={() => handleAddPreset('connected_dungeon')}
-                title="Add a connected portal dungeon or cavern"
-              >
-                <Plus size={12} /> + Dungeon
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{ fontSize: '0.72rem', padding: '0.3rem 0.5rem' }}
-                onClick={() => handleAddPreset('deployment_zone')}
-                title="Add a color-coded wargaming deployment zone"
-              >
-                <Plus size={12} /> + Deployment Zone
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{ fontSize: '0.72rem', padding: '0.3rem 0.5rem' }}
-                onClick={() => handleAddPreset('casualty_tray')}
-                title="Add an off-table casualty tray / graveyard for slain models"
-              >
-                <Plus size={12} /> + Casualty Tray
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{ fontSize: '0.72rem', padding: '0.3rem 0.5rem' }}
-                onClick={() => handleAddPreset('staging_area')}
-                title="Add an off-table staging area for reserves, deep strike, or embarked units"
-              >
-                <Plus size={12} /> + Staging Area
-              </button>
-            </div>
-
-            {/* Current Submaps List */}
-            {submaps.length > 0 ? (
-              <div
-                style={{
+                  letterSpacing: '0.05em',
+                  color: 'var(--accent-primary)',
+                  borderBottom: '1px solid var(--border-subtle)',
+                  paddingBottom: '0.35rem',
                   display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.6rem',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                 }}
               >
-                {submaps.map((sub) => (
-                  <SubmapEditorDrawer
-                    key={sub.id}
-                    submap={sub}
-                    parentMap={{
-                      ...map,
-                      gridSize: parseInt(gridSizeStr, 10) || map.gridSize || 50,
-                    }}
-                    isExpanded={expandedSubmapId === sub.id}
-                    onToggleExpand={() =>
-                      setExpandedSubmapId((cur) =>
-                        cur === sub.id ? null : sub.id
-                      )
-                    }
-                    onUpdate={(updates) => handleUpdateSubmap(sub.id, updates)}
-                    onDelete={() => handleRemoveSubmap(sub.id)}
-                    savedMapAssets={savedMapAssets}
-                  />
-                ))}
+                <span>Custom Statuses & Conditions</span>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowCustomStatusModal(true)}
+                  style={{
+                    fontSize: '0.7rem',
+                    padding: '0.25rem 0.5rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <Sparkles size={12} color="var(--accent-primary)" /> Manage
+                  Statuses ({Object.keys(map.customStatuses || {}).length}{' '}
+                  overrides)
+                </button>
               </div>
-            ) : (
-              <div
-                style={{
-                  fontSize: '0.72rem',
-                  color: 'var(--text-muted)',
-                  fontStyle: 'italic',
-                  padding: '0.2rem 0',
-                }}
-              >
-                No secondary submaps. Add a floor, deployment zone, or casualty
-                tray above.
-              </div>
-            )}
 
-            {/* Delete Map */}
-            <div
-              style={{
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                color: 'var(--accent-primary)',
-                borderBottom: '1px solid var(--border-subtle)',
-                paddingBottom: '0.35rem',
-                paddingTop: '1rem',
-              }}
-            >
-              Danger!
-            </div>
+              {/* Secondary Submaps & Layout Areas */}
+              {isFeatureEnabled('brawl_mode') && (
+                <div
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    color: 'var(--accent-primary)',
+                    borderBottom: '1px solid var(--border-subtle)',
+                    paddingBottom: '0.35rem',
+                  }}
+                >
+                  Secondary Submaps & Regions ({submaps.length})
+                </div>
+              )}
 
-            <div
-              style={{
-                padding: '0.75rem 0',
-                borderTop: '1px solid var(--border-subtle)',
-              }}
-            >
-              {confirmDelete ? (
+              {/* Submap Preset Buttons */}
+              {isFeatureEnabled('brawl_mode') && (
                 <div
                   style={{
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
+                    flexWrap: 'wrap',
+                    gap: '0.35rem',
+                    padding: '0.75rem',
+                    justifyContent: 'space-evenly',
                   }}
                 >
                   <button
                     type="button"
-                    className="btn"
-                    style={{
-                      flex: 1,
-                      backgroundColor: 'var(--accent-rose)',
-                      color: 'white',
-                      fontSize: '0.8rem',
-                      padding: '0.45rem',
-                    }}
-                    onClick={() => {
-                      onDelete(map.id);
-                      onClose();
-                    }}
+                    className="btn btn-secondary"
+                    style={{ fontSize: '0.72rem', padding: '0.3rem 0.5rem' }}
+                    onClick={() => handleAddPreset('building_floor')}
+                    title="Add an adjacent building floor (e.g. 2nd Floor, Attic)"
                   >
-                    Confirm Delete
+                    <Plus size={12} /> + Floor
                   </button>
                   <button
                     type="button"
                     className="btn btn-secondary"
-                    style={{ fontSize: '0.8rem', padding: '0.45rem' }}
-                    onClick={() => setConfirmDelete(false)}
+                    style={{ fontSize: '0.72rem', padding: '0.3rem 0.5rem' }}
+                    onClick={() => handleAddPreset('connected_dungeon')}
+                    title="Add a connected portal dungeon or cavern"
                   >
-                    Cancel
+                    <Plus size={12} /> + Dungeon
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ fontSize: '0.72rem', padding: '0.3rem 0.5rem' }}
+                    onClick={() => handleAddPreset('deployment_zone')}
+                    title="Add a color-coded wargaming deployment zone"
+                  >
+                    <Plus size={12} /> + Deployment Zone
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ fontSize: '0.72rem', padding: '0.3rem 0.5rem' }}
+                    onClick={() => handleAddPreset('casualty_tray')}
+                    title="Add an off-table casualty tray / graveyard for slain models"
+                  >
+                    <Plus size={12} /> + Casualty Tray
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ fontSize: '0.72rem', padding: '0.3rem 0.5rem' }}
+                    onClick={() => handleAddPreset('staging_area')}
+                    title="Add an off-table staging area for reserves, deep strike, or embarked units"
+                  >
+                    <Plus size={12} /> + Staging Area
                   </button>
                 </div>
-              ) : (
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  style={{
-                    width: '100%',
-                    color: 'var(--accent-rose)',
-                    borderColor: 'rgba(244, 63, 94, 0.3)',
-                    fontSize: '0.8rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.4rem',
-                    opacity: canDelete ? 1 : 0.4,
-                    cursor: canDelete ? 'pointer' : 'not-allowed',
-                  }}
-                  disabled={!canDelete}
-                  onClick={() => setConfirmDelete(true)}
-                  title={
-                    canDelete
-                      ? 'Delete this map from session'
-                      : 'Cannot delete the only remaining map'
-                  }
-                >
-                  <Trash2 size={14} /> Delete Map
-                </button>
               )}
-            </div>
-          </div>
 
-          {/* Footer Actions */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '0.75rem',
-              paddingTop: '1rem',
-              borderTop: '1px solid var(--border-strong)',
-            }}
-          >
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={onClose}
+              {/* Current Submaps List */}
+              {isFeatureEnabled('brawl_mode') && (
+                <>
+                  {submaps.length > 0 ? (
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.6rem',
+                      }}
+                    >
+                      {submaps.map((sub) => (
+                        <SubmapEditorDrawer
+                          key={sub.id}
+                          submap={sub}
+                          parentMap={{
+                            ...map,
+                            gridSize:
+                              parseInt(gridSizeStr, 10) || map.gridSize || 50,
+                          }}
+                          isExpanded={expandedSubmapId === sub.id}
+                          onToggleExpand={() =>
+                            setExpandedSubmapId((cur) =>
+                              cur === sub.id ? null : sub.id,
+                            )
+                          }
+                          onUpdate={(updates) =>
+                            handleUpdateSubmap(sub.id, updates)
+                          }
+                          onDelete={() => handleRemoveSubmap(sub.id)}
+                          savedMapAssets={savedMapAssets}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        fontSize: '0.72rem',
+                        color: 'var(--text-muted)',
+                        fontStyle: 'italic',
+                        padding: '0.2rem 0',
+                      }}
+                    >
+                      No secondary submaps. Add a floor, deployment zone, or
+                      casualty tray above.
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Delete Map */}
+              <div
+                style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  color: 'var(--accent-primary)',
+                  borderBottom: '1px solid var(--border-subtle)',
+                  paddingBottom: '0.35rem',
+                  paddingTop: '1rem',
+                }}
+              >
+                Danger!
+              </div>
+
+              <div
+                style={{
+                  padding: '0.75rem 0',
+                  borderTop: '1px solid var(--border-subtle)',
+                }}
+              >
+                {confirmDelete ? (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className="btn"
+                      style={{
+                        flex: 1,
+                        backgroundColor: 'var(--accent-rose)',
+                        color: 'white',
+                        fontSize: '0.8rem',
+                        padding: '0.45rem',
+                      }}
+                      onClick={() => {
+                        onDelete(map.id);
+                        onClose();
+                      }}
+                    >
+                      Confirm Delete
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      style={{ fontSize: '0.8rem', padding: '0.45rem' }}
+                      onClick={() => setConfirmDelete(false)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{
+                      width: '100%',
+                      color: 'var(--accent-rose)',
+                      borderColor: 'rgba(244, 63, 94, 0.3)',
+                      fontSize: '0.8rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.4rem',
+                      opacity: canDelete ? 1 : 0.4,
+                      cursor: canDelete ? 'pointer' : 'not-allowed',
+                    }}
+                    disabled={!canDelete}
+                    onClick={() => setConfirmDelete(true)}
+                    title={
+                      canDelete
+                        ? 'Delete this map from session'
+                        : 'Cannot delete the only remaining map'
+                    }
+                  >
+                    <Trash2 size={14} /> Delete Map
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '0.75rem',
+                paddingTop: '1rem',
+                borderTop: '1px solid var(--border-strong)',
+              }}
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-            >
-              <Check size={16} /> Save Settings
-            </button>
-          </div>
-        </form>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={onClose}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+              >
+                <Check size={16} /> Save Settings
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
-    {showCustomStatusModal && (
-      <CustomStatusModal
-        isOpen={showCustomStatusModal}
-        onClose={() => setShowCustomStatusModal(false)}
-        activeMap={map}
-        onUpdateMap={(mapId, updates) => onSave(updates)}
-      />
-    )}
+      {showCustomStatusModal && (
+        <CustomStatusModal
+          isOpen={showCustomStatusModal}
+          onClose={() => setShowCustomStatusModal(false)}
+          activeMap={map}
+          onUpdateMap={(mapId, updates) => onSave(updates)}
+        />
+      )}
     </>
   );
 };

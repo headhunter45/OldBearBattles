@@ -353,6 +353,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-230 | Separate army roster storage and selection between Player 1 and Player 2                                                                                                                                                                                                                                                                                                                                                                                                             | Old Bear Brawl | Ready    | [Feature](#ob-230) |
 | OB-231 | Make wargaming rulesets, phase sequences, scoring, and resource rules data-driven                                                                                                                                                                                                                                                                                                                                                                                                    | Old Bear Brawl | Ready    | [Feature](#ob-231) |
 | OB-232 | Add a system of feature flags that can be toggled after deployment.                                                                                                                                                                                                                                                                                                                                                                                                                  | Common         | Testing  | [Feature](#ob-232) |
+| OB-233 | Create scene from map asset uses natural image dimensions instead of default 2000x1500                                                                                                                                                                                                                                                                                                                                                                                               | Common         | Testing  | [Bug](#ob-233)     |
 
 ---
 
@@ -3863,6 +3864,17 @@ Design and implement a data-driven wargaming ruleset schema allowing customizabl
 
 **Description:**
 Add a system of feature flags we can use to enable/disable individual features. In prod this should rely on actual environment variables and in dev enironment variables sourced from .env with examples of currently supported ones in .env.example.
+- [x]
+
+<a id="ob-233" class="task" data-project="cmn" data-status="testing" data-task-type="bug"></a>
+### Create scene from map asset uses natural image dimensions instead of default 2000x1500
+**ID:** OB-233
+**Project:** Common
+**Status:** Testing
+**Type:** Bug
+
+**Description:**
+When importing legacy binders or map files where dimensions were omitted, making a scene from the map asset defaulted to 2000x1500 instead of inspecting the image's actual natural dimensions (e.g. 1024x1536). Inspect image dimensions on scene creation and file ingestion.
 - [x]
 
 ---

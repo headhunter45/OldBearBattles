@@ -43,6 +43,7 @@ import {
   saveAsset,
   updateAsset,
 } from '../storage/db.js';
+import { calculateDefaultTiles, getImageDimensions } from '../utils/imageUtils.js';
 export interface SavedCharacterRecord {
   id: string;
   name: string;
@@ -493,6 +494,16 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
         else if (activeTab === 'audio' || file.type.startsWith('audio/')) assetType = 'audio';
         else if ((activeTab as string) === 'props' || file.name.toLowerCase().includes('prop') || isTile) assetType = 'prop';
 
+        let width: number | undefined;
+        let height: number | undefined;
+        if (assetType === 'map' || (!file.type.startsWith('audio/') && (file.type.startsWith('image/') || dataUrl.startsWith('data:image')))) {
+          try {
+            const dims = await getImageDimensions(dataUrl);
+            width = dims.width;
+            height = dims.height;
+          } catch (_) {}
+        }
+
         await saveAsset({
           id: crypto.randomUUID(),
           name: file.name.replace(/\.[^/.]+$/, ''),
@@ -500,6 +511,8 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
           dataUrl,
           fileSize: file.size,
           fileHash: hash,
+          width,
+          height,
           isProp: assetType === 'prop' || isTile,
           layer: isTile ? 'map' : (assetType === 'prop' ? 'prop' : 'token'),
           tags: isTile ? ['tile'] : undefined,
@@ -579,6 +592,16 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
         else if (activeTab === 'audio' || file.type.startsWith('audio/')) assetType = 'audio';
         else if ((activeTab as string) === 'props' || file.name.toLowerCase().includes('prop') || isTile) assetType = 'prop';
 
+        let width: number | undefined;
+        let height: number | undefined;
+        if (assetType === 'map' || (!file.type.startsWith('audio/') && (file.type.startsWith('image/') || dataUrl.startsWith('data:image')))) {
+          try {
+            const dims = await getImageDimensions(dataUrl);
+            width = dims.width;
+            height = dims.height;
+          } catch (_) {}
+        }
+
         await saveAsset({
           id: crypto.randomUUID(),
           name: file.name.replace(/\.[^/.]+$/, ''),
@@ -586,6 +609,8 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
           dataUrl,
           fileSize: file.size,
           fileHash: hash,
+          width,
+          height,
           isProp: assetType === 'prop' || isTile,
           layer: isTile ? 'map' : (assetType === 'prop' ? 'prop' : 'token'),
           tags: isTile ? ['tile'] : undefined,
@@ -617,27 +642,52 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
     }
   };
 
-  const handleMakeScene = (asset: StoredAsset) => {
+  const handleMakeScene = async (asset: StoredAsset) => {
     if (!onAddMap) return;
+
+    let width = asset.width;
+    let height = asset.height;
+    if ((!width || !height) && asset.dataUrl) {
+      try {
+        const dims = await getImageDimensions(asset.dataUrl);
+        width = dims.width;
+        height = dims.height;
+        if (width && height && (width !== asset.width || height !== asset.height)) {
+          await saveAsset({
+            ...asset,
+            width,
+            height,
+          });
+        }
+      } catch (_) {}
+    }
+    width = width || 2000;
+    height = height || 1500;
+    const { tilesX, tilesY, gridSize } = calculateDefaultTiles(width, height);
+
     const newScene: GameMap = {
       id: `map-${crypto.randomUUID()}`,
       name: `${asset.name} Scene`,
       imageUrl: asset.dataUrl,
-      gridSize: 50,
+      gridSize,
       gridType: 'square',
       gridColor: '#ffffff',
       gridOpacity: 0.4,
-      width: asset.width || 2000,
-      height: asset.height || 1500,
+      width,
+      height,
       scaleFtPerCell: 5,
       showGrid: true,
+      tilesX,
+      tilesY,
+      gridOffsetX: 0,
+      gridOffsetY: 0,
       baseMapId: asset.id,
       baseMapName: asset.name,
     };
     onAddMap(newScene);
     setResultMessage({
       type: 'success',
-      text: `Created new scene "${newScene.name}" from map asset!`,
+      text: `Created new scene "${newScene.name}" (${width}x${height}) from map asset!`,
     });
   };
 
@@ -1105,11 +1155,11 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                         alignItems: 'center',
                         gap: '5px',
                       }}
-                      onClick={() => {
-                        selectedAssetIds.forEach((id) => {
+                      onClick={async () => {
+                        for (const id of selectedAssetIds) {
                           const asset = assets.find((a) => a.id === id);
-                          if (asset) handleMakeScene(asset);
-                        });
+                          if (asset) await handleMakeScene(asset);
+                        }
                         setSelectedAssetIds([]);
                       }}
                       title="Make scenes from selected maps"

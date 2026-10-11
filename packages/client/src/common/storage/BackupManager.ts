@@ -2,6 +2,7 @@ import {GameSession} from '@oldbear/shared';
 
 import {importBinderData, isBinderData} from './BinderPipeline.js';
 import {getDB, StoredAsset} from './db.js';
+import {getImageDimensions} from '../utils/imageUtils.js';
 
 export interface BackupPayload {
   app: 'OldBearBattles';
@@ -80,6 +81,18 @@ export async function importAllData(jsonString: string): Promise<
   }
 
   // Restore IndexedDB assets
+  if (typeof Image !== 'undefined') {
+    for (const asset of data.assets) {
+      if (asset && asset.id && asset.type === 'map' && asset.dataUrl && (!asset.width || !asset.height)) {
+        try {
+          const dims = await getImageDimensions(asset.dataUrl);
+          asset.width = dims.width;
+          asset.height = dims.height;
+        } catch (_) {}
+      }
+    }
+  }
+
   const db = await getDB();
   const tx = db.transaction('assets', 'readwrite');
   for (const asset of data.assets) {
