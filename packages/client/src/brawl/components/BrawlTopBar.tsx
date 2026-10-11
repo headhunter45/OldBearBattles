@@ -30,6 +30,7 @@ import {
   formatChessClock,
   getClockWarningStatus,
 } from '../domain/chessClock.js';
+import { useFeatureFlag } from '../../common/config/featureFlags.js';
 
 interface BrawlTopBarProps {
   roomName: string;
@@ -128,7 +129,11 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const clockEnabled = false;
+  const clockEnabled = useFeatureFlag('chess_clock');
+  const scoreboardEnabled = useFeatureFlag('scoreboard');
+  const objectivesEnabled = useFeatureFlag('objectives');
+  const armyRosterEnabled = useFeatureFlag('army_roster');
+  const toModeEnabled = useFeatureFlag('to_mode');
 
   return (
     <header
@@ -720,7 +725,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
           )}
 
         {/* Scoreboard Button (OB-159) */}
-        {onOpenScoreboard && (
+        {scoreboardEnabled && onOpenScoreboard && (
           <button
             className="btn btn-glass"
             style={{
@@ -749,7 +754,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
         )}
 
         {/* Objectives Button (OB-160) */}
-        {onOpenObjectives && (
+        {objectivesEnabled && onOpenObjectives && (
           <button
             className="btn btn-glass"
             style={{
@@ -803,7 +808,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
         )}
 
         {/* TO & Spectator Button (OB-163) */}
-        {onOpenToModal && (
+        {toModeEnabled && onOpenToModal && (
           <button
             className="btn btn-glass"
             style={{
@@ -850,24 +855,26 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
         )}
 
         {/* Army Roster Button */}
-        <button
-          className="btn btn-primary"
-          style={{
-            fontSize: '0.75rem',
-            padding: '4px 10px',
-            background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-            borderColor: '#b45309',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '5px',
-            flexShrink: 0,
-            whiteSpace: 'nowrap',
-          }}
-          onClick={onOpenArmyRoster}
-          title="Open Army Roster"
-        >
-          <Shield size={14} /> Army
-        </button>
+        {armyRosterEnabled && (
+          <button
+            className="btn btn-primary"
+            style={{
+              fontSize: '0.75rem',
+              padding: '4px 10px',
+              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+              borderColor: '#b45309',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              flexShrink: 0,
+              whiteSpace: 'nowrap',
+            }}
+            onClick={onOpenArmyRoster}
+            title="Open Army Roster"
+          >
+            <Shield size={14} /> Army
+          </button>
+        )}
 
         {/* Share Room Button */}
         <button

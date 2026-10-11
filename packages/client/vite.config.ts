@@ -54,6 +54,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     envDir: workspaceRoot,
+    envPrefix: ['VITE_', 'FEATURE_'],
     define: {
       'import.meta.env.VITE_TOAST_DURATION_MS': JSON.stringify(toastDuration),
       'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion),

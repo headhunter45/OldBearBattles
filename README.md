@@ -394,6 +394,24 @@ Old Bear Battles is configured using environment variables defined in `.env` (or
 | `TOAST_DURATION_MS` | `4500` | Duration in milliseconds before ephemeral toasts and fog status banners auto-dismiss | `4500` |
 | `VITE_TOAST_DURATION_MS` | `4500` | Client-side Vite environment variable mirroring toast duration | `4500` |
 
+#### 9. System Feature Flags (OB-232)
+
+Feature flags allow toggling individual features on or off after deployment without rebuilding the frontend bundle. In production, these are evaluated from host / container environment variables (and served via `/api/features`). In development, they are read from `.env` and `import.meta.env`. Values accept `true`/`false`, `1`/`0`, `on`/`off`, `yes`/`no`.
+
+| Environment Variable | Default | Description |
+|:---|:---:|:---|
+| `FEATURE_CHESS_CLOCK` | `false` | Enable match chess clocks in Brawl wargaming mode |
+| `FEATURE_VOICE_CHAT` | `true` | Enable WebRTC peer-to-peer voice mesh and audio controls |
+| `FEATURE_SOUNDBOARD` | `true` | Enable soundboard panel, sound effect triggers, and ambient audio |
+| `FEATURE_DICE_ROLLER` | `true` | Enable 3D dice roller drawer and chat roll integration |
+| `FEATURE_SCOREBOARD` | `true` | Enable victory point scoreboard and audit logs in Brawl mode |
+| `FEATURE_OBJECTIVES` | `true` | Enable objective markers and automatic control zone scoring |
+| `FEATURE_TO_MODE` | `true` | Enable Tournament Organizer rulings and match privacy controls |
+| `FEATURE_DNDBEYOND` | `true` | Enable D&D Beyond character importer and syncing |
+| `FEATURE_PATHBUILDER` | `true` | Enable Pathbuilder 2e character JSON imports |
+| `FEATURE_ARMY_ROSTER` | `true` | Enable wargaming army roster & NewRecruit/BattleScribe ingestion |
+| `FEATURE_FOG_OF_WAR` | `true` | Enable fog of war canvas occlusion rendering and GM tools |
+
 ---
 
 ## Native Local Development

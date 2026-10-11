@@ -352,6 +352,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-229 | Display Objective Control (OC) stats on tokens, selection HUD, and model stat cards                                                                                                                                                                                                                                                                                                                                                                                                  | Old Bear Brawl | Ready    | [Feature](#ob-229) |
 | OB-230 | Separate army roster storage and selection between Player 1 and Player 2                                                                                                                                                                                                                                                                                                                                                                                                             | Old Bear Brawl | Ready    | [Feature](#ob-230) |
 | OB-231 | Make wargaming rulesets, phase sequences, scoring, and resource rules data-driven                                                                                                                                                                                                                                                                                                                                                                                                    | Old Bear Brawl | Ready    | [Feature](#ob-231) |
+| OB-232 | Add a system of feature flags that can be toggled after deployment.                                                                                                                                                                                                                                                                                                                                                                                                                  | Common         | Testing  | [Feature](#ob-232) |
 
 ---
 
@@ -3852,6 +3853,17 @@ Separate army roster storage and selection per player so Player 1 and Player 2 e
 **Description:**
 Design and implement a data-driven wargaming ruleset schema allowing customizable phase step sequences, scoring rules (primary/secondary VP), resource pools (CP or other resources), and objective rules/presets beyond hardcoded 40k defaults.
 - [ ]
+
+<a id="ob-232" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
+### Add a system of feature flags that can be toggled after deployment.
+**ID:** OB-232
+**Project:** Common
+**Status:** Testing
+**Type:** Feature
+
+**Description:**
+Add a system of feature flags we can use to enable/disable individual features. In prod this should rely on actual environment variables and in dev enironment variables sourced from .env with examples of currently supported ones in .env.example.
+- [x]
 
 ---
 

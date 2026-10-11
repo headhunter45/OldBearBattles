@@ -43,6 +43,7 @@ import { ScoreboardModal } from './components/ScoreboardModal.js';
 import { ObjectivesModal } from './components/ObjectivesModal.js';
 import { DeploymentStagingModal } from './components/DeploymentStagingModal.js';
 import { TournamentOrganizerModal } from './components/TournamentOrganizerModal.js';
+import { useFeatureFlag } from '../common/config/featureFlags.js';
 import { WargamePhase, WargameUnit, WargameArmy } from './types/brawl.js';
 import {
   BrawlUserRole,
@@ -131,6 +132,7 @@ export const AppBrawl: React.FC = () => {
   });
   const [showArmyRoster, setShowArmyRoster] = useState(false);
   const [localArmy, setLocalArmy] = useState<WargameArmy>(() => loadSavedBrawlArmy());
+  const isChessClockFeatureEnabled = useFeatureFlag('chess_clock');
   const [showChessClockHUD, setShowChessClockHUD] = useState(false);
   const [showDiceRoller, setShowDiceRoller] = useState(false);
   const [showMapManager, setShowMapManager] = useState(false);
@@ -960,7 +962,7 @@ export const AppBrawl: React.FC = () => {
       )}
 
       {/* Floating Chess Clock HUD Widget (OB-158) */}
-      {showChessClockHUD && (
+      {isChessClockFeatureEnabled && showChessClockHUD && (
         <ChessClockWidget
           p1Seconds={p1ClockSeconds}
           p2Seconds={p2ClockSeconds}

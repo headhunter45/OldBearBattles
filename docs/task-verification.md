@@ -29,6 +29,7 @@ This document provides step-by-step instructions for manually verifying all feat
 | **[OB-200](#ob-200---standalone-token-attacks-without-character-sync)**                           | Standalone Token Attacks Without Character Sync                                  | VTT / Tokens          | Testing |
 | **[OB-207](#ob-207---unbound-token-resets-character-sheet-form-state)**                           | Unbound Token Resets Character Sheet Form State                                  | VTT / Character Sheet | Testing |
 | **[OB-211](#ob-211---remove-excess-display-from-info-commands)**                                  | Remove Excess Display from Info Commands                                         | Common / Chat         | Testing |
+| **[OB-232](#ob-232---system-feature-flags-environment-toggles--runtime-configuration)**           | System Feature Flags: Environment Toggles & Runtime Configuration                | Common / Config       | Testing |
 
 ---
 
@@ -163,6 +164,43 @@ This document provides step-by-step instructions for manually verifying all feat
 - Info command responses (`/spell?`, `/monster?`, `/attack?`, `/item?`, `/ability?`) are only displayed to the user who ran them (`isEphemeral: true`).
 - Other players in the room do not receive or see the inspection cards.
 - The cards render directly in the chat feed without being wrapped in the executing player's chat speech bubble or accompanied by redundant `inspects ...` text.
+
+---
+
+### OB-232 - System Feature Flags: Environment Toggles & Runtime Configuration
+
+- **Reference in tasks.md:** [tasks.md: OB-232](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-232)
+- **Primary Source Code:** [featureFlags.ts](file:///Users/tom/Projects/OldBearBattles/packages/shared/src/featureFlags.ts), [featureFlags.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/common/config/featureFlags.ts), [index.ts](file:///Users/tom/Projects/OldBearBattles/packages/server/src/index.ts)
+- **Where to find it:** Environment variables (`.env` in dev, container environment in prod), `/api/features` endpoint, and browser console (`window.__oldbear_features`).
+
+#### Step-by-Step Instructions:
+
+1. **Verify Default Feature States**:
+   - Navigate to Brawl mode at `http://localhost:3000/?brawl=true`.
+   - By default, `FEATURE_CHESS_CLOCK=false`. Observe that the chess clock button is hidden from the top navigation bar.
+   - Core features like Army Roster, Objectives, Scoreboard, and TO mode are enabled by default.
+2. **Verify Server Endpoint (`/api/features`)**:
+   - In your browser or via curl, navigate to `http://localhost:3000/api/features`.
+   - Verify the response JSON returns `{ features: { chess_clock: false, voice_chat: true, ... } }`.
+3. **Verify Runtime / Post-Deployment Toggling**:
+   - Open browser developer console on the Brawl page.
+   - Type `__oldbear_features.set('chess_clock', true)`.
+   - Verify the top bar immediately updates and displays the "Clock" button. Click it to open the floating Chess Clock HUD.
+   - Type `__oldbear_features.set('chess_clock', false)` (or `__oldbear_features.reset()`).
+   - Verify the chess clock button immediately hides.
+4. **Verify URL Query Override**:
+   - Navigate to `http://localhost:3000/?brawl=true&enable_feature=chess_clock` (or `?feature:chess_clock=true`).
+   - Verify the chess clock appears enabled without requiring environment modifications.
+5. **Verify Development `.env` Support**:
+   - Check `.env.example` and `.env` under section `9. Feature Flags (OB-232)`.
+   - Setting `FEATURE_CHESS_CLOCK=true` in `.env` activates chess clocks upon server restart or Vite reload.
+
+#### Expected Result (Pass Criteria):
+
+- All supported feature flags have explicit defaults documented in `.env.example`.
+- In production, flags can be toggled via host/container environment variables without rebuilding the static frontend bundle.
+- In development, flags can be set in `.env` using standard naming (`FEATURE_<NAME>=true|false`).
+- Frontend components reactively update when flags change without full page reloads.
 
 ---
 

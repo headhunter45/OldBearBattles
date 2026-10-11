@@ -9,6 +9,7 @@ import { createSession, getSession, getAllSessions, initSessionsFromDb } from '.
 import { setupWebSocket } from './signaling.js';
 import { fetchDnDCharacter } from './dndbeyond.js';
 import { initDb, isDbConnected, getDbPool } from './db.js';
+import { parseFeatureFlags } from '@oldbear/shared';
 
 // Load environment variables from root workspace and local directory
 dotenv.config({ path: path.resolve(import.meta.dirname, '../../.env') });
@@ -51,6 +52,19 @@ const healthHandler = async (_req: express.Request, res: express.Response) => {
 
 app.get('/health', healthHandler);
 app.get('/api/health', healthHandler);
+
+// System Feature Flags endpoint (OB-232)
+// Evaluated per-request from process.env (backed by .env in dev and container environment in prod)
+const featureFlagsHandler = (_req: express.Request, res: express.Response) => {
+  const flags = parseFeatureFlags(process.env);
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.json({
+    features: flags,
+  });
+};
+
+app.get('/api/features', featureFlagsHandler);
+app.get('/api/feature-flags', featureFlagsHandler);
 
 // List all active sessions
 app.get('/api/sessions', (_req, res) => {
