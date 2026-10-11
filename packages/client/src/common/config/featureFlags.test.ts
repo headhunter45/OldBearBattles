@@ -9,8 +9,9 @@ import {
 
 describe('Client Feature Flags Runtime (OB-232)', () => {
   it('reports default feature flag states accurately', () => {
-    // By default, chess_clock is disabled per user requirements
+    // By default, chess_clock and brawl_mode are disabled per requirements
     assert.strictEqual(isFeatureEnabled('chess_clock'), false);
+    assert.strictEqual(isFeatureEnabled('brawl_mode'), false);
 
     // Other core capabilities are enabled by default
     assert.strictEqual(isFeatureEnabled('voice_chat'), true);

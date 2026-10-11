@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { AppVtt } from './vtt/AppVtt.js';
 import { AppBrawl } from './brawl/AppBrawl.js';
+import { isFeatureEnabled, useFeatureFlag } from './common/config/featureFlags.js';
 
 export type GameMode = 'vtt' | 'brawl';
 
@@ -10,7 +11,24 @@ export interface GameModeConfig {
   isSingleMode: boolean;
 }
 
-export function parseAllowedModes(envAllowed?: string, envSingle?: string): GameModeConfig {
+export function parseAllowedModes(
+  envAllowed?: string,
+  envSingle?: string,
+  brawlModeEnabled?: boolean
+): GameModeConfig {
+  const isBrawlActive = brawlModeEnabled !== undefined
+    ? brawlModeEnabled
+    : isFeatureEnabled('brawl_mode');
+
+  // If brawl_mode is disabled, brawl mode is strictly unavailable and only vtt is allowed
+  if (!isBrawlActive) {
+    return {
+      allowedModes: ['vtt'],
+      defaultMode: 'vtt',
+      isSingleMode: true,
+    };
+  }
+
   const single = envSingle?.toLowerCase().trim();
   if (single === 'brawl' || single === 'vtt') {
     return {
@@ -46,8 +64,13 @@ export function detectGameMode(
   searchString?: string,
   storedMode?: string | null,
   envMode?: string,
-  envAllowedModes?: string
+  envAllowedModes?: string,
+  brawlModeEnabled?: boolean
 ): GameMode {
+  const isBrawlActive = brawlModeEnabled !== undefined
+    ? brawlModeEnabled
+    : isFeatureEnabled('brawl_mode');
+
   const resolvedEnvMode = envMode !== undefined
     ? envMode
     : (typeof import.meta !== 'undefined' ? (import.meta.env?.VITE_GAME_MODE || import.meta.env?.GAME_MODE) : undefined);
@@ -56,7 +79,20 @@ export function detectGameMode(
     ? envAllowedModes
     : (typeof import.meta !== 'undefined' ? (import.meta.env?.VITE_GAME_MODES || import.meta.env?.GAME_MODES) : undefined);
 
-  const config = parseAllowedModes(resolvedEnvAllowed, resolvedEnvMode);
+  const config = parseAllowedModes(resolvedEnvAllowed, resolvedEnvMode, isBrawlActive);
+
+  // If brawl mode is disabled, reset any persisted brawl preference to vtt and return vtt
+  if (!isBrawlActive) {
+    if (typeof localStorage !== 'undefined' && storedMode === undefined) {
+      try {
+        if (localStorage.getItem('oldbear_mode') === 'brawl') {
+          localStorage.setItem('oldbear_mode', 'vtt');
+        }
+      } catch {}
+    }
+    return 'vtt';
+  }
+
   if (config.isSingleMode) {
     return config.defaultMode;
   }
@@ -98,18 +134,35 @@ export function detectGameMode(
 
 export function switchGameMode(targetMode: GameMode): void {
   if (typeof window !== 'undefined') {
+    let modeToSet: GameMode = targetMode;
+    // When brawl_mode is false, attempts to switch to brawl must set vtt instead
+    if (modeToSet === 'brawl' && !isFeatureEnabled('brawl_mode')) {
+      modeToSet = 'vtt';
+    }
     if (typeof localStorage !== 'undefined') {
       try {
-        localStorage.setItem('oldbear_mode', targetMode);
+        localStorage.setItem('oldbear_mode', modeToSet);
       } catch {}
     }
     const url = new URL(window.location.href);
-    url.searchParams.set('mode', targetMode);
+    url.searchParams.set('mode', modeToSet);
     window.location.href = url.toString();
   }
 }
 
-export function isSingleGameModeEnforced(envMode?: string, envAllowedModes?: string): boolean {
+export function isSingleGameModeEnforced(
+  envMode?: string,
+  envAllowedModes?: string,
+  brawlModeEnabled?: boolean
+): boolean {
+  const isBrawlActive = brawlModeEnabled !== undefined
+    ? brawlModeEnabled
+    : isFeatureEnabled('brawl_mode');
+
+  if (!isBrawlActive) {
+    return true;
+  }
+
   const resolvedEnvMode = envMode !== undefined
     ? envMode
     : (typeof import.meta !== 'undefined' ? (import.meta.env?.VITE_GAME_MODE || import.meta.env?.GAME_MODE) : undefined);
@@ -118,13 +171,20 @@ export function isSingleGameModeEnforced(envMode?: string, envAllowedModes?: str
     ? envAllowedModes
     : (typeof import.meta !== 'undefined' ? (import.meta.env?.VITE_GAME_MODES || import.meta.env?.GAME_MODES) : undefined);
 
-  return parseAllowedModes(resolvedEnvAllowed, resolvedEnvMode).isSingleMode;
+  return parseAllowedModes(resolvedEnvAllowed, resolvedEnvMode, isBrawlActive).isSingleMode;
 }
 
 export const App: React.FC = () => {
-  const mode = useMemo(() => detectGameMode(), []);
+  const isBrawlEnabled = useFeatureFlag('brawl_mode');
+  const mode = useMemo(() => {
+    const detected = detectGameMode(undefined, undefined, undefined, undefined, isBrawlEnabled);
+    if (detected === 'brawl' && !isBrawlEnabled) {
+      return 'vtt';
+    }
+    return detected;
+  }, [isBrawlEnabled]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (typeof localStorage !== 'undefined') {
       try {
         localStorage.setItem('oldbear_mode', mode);
@@ -132,10 +192,39 @@ export const App: React.FC = () => {
     }
   }, [mode]);
 
-  if (mode === 'brawl') {
+  // Cleanse URL query if brawl was requested while brawl mode is disabled
+  useEffect(() => {
+    if (!isBrawlEnabled && typeof window !== 'undefined' && window.location) {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        let modified = false;
+        if (params.get('mode') === 'brawl') {
+          params.set('mode', 'vtt');
+          modified = true;
+        }
+        if (params.get('gamemode') === 'brawl') {
+          params.set('gamemode', 'vtt');
+          modified = true;
+        }
+        if (params.has('brawl')) {
+          params.delete('brawl');
+          params.set('mode', 'vtt');
+          modified = true;
+        }
+        if (modified) {
+          const newSearch = params.toString();
+          const newUrl = `${window.location.pathname}${newSearch ? '?' + newSearch : ''}${window.location.hash}`;
+          window.history.replaceState(null, '', newUrl);
+        }
+      } catch {}
+    }
+  }, [isBrawlEnabled]);
+
+  if (mode === 'brawl' && isBrawlEnabled) {
     return <AppBrawl />;
   }
 
   return <AppVtt />;
 };
+
 

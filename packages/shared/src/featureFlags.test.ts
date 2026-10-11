@@ -41,10 +41,13 @@ describe('System-Wide Feature Flags (OB-232)', () => {
     assert.strictEqual(normalizeFeatureKey('FEATURE_voice_chat'), 'voice_chat');
     assert.strictEqual(normalizeFeatureKey('chessClock'), 'chess_clock');
     assert.strictEqual(normalizeFeatureKey('dice-roller'), 'dice_roller');
+    assert.strictEqual(normalizeFeatureKey('FEATURE_BRAWL'), 'brawl_mode');
+    assert.strictEqual(normalizeFeatureKey('FEATURE_BRAWL_MODE'), 'brawl_mode');
   });
 
-  it('provides default states where chess_clock is false and others are true', () => {
+  it('provides default states where chess_clock and brawl_mode are false and others are true', () => {
     assert.strictEqual(DEFAULT_FEATURE_FLAGS.chess_clock, false);
+    assert.strictEqual(DEFAULT_FEATURE_FLAGS.brawl_mode, false);
     assert.strictEqual(DEFAULT_FEATURE_FLAGS.voice_chat, true);
     assert.strictEqual(DEFAULT_FEATURE_FLAGS.soundboard, true);
     assert.strictEqual(DEFAULT_FEATURE_FLAGS.dice_roller, true);

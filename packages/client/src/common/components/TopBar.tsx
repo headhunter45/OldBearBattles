@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { isSingleGameModeEnforced, switchGameMode } from '../../App.js';
+import { useFeatureFlag } from '../config/featureFlags.js';
 import { FULL_VERSION_STRING } from '../config/version.js';
 import { VoiceState } from '../network/VoiceManager.js';
 
@@ -60,6 +61,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onToggleMobileDrawer,
 }) => {
   const [copied, setCopied] = useState(false);
+  const isBrawlEnabled = useFeatureFlag('brawl_mode');
 
   const copyInviteLink = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -202,7 +204,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           )}
         </div>
 
-        {!isSingleGameModeEnforced() && (
+        {!isSingleGameModeEnforced() && isBrawlEnabled && (
           <button
             className="btn btn-glass"
             onClick={() => switchGameMode('brawl')}

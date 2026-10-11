@@ -16,7 +16,8 @@ export type KnownFeatureFlag =
   | 'dndbeyond'
   | 'pathbuilder'
   | 'army_roster'
-  | 'fog_of_war';
+  | 'fog_of_war'
+  | 'brawl_mode';
 
 export type FeatureFlagKey = KnownFeatureFlag | (string & {});
 
@@ -37,6 +38,7 @@ export const DEFAULT_FEATURE_FLAGS: Record<KnownFeatureFlag, boolean> = {
   pathbuilder: true,
   army_roster: true,
   fog_of_war: true,
+  brawl_mode: false,
 };
 
 /**
@@ -68,10 +70,12 @@ export function normalizeFeatureKey(rawKey: string): string {
   if (key.startsWith('FEATURE_')) {
     key = key.substring(8);
   }
-  return key
+  const normalized = key
     .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
     .replace(/[-\s]+/g, '_')
     .toLowerCase();
+  if (normalized === 'brawl') return 'brawl_mode';
+  return normalized;
 }
 
 /**
@@ -84,7 +88,7 @@ export function normalizeFeatureKey(rawKey: string): string {
  */
 export function parseFeatureFlags(
   env: Record<string, string | boolean | undefined> = {},
-  defaults: Record<string, boolean> = DEFAULT_FEATURE_FLAGS
+  defaults: Record<string, boolean> = DEFAULT_FEATURE_FLAGS,
 ): Record<string, boolean> {
   const flags: Record<string, boolean> = { ...defaults };
 
@@ -122,7 +126,7 @@ export function parseFeatureFlags(
 export function isFeatureFlagActive(
   flags: Record<string, boolean>,
   flag: string,
-  fallback = false
+  fallback = false,
 ): boolean {
   const normalized = normalizeFeatureKey(flag);
   if (normalized in flags) {

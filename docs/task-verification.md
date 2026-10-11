@@ -183,37 +183,42 @@ This document provides step-by-step instructions for manually verifying all feat
   9. `pathbuilder`: Pathbuilder 2e PF2e tab and importer in Character Sheet flyout.
   10. `army_roster`: Army button in Brawl topbar and Army Roster flyout.
   11. `fog_of_war`: GM Fog of War tool and submenus in the canvas toolbar.
+  12. `brawl_mode`: Tactical tabletop wargaming mode platform (`AppBrawl`), top bar and mobile drawer mode switchers (defaults to `false` until releasable).
 
 #### Step-by-Step Instructions:
 
 1. **Verify Default Feature States**:
-   - Navigate to Brawl mode at `http://localhost:3000/?brawl=true`.
-   - By default, `FEATURE_CHESS_CLOCK=false`. Observe that the chess clock button is hidden from the top navigation bar.
-   - Core features like Army Roster, Objectives, Scoreboard, and TO mode are enabled by default.
+   - Navigate to `http://localhost:3000`.
+   - By default, `FEATURE_BRAWL_MODE=false`. Observe that all buttons and links to switch to Brawl mode (in TopBar and MobileDrawer) are hidden.
+   - Attempting to navigate directly to `http://localhost:3000/?mode=brawl` automatically routes to VTT mode.
+   - By default, `FEATURE_CHESS_CLOCK=false`. Core features like Army Roster, Objectives, Scoreboard, and TO mode are enabled by default for when Brawl mode is active.
 2. **Verify Server Endpoint (`/api/features`)**:
    - In your browser or via curl, navigate to `http://localhost:3000/api/features`.
-   - Verify the response JSON returns all 11 flags: `{ features: { chess_clock: false, voice_chat: true, soundboard: true, dice_roller: true, scoreboard: true, objectives: true, to_mode: true, dndbeyond: true, pathbuilder: true, army_roster: true, fog_of_war: true } }`.
+   - Verify the response JSON returns all 12 flags including `brawl_mode: false`: `{ features: { brawl_mode: false, chess_clock: false, voice_chat: true, soundboard: true, dice_roller: true, scoreboard: true, objectives: true, to_mode: true, dndbeyond: true, pathbuilder: true, army_roster: true, fog_of_war: true } }`.
 3. **Verify Runtime / Post-Deployment Toggling**:
-   - Open browser developer console on the Brawl page.
-   - Type `__oldbear_features.set('chess_clock', true)`.
-   - Verify the top bar immediately updates and displays the "Clock" button. Click it to open the floating Chess Clock HUD.
-   - Type `__oldbear_features.set('chess_clock', false)` (or `__oldbear_features.reset()`).
-   - Verify the chess clock button immediately hides.
+   - Open browser developer console on the VTT page.
+   - Type `__oldbear_features.set('brawl_mode', true)`.
+   - Verify the top bar immediately updates and displays the "Brawl" mode switcher button, and Mobile Drawer displays the "Switch to Brawl Mode" toggle.
+   - Click "Brawl" to switch into Brawl mode.
+   - Type `__oldbear_features.set('chess_clock', true)`. Verify the top bar displays the "Clock" button.
+   - Type `__oldbear_features.set('brawl_mode', false)`.
+   - Verify that attempts to access brawl mode switch back to VTT mode, and all Brawl references disappear.
 4. **Verify Component-Level Toggling for Flags**:
    - **Character Imports**: Open the Character Sheet in VTT. In console run `__oldbear_features.set('dndbeyond', false)` and `__oldbear_features.set('pathbuilder', false)`. Observe that the D&D Beyond and Pathbuilder tabs hide, leaving only Local Character. Reset them with `__oldbear_features.reset()`.
-   - **Brawl Modules**: In console run `__oldbear_features.set('scoreboard', false)` or `__oldbear_features.set('army_roster', false)`. Observe that the corresponding top bar buttons hide and their modals cannot be opened.
+   - **Brawl Modules**: In console with `brawl_mode` enabled, run `__oldbear_features.set('scoreboard', false)` or `__oldbear_features.set('army_roster', false)`. Observe that the corresponding top bar buttons hide and their modals cannot be opened.
    - **Fog of War**: As GM in VTT, run `__oldbear_features.set('fog_of_war', false)` in console. Observe that the Fog of War button in the toolbar disappears.
    - **Dice Roller / Soundboard / Voice**: Run `__oldbear_features.set('dice_roller', false)`. Observe that the Dice buttons disappear from the top bar and mobile drawer.
 5. **Verify URL Query Override**:
-   - Navigate to `http://localhost:3000/?brawl=true&enable_feature=chess_clock` (or `?feature:chess_clock=true`).
-   - Verify the chess clock appears enabled without requiring environment modifications.
+   - Navigate to `http://localhost:3000/?enable_feature=brawl_mode&mode=brawl`.
+   - Verify that Brawl mode opens cleanly with URL feature flag activation.
 6. **Verify Development `.env` Support**:
    - Check `.env.example` and `.env` under section `9. Feature Flags (OB-232)`.
-   - Setting `FEATURE_CHESS_CLOCK=true` in `.env` activates chess clocks upon server restart or Vite reload.
+   - Setting `FEATURE_BRAWL_MODE=true` in `.env` activates Brawl mode upon server restart or Vite reload.
 
 #### Expected Result (Pass Criteria):
 
-- All 11 supported feature flags have explicit defaults documented in `.env.example`.
+- All 12 supported feature flags have explicit defaults documented in `.env.example`.
+- When `brawl_mode` is false (default), Brawl mode is unavailable, all links/references to Brawl mode are hidden, and attempts to set Brawl mode route to VTT.
 - In production, flags can be toggled via host/container environment variables without rebuilding the static frontend bundle.
 - In development, flags can be set in `.env` using standard naming (`FEATURE_<NAME>=true|false`).
 - Frontend components reactively update when flags change without full page reloads.

@@ -89,6 +89,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   const voiceChatEnabled = useFeatureFlag('voice_chat');
   const soundboardEnabled = useFeatureFlag('soundboard');
   const diceRollerEnabled = useFeatureFlag('dice_roller');
+  const brawlModeEnabled = useFeatureFlag('brawl_mode');
 
   useEffect(() => {
     if (isOpen) {
@@ -533,7 +534,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
         })()}
 
         {/* Mode Switcher Toggle for Multi-mode instances */}
-        {!isSingleGameModeEnforced() && (
+        {!isSingleGameModeEnforced() && brawlModeEnabled && (
           <div style={{ marginTop: '0.75rem', marginBottom: '0.5rem' }}>
             <button
               className="btn btn-secondary"
