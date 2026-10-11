@@ -32,14 +32,18 @@ import { ChatPanel } from '../common/components/ChatPanel.js';
 import { MarkerControls } from '../common/components/MarkerControls.js';
 import { TOAST_DURATION_MS } from '../common/config/toast.js';
 import { BrawlTopBar } from './components/BrawlTopBar.js';
-import { ArmyRosterFlyout } from './components/ArmyRosterFlyout.js';
+import {
+  ArmyRosterFlyout,
+  loadSavedBrawlArmy,
+  saveBrawlArmy,
+} from './components/ArmyRosterFlyout.js';
 import { PhaseAnnouncementBanner } from './components/PhaseAnnouncementBanner.js';
 import { ChessClockWidget } from './components/ChessClockWidget.js';
 import { ScoreboardModal } from './components/ScoreboardModal.js';
 import { ObjectivesModal } from './components/ObjectivesModal.js';
 import { DeploymentStagingModal } from './components/DeploymentStagingModal.js';
 import { TournamentOrganizerModal } from './components/TournamentOrganizerModal.js';
-import { WargamePhase, WargameUnit } from './types/brawl.js';
+import { WargamePhase, WargameUnit, WargameArmy } from './types/brawl.js';
 import {
   BrawlUserRole,
   OfficialRuling,
@@ -126,6 +130,7 @@ export const AppBrawl: React.FC = () => {
     hideReservesFromSpectators: false,
   });
   const [showArmyRoster, setShowArmyRoster] = useState(false);
+  const [localArmy, setLocalArmy] = useState<WargameArmy>(() => loadSavedBrawlArmy());
   const [showChessClockHUD, setShowChessClockHUD] = useState(false);
   const [showDiceRoller, setShowDiceRoller] = useState(false);
   const [showMapManager, setShowMapManager] = useState(false);
@@ -849,6 +854,11 @@ export const AppBrawl: React.FC = () => {
       {/* Army Roster Flyout */}
       {showArmyRoster && (
         <ArmyRosterFlyout
+          army={localArmy}
+          onArmyChange={(updated) => {
+            setLocalArmy(updated);
+            saveBrawlArmy(updated);
+          }}
           onClose={() => setShowArmyRoster(false)}
           onDeployUnit={(unit, army) => {
             const currentMapId = currentMap?.id || gmPreviewMapId || session?.activeMapId || session?.maps[0]?.id || '';
@@ -862,13 +872,19 @@ export const AppBrawl: React.FC = () => {
               } catch {}
             }
             const spacing = 70;
+            const deployBatchId = Date.now().toString(36);
             const newTokens = unit.models.map((model, idx) => {
               const positionedModel = {
                 ...model,
                 x: startX + (idx % 5) * spacing,
                 y: startY + Math.floor(idx / 5) * spacing,
               };
-              return modelToToken(positionedModel, unit, army, DEFAULT_PX_PER_INCH, currentMapId);
+              const tok = modelToToken(positionedModel, unit, army, DEFAULT_PX_PER_INCH, currentMapId);
+              tok.id = `${tok.id}_${deployBatchId}_${idx}`;
+              if (localPlayer?.id) {
+                tok.ownerId = localPlayer.id;
+              }
+              return tok;
             });
 
             setSession((prev) => {

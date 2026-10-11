@@ -9,28 +9,26 @@ This document provides step-by-step instructions for manually verifying all feat
 
 ## Tasks Awaiting Verification
 
-| Task ID | Feature Title | Domain | Status |
-| :------ | :------------ | :----- | :----- |
-
-| **[OB-160](#ob-160---objective-marker-control-zone-calculation--auto-scoring)** | Objective Marker Control Zone Calculation & Auto-Scoring | Wargaming / Brawl | Testing |
-| **[OB-161](#ob-161---roster-ingestion-pipeline-newrecruit-json--battlescribe-rosz)** | Roster Ingestion Pipeline: NewRecruit JSON & BattleScribe `.rosz` | Wargaming / Brawl | Testing |
-| **[OB-162](#ob-162---deployment-zones-casualty-trays--staging-submap-templates)** | Deployment Zones, Casualty Trays & Staging Submap Templates | Wargaming / Brawl | Testing |
-| **[OB-163](#ob-163---tournament-organizer-to-mode-match-privacy--spectator-controls)** | Tournament Organizer (TO) Mode, Match Privacy & Spectator Controls | Wargaming / Brawl | Testing |
-| **[OB-182](#ob-182---associate-controllable-token-with-chat-panel)** | Associate Controllable Token with Chat Panel | VTT / Chat | Testing |
-| **[OB-183](#ob-183---codebase-simplification--refactoring-plan-docsrefactor-1md)** | Codebase Simplification & Refactoring Plan (`docs/refactor-1.md`) | Architecture / Plan | Testing |
-| **[OB-184](#ob-184---helptip-component--placement-guide-docshelptip-locationsmd)** | HelpTip Component & Placement Guide (`docs/helptip-locations.md`) | UI / UX Guide | Testing |
-| **[OB-185](#ob-185---backlog-research--implementation-guide-docsbacklog-implementation-guidemd)** | Backlog Research & Implementation Guide (`docs/backlog-implementation-guide.md`) | Architecture / Guide | Testing |
-| **[OB-187](#ob-187---submap--deployment-zone-customization-ui)** | Submap & Deployment Zone Customization UI | VTT & Brawl / Scenes | Testing |
-| **[OB-188](#ob-188---relative-dragging-for-tokens-modular-tiles-and-props)** | Relative Dragging for Tokens, Modular Tiles, and Props | VTT & Brawl / Canvas | Testing |
-| **[OB-189](#ob-189---edit-modular-tiles-and-center-on-random-draw)** | Edit Modular Tiles & Center on Random Draw | Common / Assets | Testing |
-| **[OB-191](#ob-191---no-ring-color-default-for-props-and-tiles)** | No Ring Color as Default for Props & Tiles | Common / Canvas | Testing |
-| **[OB-192](#ob-192---custom-status-creation-editing-and-token-controls-integration)** | Custom Status Creation, Editing, & Token Controls Integration | Common / Statuses | Testing |
-| **[OB-193](#ob-193---choose-existing-and-preset-images-in-token-editor)** | Choose Existing & Preset Images in Token Editor | Common / Tokens | Testing |
-| **[OB-197](#ob-197---brawl-mode-top-bar-and-bidirectional-mode-switching)** | Brawl Mode Top Bar & Bidirectional Mode Switching | Platform / Brawl | Testing |
-| **[OB-198](#ob-198---reveal-fog-shortcut-key-shift-f)** | Reveal Fog Shortcut Key (`Shift+F`) | VTT / Fog of War | Testing |
-| **[OB-200](#ob-200---standalone-token-attacks-without-character-sync)** | Standalone Token Attacks Without Character Sync | VTT / Tokens | Testing |
-| **[OB-207](#ob-207---unbound-token-resets-character-sheet-form-state)** | Unbound Token Resets Character Sheet Form State | VTT / Character Sheet | Testing |
-| **[OB-211](#ob-211---remove-excess-display-from-info-commands)** | Remove Excess Display from Info Commands | Common / Chat | Testing |
+| Task ID                                                                                           | Feature Title                                                                    | Domain                | Status  |
+| :------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------- | :-------------------- | :------ |
+| **[OB-160](#ob-160---objective-marker-control-zone-calculation--auto-scoring)**                   | Objective Marker Control Zone Calculation & Auto-Scoring                         | Wargaming / Brawl     | Testing |
+| **[OB-162](#ob-162---deployment-zones-casualty-trays--staging-submap-templates)**                 | Deployment Zones, Casualty Trays & Staging Submap Templates                      | Wargaming / Brawl     | Testing |
+| **[OB-163](#ob-163---tournament-organizer-to-mode-match-privacy--spectator-controls)**            | Tournament Organizer (TO) Mode, Match Privacy & Spectator Controls               | Wargaming / Brawl     | Testing |
+| **[OB-182](#ob-182---associate-controllable-token-with-chat-panel)**                              | Associate Controllable Token with Chat Panel                                     | VTT / Chat            | Testing |
+| **[OB-183](#ob-183---codebase-simplification--refactoring-plan-docsrefactor-1md)**                | Codebase Simplification & Refactoring Plan (`docs/refactor-1.md`)                | Architecture / Plan   | Testing |
+| **[OB-184](#ob-184---helptip-component--placement-guide-docshelptip-locationsmd)**                | HelpTip Component & Placement Guide (`docs/helptip-locations.md`)                | UI / UX Guide         | Testing |
+| **[OB-185](#ob-185---backlog-research--implementation-guide-docsbacklog-implementation-guidemd)** | Backlog Research & Implementation Guide (`docs/backlog-implementation-guide.md`) | Architecture / Guide  | Testing |
+| **[OB-187](#ob-187---submap--deployment-zone-customization-ui)**                                  | Submap & Deployment Zone Customization UI                                        | VTT & Brawl / Scenes  | Testing |
+| **[OB-188](#ob-188---relative-dragging-for-tokens-modular-tiles-and-props)**                      | Relative Dragging for Tokens, Modular Tiles, and Props                           | VTT & Brawl / Canvas  | Testing |
+| **[OB-189](#ob-189---edit-modular-tiles-and-center-on-random-draw)**                              | Edit Modular Tiles & Center on Random Draw                                       | Common / Assets       | Testing |
+| **[OB-191](#ob-191---no-ring-color-default-for-props-and-tiles)**                                 | No Ring Color as Default for Props & Tiles                                       | Common / Canvas       | Testing |
+| **[OB-192](#ob-192---custom-status-creation-editing-and-token-controls-integration)**             | Custom Status Creation, Editing, & Token Controls Integration                    | Common / Statuses     | Testing |
+| **[OB-193](#ob-193---choose-existing-and-preset-images-in-token-editor)**                         | Choose Existing & Preset Images in Token Editor                                  | Common / Tokens       | Testing |
+| **[OB-197](#ob-197---brawl-mode-top-bar-and-bidirectional-mode-switching)**                       | Brawl Mode Top Bar & Bidirectional Mode Switching                                | Platform / Brawl      | Testing |
+| **[OB-198](#ob-198---reveal-fog-shortcut-key-shift-f)**                                           | Reveal Fog Shortcut Key (`Shift+F`)                                              | VTT / Fog of War      | Testing |
+| **[OB-200](#ob-200---standalone-token-attacks-without-character-sync)**                           | Standalone Token Attacks Without Character Sync                                  | VTT / Tokens          | Testing |
+| **[OB-207](#ob-207---unbound-token-resets-character-sheet-form-state)**                           | Unbound Token Resets Character Sheet Form State                                  | VTT / Character Sheet | Testing |
+| **[OB-211](#ob-211---remove-excess-display-from-info-commands)**                                  | Remove Excess Display from Info Commands                                         | Common / Chat         | Testing |
 
 ---
 
@@ -242,36 +240,6 @@ This document provides step-by-step instructions for manually verifying all feat
 - Control zone calculates 3-inch perimeter-to-perimeter distances.
 - Objective Control (OC) correctly determines controlling player.
 - Automatic scoring integrates cleanly with Scoreboard state.
-
----
-
-### OB-161 - Roster Ingestion Pipeline: NewRecruit JSON & BattleScribe `.rosz`
-
-- **Reference in tasks.md:** [tasks.md: OB-161](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-161)
-- **Primary Source Code:** [rosterParser.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/brawl/domain/rosterParser.ts), [ArmyRosterFlyout.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/brawl/components/ArmyRosterFlyout.tsx)
-- **Where to find it:** Army Roster Flyout -> **Import Roster** button.
-
-#### Step-by-Step Instructions:
-
-1. Open Army Roster Flyout in Brawl mode and click **Import**.
-2. Select or drop a roster file such as `docs/examples/armies/newrecruit-list.json`, `.ros`, or `.rosz` export.
-3. Verify the Army Roster header and metadata:
-   - Header displays accurate points: `Army Roster (1000 / 1000 pts)` (does not include configuration/upgrades like Battle Size, Detachment, Show/Hide Options).
-   - Faction displays: `Faction: Chaos - Thousand Sons • Detachment: Changehost of Deceit`.
-4. Inspect unit model counts and cards:
-   - Single-model units (e.g. `Ahriman`, `Brayherd Shaman [Crucible]`, `Exalted Sorcerer`, `Chaos Predator Annihilator`) show **1 model** (not 5).
-   - Squads show accurate counts: `Flamers` (3 models), `Chaos Spawn` (2 models).
-   - Base sizes are respected (e.g. 40mm for Ahriman, 50mm for Chaos Spawn, Hull/rectangular for Predator).
-5. Scroll through the Army Roster:
-   - Confirm the units list scrolls smoothly with a vertical scrollbar.
-   - Confirm unit cards maintain their full readable layout and do NOT compress/shrink to 4-8px tall strips.
-
-#### Expected Result (Pass Criteria):
-
-- NewRecruit JSON, XML (`.ros`), and `.rosz` files parse accurately with correct points calculations.
-- Configuration and upgrade selections (e.g., Battle Size, Detachment, Show/Hide Options) are filtered out and not treated as playable units.
-- Single-model characters display 1 model; multi-model squads display their actual model count.
-- The Army Roster Flyout scrolls cleanly without squishing unit cards.
 
 ---
 
