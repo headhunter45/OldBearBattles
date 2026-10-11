@@ -220,6 +220,12 @@ describe('Dice Parser & Slash Command Utilities', () => {
 
     assert.strictEqual(updatedTokens.length, 2);
     assert.strictEqual(updatedTokens[1].tokenId, 'tok-1');
+
+    // 6. When dndbeyond feature flag is disabled, /sync is rejected
+    updateActiveFlags({ dndbeyond: false });
+    processSlashCommand('/sync 47804290', ctx);
+    assert.ok(sentMessages.at(-1)?.text.includes('D&D Beyond integration is currently disabled.'));
+    updateActiveFlags({ dndbeyond: true });
   });
 
   it('lists tokens and their index numbers with /tokens (Bug #56)', () => {

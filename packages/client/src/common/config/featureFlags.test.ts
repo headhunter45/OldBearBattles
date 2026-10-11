@@ -18,8 +18,8 @@ describe('Client Feature Flags Runtime (OB-232)', () => {
     assert.strictEqual(isFeatureEnabled('voice_chat'), true);
     assert.strictEqual(isFeatureEnabled('soundboard'), true);
     assert.strictEqual(isFeatureEnabled('dice_roller'), true);
-    assert.strictEqual(isFeatureEnabled('scoreboard'), true);
-    assert.strictEqual(isFeatureEnabled('objectives'), true);
+    assert.strictEqual(isFeatureEnabled('scoreboard'), false);
+    assert.strictEqual(isFeatureEnabled('objectives'), false);
   });
 
   it('updates active flags when server sends runtime flags', () => {

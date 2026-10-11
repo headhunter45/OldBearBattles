@@ -203,6 +203,7 @@ describe('BrawlTopBar Active Scene Settings (OB-209)', () => {
   });
 
   it('renders Scoreboard trophy button in BrawlTopBar (OB-159)', () => {
+    updateActiveFlags({ scoreboard: true });
     const markup = renderToStaticMarkup(
       React.createElement(BrawlTopBar, {
         roomName: 'Test Room',

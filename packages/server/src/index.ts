@@ -9,7 +9,7 @@ import { createSession, getSession, getAllSessions, initSessionsFromDb } from '.
 import { setupWebSocket } from './signaling.js';
 import { fetchDnDCharacter } from './dndbeyond.js';
 import { initDb, isDbConnected, getDbPool } from './db.js';
-import { parseFeatureFlags } from '@oldbear/shared';
+import { parseFeatureFlags, isFeatureFlagActive } from '@oldbear/shared';
 
 // Load environment variables from root workspace and local directory
 dotenv.config({ path: path.resolve(import.meta.dirname, '../../.env') });
@@ -94,6 +94,11 @@ app.get('/api/sessions/:roomId', (req, res) => {
 
 // Proxy and normalize D&D Beyond character data
 app.get('/api/dndbeyond/:characterId', async (req, res) => {
+  const flags = parseFeatureFlags(process.env);
+  if (!isFeatureFlagActive(flags, 'dndbeyond')) {
+    res.status(403).json({ error: 'D&D Beyond integration is currently disabled.' });
+    return;
+  }
   try {
     const character = await fetchDnDCharacter(req.params.characterId);
     if (!character) {

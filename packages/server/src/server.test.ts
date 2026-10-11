@@ -140,6 +140,18 @@ describe('System Feature Flags Endpoint & Parsing (OB-232)', () => {
     assert.strictEqual(flags.chess_clock, true, 'chess_clock overridden to true');
     assert.strictEqual(flags.soundboard, false, 'soundboard overridden to false');
     assert.strictEqual(flags.voice_chat, DEFAULT_FEATURE_FLAGS.voice_chat, 'voice_chat retains default');
+
+    const dndDisabled = parseFeatureFlags({
+      FEATURE_DNDBEYOND: 'false',
+    });
+    assert.strictEqual(dndDisabled.dndbeyond, false, 'dndbeyond can be disabled via FEATURE_DNDBEYOND');
+
+    // sync_dndbeyond aliases to dndbeyond for backwards compatibility
+    const dndAliased = parseFeatureFlags({
+      FEATURE_SYNC_DNDBEYOND: 'false',
+    });
+    assert.strictEqual(dndAliased.dndbeyond, false, 'FEATURE_SYNC_DNDBEYOND aliases to dndbeyond');
   });
 });
+
 

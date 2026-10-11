@@ -45,6 +45,7 @@ import {
   parseCompendiumQuery,
   fetchCompendiumEntry,
 } from '../utils/compendiumResolver.js';
+import { isFeatureEnabled } from '../config/featureFlags.js';
 
 export interface ChatPanelProps {
   player: Player;
@@ -266,8 +267,11 @@ export function processSlashCommand(
 
   // 1. /help
   if (cmd === 'help') {
+    const dndBeyondLine = isFeatureEnabled('dndbeyond')
+      ? '\n• /sync [url or id] [token index] - Sync character sheet and token with D&D Beyond'
+      : '';
     sendPrivateSystemMessage(
-      `Available commands:\n• /roll [count]d[sides][+/-mod] [adv|dis] - Roll any dice (e.g. /roll 1d20+5 adv)\n• /token [name or index or clear] - Associate a controllable token with your chat for /attack and rolls\n• /as [name or index] - Alias for /token\n• /timer <duration> - Start round timer HUD (e.g. /timer 10 min, /timer 30s)\n• /clock - Open segmented pie-wedge progress clocks\n• /attack [weapon or index] [adv|dis] - Roll to-hit & damage from sheet\n• /attack? [name or index] - Inspect attack statblock card without rolling\n• /skill [skill or index] [adv|dis] - Roll a character skill check\n• /spell [spell or index] [adv|dis] - Roll a spell attack from sheet\n• /spell? [name or index] - Inspect spell reference card (e.g. /spell? magic-missile)\n• /item [item or index] - Use item from inventory\n• /item? [name or index] - Inspect item reference card (e.g. /item? potion of healing)\n• /ability? [name] - Inspect class ability or trait\n• /monster? [name] - Inspect creature statblock (e.g. /monster? goblin)\n• /import [category] <url> - Import spell, item, or monster reference card from URL\n• /sync [url or id] [token index] - Sync character sheet and token with D&D Beyond\n• /tokens - List all tokens and their index number available to sync\n• /discord webhook <url> - Configure Discord one-way sync (GM only)\n• /discord webhook none - Disable Discord sync (GM only)`
+      `Available commands:\n• /roll [count]d[sides][+/-mod] [adv|dis] - Roll any dice (e.g. /roll 1d20+5 adv)\n• /token [name or index or clear] - Associate a controllable token with your chat for /attack and rolls\n• /as [name or index] - Alias for /token\n• /timer <duration> - Start round timer HUD (e.g. /timer 10 min, /timer 30s)\n• /clock - Open segmented pie-wedge progress clocks\n• /attack [weapon or index] [adv|dis] - Roll to-hit & damage from sheet\n• /attack? [name or index] - Inspect attack statblock card without rolling\n• /skill [skill or index] [adv|dis] - Roll a character skill check\n• /spell [spell or index] [adv|dis] - Roll a spell attack from sheet\n• /spell? [name or index] - Inspect spell reference card (e.g. /spell? magic-missile)\n• /item [item or index] - Use item from inventory\n• /item? [name or index] - Inspect item reference card (e.g. /item? potion of healing)\n• /ability? [name] - Inspect class ability or trait\n• /monster? [name] - Inspect creature statblock (e.g. /monster? goblin)\n• /import [category] <url> - Import spell, item, or monster reference card from URL${dndBeyondLine}\n• /tokens - List all tokens and their index number available to sync\n• /discord webhook <url> - Configure Discord one-way sync (GM only)\n• /discord webhook none - Disable Discord sync (GM only)`
     );
     return true;
   }
@@ -1175,6 +1179,15 @@ export function processSlashCommand(
 
       // 6. /sync [urlOrId] [tokenIndex]
       if (cmd === 'sync') {
+        if (!isFeatureEnabled('dndbeyond')) {
+          sendPrivateSystemMessage(
+            'D&D Beyond integration is currently disabled.',
+            'D&D Beyond Sync',
+            '#f43f5e'
+          );
+          return true;
+        }
+
         let urlOrId = args[0];
         let tokenIndexArg = args[1];
 
@@ -1302,8 +1315,11 @@ export function processSlashCommand(
           return `${idx + 1}. ${t.name}${charStr}${hpStr}`;
         });
 
+        const syncHint = isFeatureEnabled('dndbeyond')
+          ? '\n\nUse /sync <url or id> <index> to sync a character.'
+          : '';
         sendPrivateSystemMessage(
-          `Controllable tokens available to sync:\n${lines.join('\n')}\n\nUse /sync <url or id> <index> to sync a character.`,
+          `Controllable tokens available to sync:\n${lines.join('\n')}${syncHint}`,
           'Tokens'
         );
         return true;
@@ -1430,6 +1446,15 @@ export function processSlashCommand(
         );
 
         if (isDndBeyondChar) {
+          if (!isFeatureEnabled('dndbeyond')) {
+            sendPrivateSystemMessage(
+              'D&D Beyond integration is currently disabled.',
+              'Reference Data Import',
+              '#f43f5e'
+            );
+            return true;
+          }
+
           const idMatch =
             targetUrl.match(/characters\/(\d+)/) ||
             targetUrl.match(/character\/v\d+\/character\/(\d+)/) ||
@@ -1468,6 +1493,15 @@ export function processSlashCommand(
         }
 
         if (isDndBeyondMonster) {
+          if (!isFeatureEnabled('dndbeyond')) {
+            sendPrivateSystemMessage(
+              'D&D Beyond integration is currently disabled.',
+              'Reference Data Import',
+              '#f43f5e'
+            );
+            return true;
+          }
+
           const monsterMatch = targetUrl.match(/monsters\/(?:\d+-)?([a-z0-9-]+)/i);
           const monsterSlug = monsterMatch ? monsterMatch[1] : targetUrl;
           fetchOpen5eMonster(monsterSlug)

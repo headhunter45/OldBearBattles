@@ -26,7 +26,6 @@ export type KnownFeatureFlag =
   | 'search_pf2e'
   | 'soundboard'
   | 'staging_area'
-  | 'sync_dndbeyond'
   | 'to_mode'
   | 'voice_chat';
 
@@ -58,7 +57,6 @@ export const DEFAULT_FEATURE_FLAGS: Record<KnownFeatureFlag, boolean> = {
   search_pf2e: false,
   soundboard: true,
   staging_area: false,
-  sync_dndbeyond: false,
   to_mode: true,
   voice_chat: true,
 };
@@ -97,6 +95,7 @@ export function normalizeFeatureKey(rawKey: string): string {
     .replace(/[-\s]+/g, '_')
     .toLowerCase();
   if (normalized === 'brawl') return 'brawl_mode';
+  if (normalized === 'sync_dndbeyond') return 'dndbeyond';
   return normalized;
 }
 

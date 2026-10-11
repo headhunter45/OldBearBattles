@@ -546,6 +546,10 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
     ) {
       return handleImportPathbuilder(charId);
     }
+    if (!dndBeyondEnabled) {
+      setError('D&D Beyond integration is currently disabled.');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -2339,16 +2343,18 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
                                 gap: '0.4rem',
                               }}
                             >
-                              <a
-                                href={spell.dndBeyondUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{ color: 'var(--text-secondary)' }}
-                                onClick={(e) => e.stopPropagation()}
-                                title="View on D&D Beyond"
-                              >
-                                <ExternalLink size={14} />
-                              </a>
+                              {dndBeyondEnabled && spell.dndBeyondUrl && (
+                                <a
+                                  href={spell.dndBeyondUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ color: 'var(--text-secondary)' }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  title="View on D&D Beyond"
+                                >
+                                  <ExternalLink size={14} />
+                                </a>
+                              )}
                               {isExpanded ? (
                                 <ChevronUp size={16} />
                               ) : (
@@ -2478,7 +2484,9 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
                   padding: '1rem 0',
                 }}
               >
-                No D&D Beyond character linked.
+                {dndBeyondEnabled
+                  ? 'No D&D Beyond character linked.'
+                  : 'No character sheet linked.'}
                 <br />
                 You can still track and edit your token HP below:
               </div>

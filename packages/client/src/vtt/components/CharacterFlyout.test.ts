@@ -237,6 +237,7 @@ describe('CharacterFlyout Unbound Token Reset (OB-207)', () => {
   });
 
   it('does not favor D&D and defaults to Local Character ruleset tab (OB-219)', () => {
+    updateActiveFlags({ dndbeyond: true, pathbuilder: true });
     const markup = renderToStaticMarkup(
       React.createElement(CharacterFlyout, {
         player: mockPlayer,
@@ -294,6 +295,9 @@ describe('CharacterFlyout Unbound Token Reset (OB-207)', () => {
     assert.ok(disabledMarkup.includes('Local Character'), 'Shows Local tab');
     assert.ok(!disabledMarkup.includes('D&amp;D Beyond (5e)') && !disabledMarkup.includes('D&D Beyond (5e)'), 'Hides D&D Beyond tab when disabled');
     assert.ok(!disabledMarkup.includes('Pathbuilder 2e (PF2e)'), 'Hides Pathbuilder tab when disabled');
+    assert.ok(disabledMarkup.includes('No character sheet linked.'), 'Displays generic unlinked character notice when dndbeyond is disabled');
+    assert.ok(!disabledMarkup.includes('No D&amp;D Beyond character linked') && !disabledMarkup.includes('No D&D Beyond character linked'), 'Hides D&D Beyond reference from unlinked notice');
+    assert.ok(disabledMarkup.includes('Sync with Token (Hero)'), 'Player can still sync data to a token even when dndbeyond is disabled');
 
     // Reset back to defaults
     updateActiveFlags({ dndbeyond: true, pathbuilder: true });
