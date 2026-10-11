@@ -362,9 +362,24 @@ export const AppBrawl: React.FC = () => {
     player: 1 | 2,
     resource: ResourceType,
     delta: number,
-    reason?: string
+    reason?: string,
+    modifierNickname?: string,
   ) => {
-    const { nextState, audit } = updatePlayerResource(scoreboard, player, resource, delta, reason);
+    const actor =
+      modifierNickname ||
+      localPlayer?.name ||
+      (typeof localStorage !== 'undefined'
+        ? localStorage.getItem('oldbear_player_name') || ''
+        : '') ||
+      'Player';
+    const { nextState, audit } = updatePlayerResource(
+      scoreboard,
+      player,
+      resource,
+      delta,
+      reason,
+      actor,
+    );
     setScoreboard(nextState);
     setScoreAuditTrail((prev) => [audit, ...prev]);
     showToast(audit.formattedMessage.replace(/\*\*/g, ''));
@@ -372,8 +387,8 @@ export const AppBrawl: React.FC = () => {
     if (networkRef.current && session) {
       const auditMsg: ChatMessage = {
         id: audit.id,
-        senderId: 'system',
-        senderName: 'Score Overseer',
+        senderId: localPlayer?.id || 'system',
+        senderName: actor,
         senderColor: player === 1 ? '#38bdf8' : '#ec4899',
         text: audit.formattedMessage,
         timestamp: audit.timestamp,
@@ -934,6 +949,13 @@ export const AppBrawl: React.FC = () => {
           onResetScoreboard={handleResetScoreboard}
           auditTrail={scoreAuditTrail}
           onClose={() => setShowScoreboardModal(false)}
+          userNickname={
+            localPlayer?.name ||
+            (typeof localStorage !== 'undefined'
+              ? localStorage.getItem('oldbear_player_name') || ''
+              : '') ||
+            'Player'
+          }
         />
       )}
 

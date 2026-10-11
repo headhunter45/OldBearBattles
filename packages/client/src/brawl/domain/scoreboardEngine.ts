@@ -31,6 +31,7 @@ export interface ScoreAuditEntry {
   delta: number;
   newValue: number;
   reason?: string;
+  modifierNickname?: string;
   formattedMessage: string;
 }
 
@@ -67,7 +68,8 @@ export function updatePlayerResource(
   player: 1 | 2,
   resource: ResourceType,
   delta: number,
-  reason?: string
+  reason?: string,
+  modifierNickname?: string,
 ): { nextState: ScoreboardState; audit: ScoreAuditEntry } {
   const targetKey = player === 1 ? 'p1' : 'p2';
   const targetPlayer = state[targetKey];
@@ -139,7 +141,8 @@ export function updatePlayerResource(
 
   const sign = delta >= 0 ? `+${delta}` : `${delta}`;
   const reasonText = reason?.trim() ? ` (${reason.trim()})` : '';
-  const formattedMessage = `${emoji} **[${playerName}]** ${resourceLabel} ${sign} ➔ ${newValue}${reasonText}. Total VP: ${updatedTarget.totalVp}`;
+  const byModifier = modifierNickname?.trim() ? ` by ${modifierNickname.trim()}` : '';
+  const formattedMessage = `${emoji} **[${playerName}]** ${resourceLabel} ${sign} ➔ ${newValue}${reasonText}${byModifier}. Total VP: ${updatedTarget.totalVp}`;
 
   const audit: ScoreAuditEntry = {
     id: `audit-score-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -150,6 +153,7 @@ export function updatePlayerResource(
     delta,
     newValue,
     reason,
+    modifierNickname: modifierNickname?.trim() || undefined,
     formattedMessage,
   };
 

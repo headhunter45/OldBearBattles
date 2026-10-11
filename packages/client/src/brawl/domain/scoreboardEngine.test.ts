@@ -77,4 +77,11 @@ describe('Scoreboard & Resource Tracker Engine (OB-159)', () => {
     };
     assert.equal(calculateTotalVp(score, 100), 100);
   });
+
+  it('records modifier nickname in audit entry and formatted message', () => {
+    const sb = createInitialScoreboard();
+    const res = updatePlayerResource(sb, 1, 'primaryVp', 4, 'Hold 2 Objectives', 'Tom');
+    assert.equal(res.audit.modifierNickname, 'Tom');
+    assert(res.audit.formattedMessage.includes('by Tom'));
+  });
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Trophy,
   X,
@@ -25,10 +25,12 @@ interface ScoreboardModalProps {
     resource: ResourceType,
     delta: number,
     reason?: string,
+    modifierNickname?: string,
   ) => void;
   onResetScoreboard: () => void;
   auditTrail: ScoreAuditEntry[];
   onClose: () => void;
+  userNickname?: string;
 }
 
 export const ScoreboardModal: React.FC<ScoreboardModalProps> = ({
@@ -37,18 +39,40 @@ export const ScoreboardModal: React.FC<ScoreboardModalProps> = ({
   onResetScoreboard,
   auditTrail,
   onClose,
+  userNickname,
 }) => {
   const [activeTab, setActiveTab] = useState<'scoreboard' | 'audit'>(
     'scoreboard',
   );
   const [reasonInput, setReasonInput] = useState('');
+  const [modifierNickname, setModifierNickname] = useState(() => {
+    return (
+      userNickname ||
+      (typeof localStorage !== 'undefined'
+        ? localStorage.getItem('oldbear_player_name') || ''
+        : '') ||
+      'Player'
+    );
+  });
+
+  useEffect(() => {
+    if (userNickname) {
+      setModifierNickname(userNickname);
+    }
+  }, [userNickname]);
 
   const handleAdjust = (
     player: 1 | 2,
     resource: ResourceType,
     delta: number,
   ) => {
-    onUpdateResource(player, resource, delta, reasonInput.trim() || undefined);
+    onUpdateResource(
+      player,
+      resource,
+      delta,
+      reasonInput.trim() || undefined,
+      modifierNickname.trim() || undefined,
+    );
     setReasonInput('');
   };
 
@@ -553,42 +577,110 @@ export const ScoreboardModal: React.FC<ScoreboardModalProps> = ({
             <div
               style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
             >
-              {/* Optional Reason Input Bar */}
+              {/* Optional Reason & Initiated by Nickname Bar */}
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
+                  gap: '10px',
                   background: 'rgba(0, 0, 0, 0.25)',
                   padding: '6px 12px',
                   borderRadius: '6px',
                   border: '1px solid rgba(255, 255, 255, 0.06)',
+                  flexWrap: 'wrap',
                 }}
               >
-                <span
+                <div
                   style={{
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    color: 'var(--text-secondary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
                   }}
                 >
-                  Audit Reason (optional):
-                </span>
-                <input
-                  type="text"
-                  placeholder="e.g., Hold 2 Objectives, Command Re-roll, Assassination"
-                  value={reasonInput}
-                  onChange={(e) => setReasonInput(e.target.value)}
+                  <span
+                    style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      color: 'var(--text-secondary)',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Initiated by:
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Nickname"
+                    title="Player nickname recorded in the audit log"
+                    value={modifierNickname}
+                    onChange={(e) => {
+                      setModifierNickname(e.target.value);
+                      try {
+                        localStorage.setItem(
+                          'oldbear_player_name',
+                          e.target.value,
+                        );
+                      } catch {}
+                    }}
+                    style={{
+                      width: '110px',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '4px',
+                      color: '#f8fafc',
+                      fontSize: '0.75rem',
+                      padding: '4px 8px',
+                    }}
+                  />
+                </div>
+
+                <div
                   style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
                     flex: 1,
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '4px',
-                    color: '#f8fafc',
-                    fontSize: '0.75rem',
-                    padding: '4px 8px',
+                    minWidth: '200px',
                   }}
-                />
+                >
+                  <span
+                    style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      color: 'var(--text-secondary)',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Audit Reason (optional):
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="e.g., Hold 2 Objectives, Command Re-roll, Assassination"
+                    value={reasonInput}
+                    onChange={(e) => setReasonInput(e.target.value)}
+                    style={{
+                      flex: 1,
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '4px',
+                      color: '#f8fafc',
+                      fontSize: '0.75rem',
+                      padding: '4px 8px',
+                    }}
+                  />
+                  {reasonInput && (
+                    <button
+                      className="btn btn-glass"
+                      onClick={() => setReasonInput('')}
+                      style={{
+                        fontSize: '0.68rem',
+                        padding: '2px 6px',
+                        color: '#ffffff',
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Dual Player Columns */}
@@ -626,15 +718,43 @@ export const ScoreboardModal: React.FC<ScoreboardModalProps> = ({
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       fontSize: '0.78rem',
+                      gap: '10px',
                     }}
                   >
-                    <span style={{ color: '#f8fafc' }}>
-                      {entry.formattedMessage}
-                    </span>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      <span style={{ color: '#f8fafc' }}>
+                        {entry.formattedMessage}
+                      </span>
+                      {entry.modifierNickname && (
+                        <span
+                          style={{
+                            fontSize: '0.68rem',
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            background: 'rgba(56, 189, 248, 0.15)',
+                            border: '1px solid rgba(56, 189, 248, 0.3)',
+                            color: '#7dd3fc',
+                            fontWeight: 600,
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          👤 {entry.modifierNickname}
+                        </span>
+                      )}
+                    </div>
                     <span
                       style={{
                         fontSize: '0.68rem',
                         color: 'var(--text-secondary)',
+                        whiteSpace: 'nowrap',
+                        marginLeft: 'auto',
                       }}
                     >
                       {new Date(entry.timestamp).toLocaleTimeString([], {
