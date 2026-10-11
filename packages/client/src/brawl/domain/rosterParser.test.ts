@@ -241,6 +241,35 @@ describe('Roster Ingestion Pipeline (OB-161)', () => {
       assert.strictEqual(result.army.units[0].name, 'Guardians');
     });
 
+    it('parses sample JSON, ROS, and ROSZ files from public/samples', async () => {
+      const fs = await import('fs');
+      const path = await import('path');
+      const dir = fs.existsSync(path.join(process.cwd(), 'public/samples'))
+        ? path.join(process.cwd(), 'public/samples')
+        : path.join(process.cwd(), 'packages/client/public/samples');
+
+      // 1. JSON
+      const jsonStr = fs.readFileSync(path.join(dir, 'space-marines-patrol.json'), 'utf8');
+      const resJson = await parseRosterFile('space-marines-patrol.json', jsonStr);
+      assert.strictEqual(resJson.format, 'newrecruit');
+      assert.strictEqual(resJson.army.name, 'Ultramarines 1st Company Strike Force');
+      assert.strictEqual(resJson.army.units.length, 4);
+
+      // 2. ROS XML
+      const rosStr = fs.readFileSync(path.join(dir, 'orks-waaagh-patrol.ros'), 'utf8');
+      const resRos = await parseRosterFile('orks-waaagh-patrol.ros', rosStr);
+      assert.strictEqual(resRos.format, 'battlescribe_xml');
+      assert.strictEqual(resRos.army.name, 'Waaagh Bloodguts Patrol');
+      assert.strictEqual(resRos.army.units.length, 3);
+
+      // 3. ROSZ
+      const roszBuf = fs.readFileSync(path.join(dir, 'orks-waaagh-patrol.rosz'));
+      const resRosz = await parseRosterFile('orks-waaagh-patrol.rosz', roszBuf);
+      assert.strictEqual(resRosz.format, 'battlescribe_rosz');
+      assert.strictEqual(resRosz.army.name, 'Waaagh Bloodguts Patrol');
+      assert.strictEqual(resRosz.army.units.length, 3);
+    });
+
     it('throws error on unsupported format', async () => {
       await assert.rejects(
         async () => {

@@ -198,8 +198,8 @@ export function parseBattleScribeXml(xmlContent: string): WargameArmy {
   const costMatch = xmlContent.match(/<cost[^>]*\bname="pts"[^>]*\bvalue="([^"]+)"/i);
   const pointsLimit = costMatch ? parseInt(costMatch[1], 10) : 2000;
 
-  // Extract units from <selection ... type="unit">
-  const unitRegex = /<selection\b[^>]*\btype="unit"[^>]*>([\s\S]*?)<\/selection>/gi;
+  // Extract units from <selection ... type="unit" or type="model">
+  const unitRegex = /<selection\b[^>]*\btype="(?:unit|model)"[^>]*>([\s\S]*?)<\/selection>/gi;
   const parsedUnits: WargameUnit[] = [];
 
   let match: RegExpExecArray | null;

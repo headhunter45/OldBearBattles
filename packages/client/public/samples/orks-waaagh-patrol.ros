@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<roster id="ork-123" name="Waaagh Bloodguts Patrol" battleScribeVersion="2.03">
+  <costs>
+    <cost name="pts" typeId="points" value="500"/>
+  </costs>
+  <forces>
+    <force id="f1" name="Ork Patrol" catalogueName="Orks - Codex">
+      <selections>
+        <selection id="s1" name="Warboss in Mega Armour" type="model">
+          <costs>
+            <cost name="pts" typeId="points" value="80"/>
+          </costs>
+          <profiles>
+            <profile id="p1" name="Warboss in Mega Armour" typeName="Unit">
+              <characteristics>
+                <characteristic name="M">5"</characteristic>
+                <characteristic name="T">6</characteristic>
+                <characteristic name="Sv">2+</characteristic>
+                <characteristic name="W">7</characteristic>
+                <characteristic name="Ld">6+</characteristic>
+                <characteristic name="OC">1</characteristic>
+              </characteristics>
+            </profile>
+            <profile id="p2" name="Uppa Klaw" typeName="Melee Weapons">
+              <characteristics>
+                <characteristic name="Range">Melee</characteristic>
+                <characteristic name="A">5</characteristic>
+                <characteristic name="WS">3+</characteristic>
+                <characteristic name="S">10</characteristic>
+                <characteristic name="AP">-2</characteristic>
+                <characteristic name="D">2</characteristic>
+              </characteristics>
+            </profile>
+          </profiles>
+        </selection>
+        <selection id="s2" name="Boyz" type="unit">
+          <costs>
+            <cost name="pts" typeId="points" value="85"/>
+          </costs>
+          <selections>
+            <selection id="m1" name="Boy" type="model" number="10"/>
+          </selections>
+          <profiles>
+            <profile id="p3" name="Boyz" typeName="Unit">
+              <characteristics>
+                <characteristic name="M">6"</characteristic>
+                <characteristic name="T">5</characteristic>
+                <characteristic name="Sv">5+</characteristic>
+                <characteristic name="W">1</characteristic>
+                <characteristic name="Ld">7+</characteristic>
+                <characteristic name="OC">2</characteristic>
+              </characteristics>
+            </profile>
+            <profile id="p4" name="Choppa" typeName="Melee Weapons">
+              <characteristics>
+                <characteristic name="Range">Melee</characteristic>
+                <characteristic name="A">3</characteristic>
+                <characteristic name="WS">3+</characteristic>
+                <characteristic name="S">4</characteristic>
+                <characteristic name="AP">-1</characteristic>
+                <characteristic name="D">1</characteristic>
+              </characteristics>
+            </profile>
+          </profiles>
+        </selection>
+        <selection id="s3" name="Nobz" type="unit">
+          <costs>
+            <cost name="pts" typeId="points" value="105"/>
+          </costs>
+          <selections>
+            <selection id="m2" name="Nob" type="model" number="5"/>
+          </selections>
+          <profiles>
+            <profile id="p5" name="Nobz" typeName="Unit">
+              <characteristics>
+                <characteristic name="M">6"</characteristic>
+                <characteristic name="T">5</characteristic>
+                <characteristic name="Sv">4+</characteristic>
+                <characteristic name="W">2</characteristic>
+                <characteristic name="Ld">7+</characteristic>
+                <characteristic name="OC">2</characteristic>
+              </characteristics>
+            </profile>
+            <profile id="p6" name="Power Klaw" typeName="Melee Weapons">
+              <characteristics>
+                <characteristic name="Range">Melee</characteristic>
+                <characteristic name="A">3</characteristic>
+                <characteristic name="WS">4+</characteristic>
+                <characteristic name="S">9</characteristic>
+                <characteristic name="AP">-2</characteristic>
+                <characteristic name="D">2</characteristic>
+              </characteristics>
+            </profile>
+          </profiles>
+        </selection>
+      </selections>
+    </force>
+  </forces>
+</roster>

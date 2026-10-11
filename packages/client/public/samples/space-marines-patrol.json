@@ -1,0 +1,177 @@
+{
+  "roster": {
+    "name": "Ultramarines 1st Company Strike Force",
+    "faction": "Adeptus Astartes",
+    "pointsLimit": 2000,
+    "units": [
+      {
+        "name": "Captain in Terminator Armour",
+        "cost": 95,
+        "count": 1,
+        "profiles": [
+          {
+            "typeName": "Unit",
+            "attributes": {
+              "M": "5\"",
+              "T": "5",
+              "SV": "2+",
+              "W": "6",
+              "LD": "6+",
+              "OC": "1"
+            }
+          },
+          {
+            "typeName": "Ranged Weapon",
+            "name": "Storm Bolter",
+            "attributes": {
+              "Range": "24\"",
+              "A": "2",
+              "BS": "2+",
+              "S": "4",
+              "AP": "0",
+              "D": "1"
+            }
+          },
+          {
+            "typeName": "Melee Weapon",
+            "name": "Relic Weapon",
+            "attributes": {
+              "Range": "Melee",
+              "A": "5",
+              "WS": "2+",
+              "S": "5",
+              "AP": "-2",
+              "D": "2"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Terminator Squad",
+        "cost": 185,
+        "count": 5,
+        "profiles": [
+          {
+            "typeName": "Unit",
+            "attributes": {
+              "M": "5\"",
+              "T": "5",
+              "SV": "2+",
+              "W": "3",
+              "LD": "6+",
+              "OC": "1"
+            }
+          },
+          {
+            "typeName": "Ranged Weapon",
+            "name": "Storm Bolter",
+            "attributes": {
+              "Range": "24\"",
+              "A": "2",
+              "BS": "3+",
+              "S": "4",
+              "AP": "0",
+              "D": "1"
+            }
+          },
+          {
+            "typeName": "Melee Weapon",
+            "name": "Power Fist",
+            "attributes": {
+              "Range": "Melee",
+              "A": "3",
+              "WS": "3+",
+              "S": "8",
+              "AP": "-2",
+              "D": "2"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Intercessor Squad",
+        "cost": 80,
+        "count": 5,
+        "profiles": [
+          {
+            "typeName": "Unit",
+            "attributes": {
+              "M": "6\"",
+              "T": "4",
+              "SV": "3+",
+              "W": "2",
+              "LD": "6+",
+              "OC": "2"
+            }
+          },
+          {
+            "typeName": "Ranged Weapon",
+            "name": "Bolt Rifle",
+            "attributes": {
+              "Range": "24\"",
+              "A": "2",
+              "BS": "3+",
+              "S": "4",
+              "AP": "-1",
+              "D": "1"
+            }
+          },
+          {
+            "typeName": "Melee Weapon",
+            "name": "Close Combat Weapon",
+            "attributes": {
+              "Range": "Melee",
+              "A": "3",
+              "WS": "3+",
+              "S": "4",
+              "AP": "0",
+              "D": "1"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Redemptor Dreadnought",
+        "cost": 210,
+        "count": 1,
+        "profiles": [
+          {
+            "typeName": "Unit",
+            "attributes": {
+              "M": "8\"",
+              "T": "10",
+              "SV": "2+",
+              "W": "12",
+              "LD": "6+",
+              "OC": "4"
+            }
+          },
+          {
+            "typeName": "Ranged Weapon",
+            "name": "Macro Plasma Incinerator",
+            "attributes": {
+              "Range": "36\"",
+              "A": "D6+1",
+              "BS": "3+",
+              "S": "8",
+              "AP": "-3",
+              "D": "3"
+            }
+          },
+          {
+            "typeName": "Melee Weapon",
+            "name": "Redemptor Fist",
+            "attributes": {
+              "Range": "Melee",
+              "A": "5",
+              "WS": "3+",
+              "S": "12",
+              "AP": "-2",
+              "D": "D6+1"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
