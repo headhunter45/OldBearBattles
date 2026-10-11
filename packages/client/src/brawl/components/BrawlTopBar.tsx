@@ -58,6 +58,7 @@ interface BrawlTopBarProps {
   onToggleChessClockHUD?: () => void;
   onOpenSceneSettings?: () => void;
   voiceState?: VoiceState;
+  headerRef?: React.Ref<HTMLElement>;
 }
 
 const PHASES: WargamePhase[] = ['Command', 'Movement', 'Shooting', 'Charge', 'Fight', 'Morale'];
@@ -94,6 +95,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
   onToggleMobileDrawer,
   onToggleChessClockHUD,
   voiceState,
+  headerRef,
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -105,6 +107,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
 
   return (
     <header
+      ref={headerRef}
       className="floating-hud glass-panel top-bar"
       style={{
         top: '0.75rem',
@@ -118,7 +121,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
         zIndex: 30,
       }}
     >
-      <div className="top-bar-left" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'nowrap', minWidth: 0 }}>
+      <div className="top-bar-left" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
         <button
           className="btn-icon"
           onClick={onToggleMobileDrawer}
@@ -315,7 +318,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
                 onClick={onSwitchActivePlayer}
                 title="Pass turn to opponent"
               >
-                Pass
+                Pass Turn
               </button>
               {onToggleChessClockHUD && (
                 <button
@@ -332,7 +335,7 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
         })()}
       </div>
 
-      <div className="top-bar-right" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'nowrap', minWidth: 0 }}>
+      <div className="top-bar-right" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
         {/* Scoreboard Button (OB-159) */}
         {onOpenScoreboard && (
           <button

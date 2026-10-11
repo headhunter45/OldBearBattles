@@ -156,8 +156,28 @@ export const AppBrawl: React.FC = () => {
     isAudioStreaming: false,
     micVolume: 1.0,
     desktopVolume: 0.8,
-    localLevel: 0,
   });
+
+  const topBarRef = useRef<HTMLElement>(null);
+  const [topBarHeight, setTopBarHeight] = useState<number>(0);
+
+  useEffect(() => {
+    const updateHeight = () => {
+      if (topBarRef.current) {
+        setTopBarHeight(topBarRef.current.getBoundingClientRect().height);
+      }
+    };
+    updateHeight();
+    const ro = new ResizeObserver(updateHeight);
+    if (topBarRef.current) {
+      ro.observe(topBarRef.current);
+    }
+    window.addEventListener('resize', updateHeight);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', updateHeight);
+    };
+  }, []);
 
   const currentMap = session?.maps.find((m) => m.id === (gmPreviewMapId || session.activeMapId || '')) || session?.maps[0];
 
@@ -632,6 +652,7 @@ export const AppBrawl: React.FC = () => {
         onToggleMobileDrawer={() => setIsMobileDrawerOpen(true)}
         onToggleChessClockHUD={() => setShowChessClockHUD((prev) => !prev)}
         voiceState={voiceState}
+        headerRef={topBarRef}
       />
 
       {/* Phase Transition Banner (OB-157) */}
@@ -642,6 +663,7 @@ export const AppBrawl: React.FC = () => {
 
       {/* Main Left Toolbar */}
       <ToolBar
+        topOffset={topBarHeight > 0 ? `${12 + topBarHeight + 10}px` : undefined}
         activeTool={activeTool}
         onSelectTool={(tool) => {
           setActiveTool(tool);

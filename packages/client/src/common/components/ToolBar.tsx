@@ -44,6 +44,7 @@ export interface ToolBarProps {
   unreadChatCount?: number;
   fogBrushRadius?: number;
   onChangeFogBrushRadius?: (radius: number) => void;
+  topOffset?: string | number;
 }
 
 const COLORS = COLOR_VALUES;
@@ -67,6 +68,7 @@ export const ToolBar: React.FC<ToolBarProps> = ({
   unreadChatCount = 0,
   fogBrushRadius = 40,
   onChangeFogBrushRadius,
+  topOffset,
 }) => {
   const [showSelectMenu, setShowSelectMenu] = useState(false);
   const selectMenuRef = useRef<HTMLDivElement>(null);
@@ -119,7 +121,7 @@ export const ToolBar: React.FC<ToolBarProps> = ({
       className="floating-hud floating-hud-toolbar glass-panel"
       style={{
         left: '1rem',
-        top: '5rem',
+        top: topOffset ?? '5rem',
       }}
     >
       {/* Selection Tools Sub-menu (Flyout) */}

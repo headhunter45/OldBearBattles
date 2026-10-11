@@ -184,29 +184,20 @@ html, body, #root {
   gap: 0.75rem;
   padding: 0.5rem 1rem;
   pointer-events: auto;
-  white-space: nowrap;
 }
 
 .top-bar-left {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  flex-wrap: nowrap;
-  min-width: 0;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .top-bar-right {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  flex-wrap: nowrap;
-  min-width: 0;
-}
-
-@media (max-width: 1400px) {
-  .brawl-topbar-btn-label {
-    display: none !important;
-  }
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 /* Animations */

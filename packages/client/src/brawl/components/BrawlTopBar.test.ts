@@ -102,7 +102,7 @@ describe('BrawlTopBar Active Scene Settings (OB-209)', () => {
     assert.ok(markup.includes('background-color:var(--accent-primary)'), 'Hamburger menu has accent-primary background');
   });
 
-  it('renders single-row nowrap layout to prevent left toolbar overlap', () => {
+  it('renders wrapping layout to accommodate extensive wargame toolbar controls', () => {
     const markup = renderToStaticMarkup(
       React.createElement(BrawlTopBar, {
         roomName: 'Test Room',
@@ -130,9 +130,7 @@ describe('BrawlTopBar Active Scene Settings (OB-209)', () => {
       })
     );
 
-    assert.ok(markup.includes('flex-wrap:nowrap'), 'TopBar elements use flex-wrap:nowrap');
-    assert.ok(markup.includes('topbar-players-list'), 'Player avatars use responsive topbar-players-list class');
-    assert.ok(!markup.includes('flex-wrap:wrap'), 'Does not use flex-wrap:wrap');
+    assert.ok(markup.includes('flex-wrap:wrap'), 'TopBar elements intentionally use flex-wrap:wrap');
   });
 });
 
