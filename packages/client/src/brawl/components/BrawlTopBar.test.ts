@@ -132,5 +132,39 @@ describe('BrawlTopBar Active Scene Settings (OB-209)', () => {
 
     assert.ok(markup.includes('flex-wrap:wrap'), 'TopBar elements intentionally use flex-wrap:wrap');
   });
+
+  it('renders dedicated Next Phase button and phase quick-jump trigger (OB-157)', () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(BrawlTopBar, {
+        roomName: 'Test Room',
+        activeMapName: 'Wargame Ruins',
+        isOrganizer: true,
+        players: [],
+        localPlayer: null,
+        activePlayerIndex: 1,
+        currentRound: 1,
+        currentPhase: 'Command',
+        p1ClockSeconds: 300,
+        p2ClockSeconds: 300,
+        isClockRunning: false,
+        onToggleClock: () => {},
+        onNextPhase: () => {},
+        onSwitchActivePlayer: () => {},
+        onOpenArmyRoster: () => {},
+        onOpenDice: () => {},
+        onOpenMaps: () => {},
+        onOpenSceneSettings: () => {},
+        onOpenSoundboard: () => {},
+        onOpenBackup: () => {},
+        onAddNewModel: () => {},
+        onToggleMobileDrawer: () => {},
+      })
+    );
+
+    assert.ok(markup.includes('title="Next Phase (Spacebar)"'), 'Renders dedicated Next Phase button');
+    assert.ok(markup.includes('title="Click to open phase quick-jump menu"'), 'Renders phase quick-jump trigger');
+    assert.ok(markup.includes('Command Phase'), 'Displays current phase');
+    assert.ok(markup.includes('Round 1 - Player 1'), 'Displays round and active player');
+  });
 });
 

@@ -275,8 +275,8 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-152 | *Integrate Help & Tooltip Component Across UI*                                                                                                                                                                                                                                                                                                                                                                                                                                       | Old Bear VTT   | Triage   | [Feature](#ob-152) |
 | OB-153 | *Pathfinder 2e (PF2e) Ruleset Support*                                                                                                                                                                                                                                                                                                                                                                                                                                               | Old Bear VTT   | Triage   | [Feature](#ob-153) |
 | OB-154 | `GAME_MODE` Environment Configuration & Deployment Toggles                                                                                                                                                                                                                                                                                                                                                                                                                           | Old Bear VTT   | Done     | [Feature](#ob-154) |
-| OB-155 | Army, Unit, and Model Domain Hierarchy & Disambiguation                                                                                                                                                                                                                                                                                                                                                                                                                              | Old Bear Brawl | Testing  | [Feature](#ob-155) |
-| OB-156 | Unit Coherency Graph Engine & Real-Time Warning Halos                                                                                                                                                                                                                                                                                                                                                                                                                                | Old Bear Brawl | Testing  | [Feature](#ob-156) |
+| OB-155 | Army, Unit, and Model Domain Hierarchy & Disambiguation                                                                                                                                                                                                                                                                                                                                                                                                                              | Old Bear Brawl | Done     | [Feature](#ob-155) |
+| OB-156 | Unit Coherency Graph Engine & Real-Time Warning Halos                                                                                                                                                                                                                                                                                                                                                                                                                                | Old Bear Brawl | Done     | [Feature](#ob-156) |
 | OB-157 | Battle Round Stepper & Wargaming Phase Engine                                                                                                                                                                                                                                                                                                                                                                                                                                        | Old Bear Brawl | Testing  | [Feature](#ob-157) |
 | OB-158 | Dual-Player Chess Clocks with Turn Countdown & Active Switching                                                                                                                                                                                                                                                                                                                                                                                                                      | Old Bear Brawl | Testing  | [Feature](#ob-158) |
 | OB-159 | Scoreboard & Resource Tracker (VP, CP, Casualties) with Audit Trail                                                                                                                                                                                                                                                                                                                                                                                                                  | Old Bear Brawl | Testing  | [Feature](#ob-159) |
@@ -2687,16 +2687,14 @@ Support multi-mode deployment and runtime game mode selection via environment va
 - Multi-mode instances allow per-room/per-session selection (e.g. room creation dialog or `/room/:id?mode=brawl`).
 - Update top navigation branding, module headers, and feature availability based on active game mode.
 
-<a id="ob-155" class="task" data-project="brawl" data-status="testing" data-task-type="feature"></a>
+<a id="ob-155" class="task" data-project="brawl" data-status="done" data-task-type="feature"></a>
 ### Army, Unit, and Model Domain Hierarchy & Disambiguation
 **ID:** OB-155
 **Project:** Old Bear Brawl
-**Status:** Testing
+**Status:** Done
 **Type:** Feature
 
-
 **Description:**
-
 **Depends On:** [OB-154](#ob-154)
 
 Establish the core tabletop wargaming domain model (`Army` ➔ `Unit` ➔ `Model`):
@@ -2713,16 +2711,14 @@ Establish the core tabletop wargaming domain model (`Army` ➔ `Unit` ➔ `Model
   - Automatic duplicate unit disambiguation: `Terminators A 1`, `Terminators B 1`.
 - **UI**: Interactive Army Roster Flyout and unit/model inspector panels.
 
-<a id="ob-156" class="task" data-project="brawl" data-status="testing" data-task-type="feature"></a>
+<a id="ob-156" class="task" data-project="brawl" data-status="done" data-task-type="feature"></a>
 ### Unit Coherency Graph Engine & Real-Time Warning Halos
 **ID:** OB-156
 **Project:** Old Bear Brawl
-**Status:** Testing
+**Status:** Done
 **Type:** Feature
 
-
 **Description:**
-
 **Depends On:** [OB-155](#ob-155)
 
 Real-time graph-based unit coherency validation engine:

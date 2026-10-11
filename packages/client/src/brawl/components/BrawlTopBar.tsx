@@ -17,6 +17,7 @@ import {
   Gavel,
   Eye,
   Settings,
+  ChevronDown,
 } from 'lucide-react';
 import { BrawlUserRole } from '../domain/toManager.js';
 import { Player } from '@oldbear/shared';
@@ -59,6 +60,7 @@ interface BrawlTopBarProps {
   onOpenSceneSettings?: () => void;
   voiceState?: VoiceState;
   headerRef?: React.Ref<HTMLElement>;
+  onJumpPhase?: (round: number, phaseIndex: number, playerIndex?: 1 | 2) => void;
 }
 
 const PHASES: WargamePhase[] = ['Command', 'Movement', 'Shooting', 'Charge', 'Fight', 'Morale'];
@@ -96,8 +98,10 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
   onToggleChessClockHUD,
   voiceState,
   headerRef,
+  onJumpPhase,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [showPhaseQuickJump, setShowPhaseQuickJump] = useState(false);
 
   const copyInviteLink = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -210,12 +214,13 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
           )}
         </div>
 
-        {/* Round & Phase Bar */}
+        {/* Round & Phase Bar (OB-157) */}
         <div
           style={{
+            position: 'relative',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.4rem',
             background: 'rgba(0, 0, 0, 0.3)',
             padding: '3px 8px',
             borderRadius: '6px',
@@ -225,13 +230,13 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
           }}
         >
           <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-            Round {currentRound}
+            Round {currentRound} - Player {activePlayerIndex}
           </span>
           <span style={{ color: 'rgba(255, 255, 255, 0.2)' }}>|</span>
           <button
-            onClick={onNextPhase}
+            onClick={() => setShowPhaseQuickJump((prev) => !prev)}
             style={{
-              background: 'none',
+              background: showPhaseQuickJump ? 'rgba(56, 189, 248, 0.2)' : 'none',
               border: 'none',
               color: '#38bdf8',
               fontSize: '0.75rem',
@@ -240,13 +245,143 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
               display: 'flex',
               alignItems: 'center',
               gap: '3px',
-              padding: '2px 4px',
+              padding: '2px 5px',
               borderRadius: '4px',
             }}
-            title="Click to advance to next phase"
+            title="Click to open phase quick-jump menu"
           >
-            {currentPhase} <ChevronRight size={14} />
+            {currentPhase} Phase <ChevronDown size={12} />
           </button>
+          <button
+            onClick={onNextPhase}
+            style={{
+              background: 'rgba(56, 189, 248, 0.15)',
+              border: '1px solid rgba(56, 189, 248, 0.3)',
+              color: '#38bdf8',
+              width: '20px',
+              height: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              padding: 0,
+            }}
+            title="Next Phase (Spacebar)"
+          >
+            <ChevronRight size={13} />
+          </button>
+
+          {/* Phase Quick-Jump Dropdown Menu */}
+          {showPhaseQuickJump && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 6px)',
+                left: 0,
+                background: 'var(--bg-surface-elevated, #1e293b)',
+                border: '1px solid rgba(56, 189, 248, 0.3)',
+                borderRadius: '8px',
+                padding: '10px',
+                zIndex: 60,
+                boxShadow: '0 12px 28px rgba(0, 0, 0, 0.6)',
+                minWidth: '240px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '4px' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#f59e0b' }}>Phase Quick-Jump</span>
+                <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>Spacebar: Next</span>
+              </div>
+
+              {/* Round Selector */}
+              <div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', marginBottom: '3px' }}>Round:</div>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  {[1, 2, 3, 4, 5].map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => {
+                        onJumpPhase?.(r, PHASES.indexOf(currentPhase), activePlayerIndex);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '3px 0',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        borderRadius: '4px',
+                        border: currentRound === r ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.1)',
+                        background: currentRound === r ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255, 255, 255, 0.04)',
+                        color: currentRound === r ? '#38bdf8' : '#e2e8f0',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Active Player Selector */}
+              <div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', marginBottom: '3px' }}>Active Turn:</div>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  {[1, 2].map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => {
+                        onJumpPhase?.(currentRound, PHASES.indexOf(currentPhase), p as 1 | 2);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '3px 0',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        borderRadius: '4px',
+                        border: activePlayerIndex === p ? '1px solid #f59e0b' : '1px solid rgba(255, 255, 255, 0.1)',
+                        background: activePlayerIndex === p ? 'rgba(245, 158, 11, 0.25)' : 'rgba(255, 255, 255, 0.04)',
+                        color: activePlayerIndex === p ? '#f59e0b' : '#e2e8f0',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Player {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Phase Buttons */}
+              <div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', marginBottom: '3px' }}>Jump to Phase:</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+                  {PHASES.map((phase, idx) => (
+                    <button
+                      key={phase}
+                      onClick={() => {
+                        onJumpPhase?.(currentRound, idx, activePlayerIndex);
+                        setShowPhaseQuickJump(false);
+                      }}
+                      style={{
+                        padding: '4px 6px',
+                        fontSize: '0.72rem',
+                        fontWeight: currentPhase === phase ? 700 : 500,
+                        textAlign: 'left',
+                        borderRadius: '4px',
+                        border: currentPhase === phase ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.06)',
+                        background: currentPhase === phase ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.03)',
+                        color: currentPhase === phase ? '#38bdf8' : '#e2e8f0',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {phase}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Chess Clock Indicator (OB-158) */}

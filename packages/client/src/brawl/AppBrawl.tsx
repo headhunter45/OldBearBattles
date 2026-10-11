@@ -299,6 +299,48 @@ export const AppBrawl: React.FC = () => {
     }
   };
 
+  const handleNextPhaseRef = useRef(handleNextPhase);
+  handleNextPhaseRef.current = handleNextPhase;
+
+  // Phase Quick-Jump (OB-157)
+  const handleJumpPhase = (round: number, phaseIndex: number, playerIndex?: 1 | 2) => {
+    const nextPlayer = playerIndex || activePlayerIndex;
+    const playersList = session ? Object.values(session.players) : [];
+    const activePlayerName = (nextPlayer === 1 ? playersList[0]?.name : playersList[1]?.name) || `Player ${nextPlayer}`;
+    const newPhase = WARGAME_PHASES[phaseIndex] || 'Command';
+
+    setCurrentRound(round);
+    setActivePlayerIndex(nextPlayer);
+    setCurrentPhaseIndex(phaseIndex);
+
+    const event: PhaseTransitionEvent = {
+      type: 'phase_change',
+      previousPhase: WARGAME_PHASES[currentPhaseIndex],
+      newPhase,
+      activePlayer: nextPlayer,
+      currentRound: round,
+      bannerTitle: `${newPhase.toUpperCase()} PHASE`,
+      bannerSubtitle: `Round ${round} • ${activePlayerName}'s Turn (Quick Jump)`,
+      chatAuditMessage: `⏱️ **[Round ${round}]** Quick jumped to **${newPhase} Phase** (${activePlayerName}'s Turn).`,
+    };
+
+    setPhaseAnnouncement(event);
+    showToast(`Jumped to Round ${round} • ${newPhase} Phase (${activePlayerName})`);
+
+    if (networkRef.current && session) {
+      const auditMsg: ChatMessage = {
+        id: `audit-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        senderId: 'system',
+        senderName: 'Battle Overseer',
+        senderColor: '#f59e0b',
+        text: event.chatAuditMessage,
+        timestamp: Date.now(),
+        isCommand: true,
+      };
+      networkRef.current.send({ type: 'chat-send', message: auditMsg });
+    }
+  };
+
   // Scoreboard Resource Adjuster (OB-159)
   const handleUpdateScoreResource = (
     player: 1 | 2,
@@ -643,6 +685,13 @@ export const AppBrawl: React.FC = () => {
         return;
       }
 
+      // Next Phase via Spacebar (OB-157)
+      if (e.code === 'Space' && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        handleNextPhaseRef.current();
+        return;
+      }
+
       if (e.key === 'Escape') {
         if (isChatOpen) {
           setIsChatOpen(false);
@@ -675,6 +724,7 @@ export const AppBrawl: React.FC = () => {
         p2TotalVp={scoreboard.p2.totalVp}
         onToggleClock={() => setIsClockRunning((prev) => !prev)}
         onNextPhase={handleNextPhase}
+        onJumpPhase={handleJumpPhase}
         onSwitchActivePlayer={handleSwitchActivePlayer}
         onOpenScoreboard={() => setShowScoreboardModal(true)}
         onOpenObjectives={() => setShowObjectivesModal(true)}

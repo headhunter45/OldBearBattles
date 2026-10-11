@@ -12,9 +12,6 @@ This document provides step-by-step instructions for manually verifying all feat
 | Task ID | Feature Title | Domain | Status |
 | :------ | :------------ | :----- | :----- |
 
-| **[OB-154](#ob-154---game_mode-environment-configuration--deployment-toggles)** | `GAME_MODE` Environment Configuration & Deployment Toggles | Platform / Brawl | Testing |
-| **[OB-155](#ob-155---army-unit-and-model-domain-hierarchy--disambiguation)** | Army, Unit, and Model Domain Hierarchy & Disambiguation | Wargaming / Brawl | Testing |
-| **[OB-156](#ob-156---unit-coherency-graph-engine--real-time-warning-halos)** | Unit Coherency Graph Engine & Real-Time Warning Halos | Wargaming / Brawl | Testing |
 | **[OB-157](#ob-157---battle-round-stepper--wargaming-phase-engine)** | Battle Round Stepper & Wargaming Phase Engine | Wargaming / Brawl | Testing |
 | **[OB-158](#ob-158---dual-player-chess-clocks-with-turn-countdown--active-switching)** | Dual-Player Chess Clocks with Turn Countdown & Active Switching | Wargaming / Brawl | Testing |
 | **[OB-159](#ob-159---scoreboard--resource-tracker-vp-cp-casualties-with-audit-trail)** | Scoreboard & Resource Tracker (VP, CP, Casualties) with Audit Trail | Wargaming / Brawl | Testing |
@@ -227,31 +224,6 @@ This document provides step-by-step instructions for manually verifying all feat
 ---
 
 ## Old Bear Brawl (Tabletop Wargaming Platform)
-
-### OB-155 - Army, Unit, and Model Domain Hierarchy & Disambiguation
-
-- **Reference in tasks.md:** [tasks.md: OB-155](file:///Users/tom/Projects/OldBearBattles/docs/tasks.md#ob-155)
-- **Primary Source Code:** [types.ts](file:///Users/tom/Projects/OldBearBattles/packages/shared/src/brawl/types.ts), [ArmyRosterFlyout.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/brawl/components/ArmyRosterFlyout.tsx), [rosterIngestion.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/brawl/utils/rosterIngestion.ts)
-- **Where to find it:** The **Army Roster Flyout** in Brawl mode (`?mode=brawl` -> Shield icon in top bar).
-
-#### Step-by-Step Instructions:
-
-1. Navigate to `http://localhost:3000/?mode=brawl`.
-2. Click the **Shield** icon in the top bar to open the Army Roster Flyout.
-3. Observe the army summary header: points limit, points spent (e.g. `80 / 2000 pts`), faction, and detachment.
-4. Click on a unit (e.g. `Terminator Squad`) to expand its model roster.
-5. Notice model disambiguation: individual models have unique IDs and specific wargear (e.g. `Terminator Sergeant [Power Weapon, Storm Bolter]`, `Terminator 1 [Chainfist, Heavy Flamer]`).
-6. Click **Deploy Unit to Table**:
-   - Verify tokens spawn grouped together on the canvas with matching `unitId`.
-   - Verify token rings share the unit's coherency color.
-
-#### Expected Result (Pass Criteria):
-
-- Hierarchy correctly reflects Army -> Unit -> Model.
-- Individual models maintain unique IDs, base sizes, and wargear.
-- Models deploy to the canvas linked by `unitId` with matching ring colors.
-
----
 
 ### OB-156 - Unit Coherency Graph Engine & Real-Time Warning Halos
 
