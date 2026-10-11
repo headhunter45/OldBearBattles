@@ -347,6 +347,11 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-224 | Separate map and token instances between VTT and Brawl modes                                                                                                                                                                                                                                                                                                                                                                                                                         | Old Bear Brawl | Ready    | [Bug](#ob-224)     |
 | OB-225 | Add floating token bar and model wargear inspector when selecting tokens in Brawl mode                                                                                                                                                                                                                                                                                                                                                                                               | Old Bear Brawl | Ready    | [Bug](#ob-225)     |
 | OB-226 | Add dedicated UI controls to place custom objective markers and wargaming tokens onto the canvas                                                                                                                                                                                                                                                                                                                                                                                     | Old Bear Brawl | Ready    | [Feature](#ob-226) |
+| OB-227 | Fix unit deployment assigning all units to Player 1 regardless of deploying player                                                                                                                                                                                                                                                                                                                                                                                                   | Old Bear Brawl | Ready    | [Bug](#ob-227)     |
+| OB-228 | Prevent re-deploying a unit from replacing previously deployed tokens on the map                                                                                                                                                                                                                                                                                                                                                                                                     | Old Bear Brawl | Ready    | [Bug](#ob-228)     |
+| OB-229 | Display Objective Control (OC) stats on tokens, selection HUD, and model stat cards                                                                                                                                                                                                                                                                                                                                                                                                  | Old Bear Brawl | Ready    | [Feature](#ob-229) |
+| OB-230 | Separate army roster storage and selection between Player 1 and Player 2                                                                                                                                                                                                                                                                                                                                                                                                             | Old Bear Brawl | Ready    | [Feature](#ob-230) |
+| OB-231 | Make wargaming rulesets, phase sequences, scoring, and resource rules data-driven                                                                                                                                                                                                                                                                                                                                                                                                    | Old Bear Brawl | Ready    | [Feature](#ob-231) |
 
 ---
 
@@ -3791,6 +3796,61 @@ When selecting tokens in Brawl mode, there is currently no floating token contro
 
 **Description:**
 Provide dedicated UI tools, flyout palette, or token picker controls to add custom objective markers and miscellaneous wargaming tokens directly to the canvas in Brawl mode.
+- [ ]
+
+<a id="ob-227" class="task" data-project="brawl" data-status="ready" data-task-type="bug"></a>
+### Fix unit deployment assigning all units to Player 1 regardless of deploying player
+**ID:** OB-227
+**Project:** Old Bear Brawl
+**Status:** Ready
+**Type:** Bug
+
+**Description:**
+Fix unit deployment in AppBrawl and DeploymentStagingModal so models are assigned to the deploying player (Player 1 or Player 2) with correct ownership (ownerId, player index, and player accent color) instead of defaulting to Player 1.
+- [ ]
+
+<a id="ob-228" class="task" data-project="brawl" data-status="ready" data-task-type="bug"></a>
+### Prevent re-deploying a unit from replacing previously deployed tokens on the map
+**ID:** OB-228
+**Project:** Old Bear Brawl
+**Status:** Ready
+**Type:** Bug
+
+**Description:**
+Fix unit deployment replacing existing units when deployed again. Allow multiple instances or distinct squads of the same unit datasheet to be deployed without overwriting or deleting prior tokens.
+- [ ]
+
+<a id="ob-229" class="task" data-project="brawl" data-status="ready" data-task-type="feature"></a>
+### Display Objective Control (OC) stats on tokens, selection HUD, and model stat cards
+**ID:** OB-229
+**Project:** Old Bear Brawl
+**Status:** Ready
+**Type:** Feature
+
+**Description:**
+Display Objective Control (OC) stat values clearly on deployed model tokens, token badges/tooltips, selection HUD, and the army roster model stat cards.
+- [ ]
+
+<a id="ob-230" class="task" data-project="brawl" data-status="ready" data-task-type="feature"></a>
+### Separate army roster storage and selection between Player 1 and Player 2
+**ID:** OB-230
+**Project:** Old Bear Brawl
+**Status:** Ready
+**Type:** Feature
+
+**Description:**
+Separate army roster storage and selection per player so Player 1 and Player 2 each have independent army lists and imports rather than sharing a single global army array.
+- [ ]
+
+<a id="ob-231" class="task" data-project="brawl" data-status="ready" data-task-type="feature"></a>
+### Make wargaming rulesets, phase sequences, scoring, and resource rules data-driven
+**ID:** OB-231
+**Project:** Old Bear Brawl
+**Status:** Ready
+**Type:** Feature
+
+**Description:**
+Design and implement a data-driven wargaming ruleset schema allowing customizable phase step sequences, scoring rules (primary/secondary VP), resource pools (CP or other resources), and objective rules/presets beyond hardcoded 40k defaults.
 - [ ]
 
 ---
