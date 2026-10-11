@@ -126,6 +126,11 @@ export interface Token {
   statusCounters?: Record<string, number>; // current numeric counters for conditions (OB-131)
   isOutOfCoherency?: boolean; // real-time unit coherency warning (OB-156)
   unitHaloColor?: string; // visual unit squad grouping halo color (OB-156)
+  unitId?: string; // unit grouping identifier (OB-155)
+  wargameArmyId?: string; // army identifier (OB-155)
+  wargameUnitId?: string; // unit identifier (OB-155)
+  wargameModelId?: string; // model identifier (OB-155)
+  baseShape?: { type: 'circle' | 'oval' | 'rect' | 'polygon'; widthMm: number; heightMm?: number };
 }
 
 export interface StatusCounterConfig {

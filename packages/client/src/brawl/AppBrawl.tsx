@@ -47,7 +47,7 @@ import {
   formatOfficialRulingMessage,
   filterTokensForSpectator,
 } from './domain/toManager.js';
-import { modelToToken } from './domain/armyManager.js';
+import { modelToToken, DEFAULT_PX_PER_INCH } from './domain/armyManager.js';
 import { updateTokensCoherency } from './domain/coherencyEngine.js';
 import {
   ObjectiveMarker,
@@ -575,6 +575,45 @@ export const AppBrawl: React.FC = () => {
       } else if (msg.type === 'chat-msg') {
         setChatMessages((prev) => [...prev, msg.message]);
         setUnreadChatCount((prev) => prev + 1);
+      } else if (msg.type === 'token-added') {
+        setSession((prev) => {
+          if (!prev) return prev;
+          const currentTokens = Array.isArray(prev.tokens)
+            ? prev.tokens.reduce((acc, t) => ({ ...acc, [t.id]: t }), {} as Record<string, Token>)
+            : { ...(prev.tokens || {}) };
+          return {
+            ...prev,
+            tokens: { ...currentTokens, [msg.token.id]: msg.token },
+          };
+        });
+      } else if (msg.type === 'token-updated') {
+        setSession((prev) => {
+          if (!prev) return prev;
+          const currentTokens = Array.isArray(prev.tokens)
+            ? prev.tokens.reduce((acc, t) => ({ ...acc, [t.id]: t }), {} as Record<string, Token>)
+            : { ...(prev.tokens || {}) };
+          if (!currentTokens[msg.id]) return prev;
+          return {
+            ...prev,
+            tokens: {
+              ...currentTokens,
+              [msg.id]: { ...currentTokens[msg.id], ...msg.updates },
+            },
+          };
+        });
+      } else if (msg.type === 'token-deleted') {
+        setSession((prev) => {
+          if (!prev) return prev;
+          const currentTokens = Array.isArray(prev.tokens)
+            ? prev.tokens.reduce((acc, t) => ({ ...acc, [t.id]: t }), {} as Record<string, Token>)
+            : { ...(prev.tokens || {}) };
+          const next = { ...currentTokens };
+          delete next[msg.id];
+          return {
+            ...prev,
+            tokens: next,
+          };
+        });
       }
     });
 
@@ -705,8 +744,16 @@ export const AppBrawl: React.FC = () => {
         <ArmyRosterFlyout
           onClose={() => setShowArmyRoster(false)}
           onDeployUnit={(unit, army) => {
-            const startX = 250;
-            const startY = 250;
+            const currentMapId = currentMap?.id || gmPreviewMapId || session?.activeMapId || session?.maps[0]?.id || '';
+            let startX = 400;
+            let startY = 400;
+            if (engineRef.current) {
+              try {
+                const center = engineRef.current.screenToWorld(window.innerWidth / 2, window.innerHeight / 2);
+                startX = Math.round(center.x);
+                startY = Math.round(center.y);
+              } catch {}
+            }
             const spacing = 70;
             const newTokens = unit.models.map((model, idx) => {
               const positionedModel = {
@@ -714,7 +761,7 @@ export const AppBrawl: React.FC = () => {
                 x: startX + (idx % 5) * spacing,
                 y: startY + Math.floor(idx / 5) * spacing,
               };
-              return modelToToken(positionedModel, unit, army);
+              return modelToToken(positionedModel, unit, army, DEFAULT_PX_PER_INCH, currentMapId);
             });
 
             setSession((prev) => {
@@ -730,6 +777,10 @@ export const AppBrawl: React.FC = () => {
                 tokens: currentTokensRecord,
               };
             });
+
+            if (newTokens.length > 0 && engineRef.current) {
+              engineRef.current.selectToken(newTokens[0].id);
+            }
 
             newTokens.forEach((tok) => {
               networkRef.current?.send({ type: 'token-add', token: tok });

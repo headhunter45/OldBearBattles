@@ -97,6 +97,27 @@ export function calculateBaseRadiusInches(token: Token): number {
   return sizeNum / 2;
 }
 
+export const UNIT_COHERENCY_COLORS = [
+  '#3b82f6', // blue
+  '#10b981', // emerald
+  '#f59e0b', // amber
+  '#8b5cf6', // purple
+  '#ec4899', // pink
+  '#06b6d4', // cyan
+  '#f97316', // orange
+  '#84cc16', // lime
+  '#a855f7', // violet
+  '#14b8a6', // teal
+];
+
+export function getUnitColor(unitId: string): string {
+  let hash = 0;
+  for (let i = 0; i < unitId.length; i++) {
+    hash = (hash * 31 + unitId.charCodeAt(i)) >>> 0;
+  }
+  return UNIT_COHERENCY_COLORS[hash % UNIT_COHERENCY_COLORS.length];
+}
+
 /**
  * Converts a WargameModel into a fully ready-to-fight VTT canvas Token.
  */
@@ -104,32 +125,57 @@ export function modelToToken(
   model: WargameModel,
   unit: WargameUnit,
   army: WargameArmy,
-  pxPerInch: number = DEFAULT_PX_PER_INCH
+  pxPerInch: number = DEFAULT_PX_PER_INCH,
+  mapId: string = ''
 ): Token {
   const widthInches = (model.baseShape.widthMm || 32) / MM_PER_INCH;
   const heightInches = (model.baseShape.heightMm || model.baseShape.widthMm || 32) / MM_PER_INCH;
   const size = Math.max(0.5, Math.round(widthInches * 10) / 10);
 
   const wounds = unit.datasheet?.woundsPerModel || 1;
+  const unitColor = getUnitColor(unit.id);
+
+  const actions = (model.actionOverrides && model.actionOverrides.length > 0
+    ? model.actionOverrides
+    : unit.baseActions || []
+  ).map((act) => ({
+    id: act.id,
+    name: act.name,
+    type: act.type === 'ranged' ? ('ranged' as const) : ('melee' as const),
+    range: act.rangeInches ? `${act.rangeInches}"` : 'Melee',
+    attackBonus: parseInt(act.skill?.replace('+', '') || '3', 10),
+    damage: `${act.damage || 1}`,
+    description: act.rulesDescription || `A: ${act.attacks}, S: ${act.strength}, AP: ${act.ap}`,
+  }));
 
   return {
     id: `token_${model.id}`,
+    mapId,
     name: model.name,
     x: model.x,
     y: model.y,
     size,
-    color: '#f59e0b',
+    color: unitColor,
+    ringColor: unitColor,
+    fillColor: '#1e293b',
+    clipCircle: true,
+    clipShape: model.baseShape.type === 'rect' ? 'square' : 'circle',
+    rotation: 0,
     currentHp: wounds,
     maxHp: wounds,
+    tempHp: 0,
+    speed: (unit.datasheet?.movementInches || 6) * 5,
     armorClass: parseInt(unit.datasheet?.armorSave?.replace('+', '') || '3', 10) || 10,
     initiativeBonus: 0,
-    // Tag wargaming specific metadata
+    conditions: [],
+    isProp: false,
+    layer: 'token',
+    actions,
+    unitId: unit.id,
     wargameArmyId: army.id,
     wargameUnitId: unit.id,
     wargameModelId: model.id,
-  } as Token & {
-    wargameArmyId: string;
-    wargameUnitId: string;
-    wargameModelId: string;
+    unitHaloColor: unitColor,
+    baseShape: model.baseShape,
   };
 }

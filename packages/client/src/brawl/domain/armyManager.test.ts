@@ -152,9 +152,10 @@ describe('Army, Unit, and Model Domain Hierarchy & Disambiguation (OB-155)', () 
       baseShape: { type: 'circle' as const, widthMm: 32 },
     };
 
-    const token = modelToToken(model, unit, army);
+    const token = modelToToken(model, unit, army, 50, 'test_map_1');
 
     assert.strictEqual(token.id, 'token_m_nob');
+    assert.strictEqual(token.mapId, 'test_map_1');
     assert.strictEqual(token.name, 'Boyz 1');
     assert.strictEqual(token.x, 250);
     assert.strictEqual(token.y, 300);
@@ -163,5 +164,9 @@ describe('Army, Unit, and Model Domain Hierarchy & Disambiguation (OB-155)', () 
     assert.strictEqual(token.armorClass, 5);
     // 32mm / 25.4mm = ~1.26 -> rounded to 1.3
     assert.strictEqual(token.size, 1.3);
+    assert.ok(token.ringColor, 'Has ring color');
+    assert.strictEqual(token.ringColor, token.unitHaloColor, 'Ring color matches unit coherency halo');
+    assert.strictEqual(token.unitId, 'u_boyz');
+    assert.strictEqual(token.wargameUnitId, 'u_boyz');
   });
 });

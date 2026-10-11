@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Shield, X, Plus, Trash2, Swords, Crosshair, Users, ChevronDown, ChevronUp, Upload, CheckCircle, AlertCircle } from 'lucide-react';
 import { useDraggableWindow } from '../../common/hooks/useDraggableWindow.js';
 import { WargameArmy, WargameUnit } from '../types/brawl.js';
-import { disambiguateArmy } from '../domain/armyManager.js';
+import { disambiguateArmy, getUnitColor } from '../domain/armyManager.js';
 import { parseRosterFile } from '../domain/rosterParser.js';
 
 interface ArmyRosterFlyoutProps {
@@ -47,6 +47,7 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({ onClose, onD
     id: 'army_1',
     name: 'Strike Force Alpha',
     faction: 'Space Marines',
+    detachment: 'Gladius Task Force',
     pointsLimit: 2000,
     units: [
       {
@@ -56,11 +57,11 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({ onClose, onD
         points: 80,
         coherencyDistanceInches: 2.0,
         models: [
-          { id: 'm1', name: '', unitId: 'unit_1', x: 0, y: 0, baseShape: { type: 'circle', widthMm: 32 } },
-          { id: 'm2', name: '', unitId: 'unit_1', x: 0, y: 0, baseShape: { type: 'circle', widthMm: 32 } },
-          { id: 'm3', name: '', unitId: 'unit_1', x: 0, y: 0, baseShape: { type: 'circle', widthMm: 32 } },
-          { id: 'm4', name: '', unitId: 'unit_1', x: 0, y: 0, baseShape: { type: 'circle', widthMm: 32 } },
-          { id: 'm5', name: '', unitId: 'unit_1', x: 0, y: 0, baseShape: { type: 'circle', widthMm: 32 } },
+          { id: 'm1', name: 'Intercessor Sergeant', unitId: 'unit_1', x: 0, y: 0, baseShape: { type: 'circle', widthMm: 32 }, actionOverrides: [{ id: 'w1', name: 'Astartes Chainsword', type: 'melee', attacks: 4, skill: '3+', strength: 4, ap: -1, damage: 1 }, { id: 'w2', name: 'Bolt Rifle', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: -1, damage: 1 }] },
+          { id: 'm2', name: 'Intercessor 1', unitId: 'unit_1', x: 0, y: 0, baseShape: { type: 'circle', widthMm: 32 }, actionOverrides: [{ id: 'w3', name: 'Bolt Rifle', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: -1, damage: 1 }] },
+          { id: 'm3', name: 'Intercessor 2', unitId: 'unit_1', x: 0, y: 0, baseShape: { type: 'circle', widthMm: 32 }, actionOverrides: [{ id: 'w4', name: 'Bolt Rifle', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: -1, damage: 1 }] },
+          { id: 'm4', name: 'Intercessor 3', unitId: 'unit_1', x: 0, y: 0, baseShape: { type: 'circle', widthMm: 32 }, actionOverrides: [{ id: 'w5', name: 'Bolt Rifle', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: -1, damage: 1 }] },
+          { id: 'm5', name: 'Intercessor 4', unitId: 'unit_1', x: 0, y: 0, baseShape: { type: 'circle', widthMm: 32 }, actionOverrides: [{ id: 'w6', name: 'Bolt Rifle', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: -1, damage: 1 }] },
         ],
         baseActions: [
           { id: 'a1', name: 'Bolt Rifle', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: -1, damage: 1 },
@@ -75,12 +76,93 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({ onClose, onD
           objectiveControl: 2,
         },
       },
+      {
+        id: 'unit_2',
+        name: 'Terminator Squad',
+        armyId: 'army_1',
+        points: 185,
+        coherencyDistanceInches: 2.0,
+        models: [
+          {
+            id: 'term_sgt',
+            name: 'Terminator Sergeant',
+            unitId: 'unit_2',
+            x: 0,
+            y: 0,
+            baseShape: { type: 'circle', widthMm: 40 },
+            actionOverrides: [
+              { id: 'wpn_pw', name: 'Power Weapon', type: 'melee', attacks: 4, skill: '3+', strength: 5, ap: -2, damage: 1 },
+              { id: 'wpn_sb', name: 'Storm Bolter', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: 0, damage: 1 },
+            ],
+          },
+          {
+            id: 'term_1',
+            name: 'Terminator 1',
+            unitId: 'unit_2',
+            x: 0,
+            y: 0,
+            baseShape: { type: 'circle', widthMm: 40 },
+            actionOverrides: [
+              { id: 'wpn_cf', name: 'Chainfist', type: 'melee', attacks: 3, skill: '3+', strength: 8, ap: -2, damage: 2 },
+              { id: 'wpn_hf', name: 'Heavy Flamer', type: 'ranged', rangeInches: 12, attacks: 'D6', skill: 'N/A', strength: 5, ap: -1, damage: 1 },
+            ],
+          },
+          {
+            id: 'term_2',
+            name: 'Terminator 2',
+            unitId: 'unit_2',
+            x: 0,
+            y: 0,
+            baseShape: { type: 'circle', widthMm: 40 },
+            actionOverrides: [
+              { id: 'wpn_pf1', name: 'Power Fist', type: 'melee', attacks: 3, skill: '3+', strength: 8, ap: -2, damage: 2 },
+              { id: 'wpn_sb1', name: 'Storm Bolter', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: 0, damage: 1 },
+            ],
+          },
+          {
+            id: 'term_3',
+            name: 'Terminator 3',
+            unitId: 'unit_2',
+            x: 0,
+            y: 0,
+            baseShape: { type: 'circle', widthMm: 40 },
+            actionOverrides: [
+              { id: 'wpn_pf2', name: 'Power Fist', type: 'melee', attacks: 3, skill: '3+', strength: 8, ap: -2, damage: 2 },
+              { id: 'wpn_sb2', name: 'Storm Bolter', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: 0, damage: 1 },
+            ],
+          },
+          {
+            id: 'term_4',
+            name: 'Terminator 4',
+            unitId: 'unit_2',
+            x: 0,
+            y: 0,
+            baseShape: { type: 'circle', widthMm: 40 },
+            actionOverrides: [
+              { id: 'wpn_pf3', name: 'Power Fist', type: 'melee', attacks: 3, skill: '3+', strength: 8, ap: -2, damage: 2 },
+              { id: 'wpn_sb3', name: 'Storm Bolter', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: 0, damage: 1 },
+            ],
+          },
+        ],
+        baseActions: [
+          { id: 'a_sb', name: 'Storm Bolter', type: 'ranged', rangeInches: 24, attacks: 2, skill: '3+', strength: 4, ap: 0, damage: 1 },
+          { id: 'a_pf', name: 'Power Fist', type: 'melee', attacks: 3, skill: '3+', strength: 8, ap: -2, damage: 2 },
+        ],
+        datasheet: {
+          movementInches: 5,
+          toughness: 5,
+          armorSave: '2+',
+          woundsPerModel: 3,
+          leadership: '6+',
+          objectiveControl: 1,
+        },
+      },
     ],
   });
 
   const activeArmy = disambiguateArmy(rawArmy);
 
-  const [expandedUnitId, setExpandedUnitId] = useState<string | null>('unit_1');
+  const [expandedUnitId, setExpandedUnitId] = useState<string | null>('unit_2');
 
   const totalPoints = activeArmy.units.reduce((sum, u) => sum + u.points, 0);
 
@@ -133,7 +215,9 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({ onClose, onD
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
           <div>
             <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{activeArmy.name}</div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Faction: {activeArmy.faction}</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+              Faction: {activeArmy.faction} {activeArmy.detachment ? `• Detachment: ${activeArmy.detachment}` : ''}
+            </div>
           </div>
           <label
             className="btn-secondary"
@@ -259,6 +343,55 @@ export const ArmyRosterFlyout: React.FC<ArmyRosterFlyoutProps> = ({ onClose, onD
                       • {act.name} {act.rangeInches ? `(${act.rangeInches}")` : '(Melee)'}: A{act.attacks} S{act.strength} AP{act.ap} D{act.damage}
                     </div>
                   ))}
+
+                  {/* Models Roster & Disambiguation */}
+                  <div style={{ fontWeight: 600, marginTop: '0.6rem', marginBottom: '0.3rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span
+                      style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        backgroundColor: getUnitColor(unit.id),
+                        display: 'inline-block',
+                      }}
+                      title="Unit Coherency Group Color"
+                    />
+                    <span>Models ({unit.models.length}):</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {unit.models.map((model) => {
+                      const gearList = model.actionOverrides && model.actionOverrides.length > 0
+                        ? model.actionOverrides.map((a) => a.name).join(', ')
+                        : unit.baseActions.map((a) => a.name).join(', ');
+                      return (
+                        <div
+                          key={model.id}
+                          style={{
+                            padding: '4px 6px',
+                            background: 'rgba(255, 255, 255, 0.04)',
+                            borderLeft: `3px solid ${getUnitColor(unit.id)}`,
+                            borderRadius: '0 4px 4px 0',
+                            fontSize: '0.72rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '2px',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontWeight: 600, color: '#f8fafc' }}>{model.name}</span>
+                            <span style={{ fontSize: '0.65rem', color: '#94a3b8', fontFamily: 'monospace' }}>
+                              {model.baseShape.widthMm}mm • #{model.id}
+                            </span>
+                          </div>
+                          {gearList && (
+                            <div style={{ color: '#38bdf8', fontSize: '0.68rem', fontStyle: 'italic' }}>
+                              [{gearList}]
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
 
                   {onDeployUnit && (
                     <button
