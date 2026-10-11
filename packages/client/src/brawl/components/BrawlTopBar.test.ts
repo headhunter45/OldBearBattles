@@ -166,5 +166,78 @@ describe('BrawlTopBar Active Scene Settings (OB-209)', () => {
     assert.ok(markup.includes('Command Phase'), 'Displays current phase');
     assert.ok(markup.includes('Round 1 - Player 1'), 'Displays round and active player');
   });
+
+  it('hides chess clocks by default and displays Clock toggle button in top-bar-right', () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(BrawlTopBar, {
+        roomName: 'Test Room',
+        activeMapName: 'Wargame Ruins',
+        isOrganizer: true,
+        players: [],
+        localPlayer: null,
+        activePlayerIndex: 1,
+        currentRound: 1,
+        currentPhase: 'Command',
+        p1ClockSeconds: 300,
+        p2ClockSeconds: 300,
+        isClockRunning: false,
+        isChessClockEnabled: false,
+        onToggleClock: () => {},
+        onNextPhase: () => {},
+        onSwitchActivePlayer: () => {},
+        onOpenArmyRoster: () => {},
+        onOpenDice: () => {},
+        onOpenMaps: () => {},
+        onOpenSceneSettings: () => {},
+        onOpenSoundboard: () => {},
+        onOpenBackup: () => {},
+        onAddNewModel: () => {},
+        onToggleMobileDrawer: () => {},
+        onToggleChessClockHUD: () => {},
+        onToggleChessClockEnabled: () => {},
+      })
+    );
+
+    assert.ok(!markup.includes('Pass Turn'), 'Does not render inline clock Pass Turn button when disabled');
+    assert.ok(markup.includes('title="Enable Match Chess Clocks"'), 'Renders Clock button to enable clocks');
+    assert.ok(markup.includes('>Clock<'), 'Renders Clock button label in top bar');
+  });
+
+  it('renders inline chess clock bar when isChessClockEnabled is true', () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(BrawlTopBar, {
+        roomName: 'Test Room',
+        activeMapName: 'Wargame Ruins',
+        isOrganizer: true,
+        players: [],
+        localPlayer: null,
+        activePlayerIndex: 1,
+        currentRound: 1,
+        currentPhase: 'Command',
+        p1ClockSeconds: 5400,
+        p2ClockSeconds: 5400,
+        isClockRunning: false,
+        isChessClockEnabled: true,
+        onToggleClock: () => {},
+        onNextPhase: () => {},
+        onSwitchActivePlayer: () => {},
+        onOpenArmyRoster: () => {},
+        onOpenDice: () => {},
+        onOpenMaps: () => {},
+        onOpenSceneSettings: () => {},
+        onOpenSoundboard: () => {},
+        onOpenBackup: () => {},
+        onAddNewModel: () => {},
+        onToggleMobileDrawer: () => {},
+        onToggleChessClockHUD: () => {},
+        onToggleChessClockEnabled: () => {},
+      })
+    );
+
+    assert.ok(markup.includes('Pass Turn'), 'Renders inline clock Pass Turn button when enabled');
+    assert.ok(markup.includes('title="Start Clock"'), 'Renders Start Clock button when enabled');
+    assert.ok(markup.includes('title="Hide / Disable Chess Clocks"'), 'Renders Disable Chess Clocks button');
+  });
 });
+
 

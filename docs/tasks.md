@@ -277,7 +277,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-154 | `GAME_MODE` Environment Configuration & Deployment Toggles                                                                                                                                                                                                                                                                                                                                                                                                                           | Old Bear VTT   | Done     | [Feature](#ob-154) |
 | OB-155 | Army, Unit, and Model Domain Hierarchy & Disambiguation                                                                                                                                                                                                                                                                                                                                                                                                                              | Old Bear Brawl | Done     | [Feature](#ob-155) |
 | OB-156 | Unit Coherency Graph Engine & Real-Time Warning Halos                                                                                                                                                                                                                                                                                                                                                                                                                                | Old Bear Brawl | Done     | [Feature](#ob-156) |
-| OB-157 | Battle Round Stepper & Wargaming Phase Engine                                                                                                                                                                                                                                                                                                                                                                                                                                        | Old Bear Brawl | Testing  | [Feature](#ob-157) |
+| OB-157 | Battle Round Stepper & Wargaming Phase Engine                                                                                                                                                                                                                                                                                                                                                                                                                                        | Old Bear Brawl | Done     | [Feature](#ob-157) |
 | OB-158 | Dual-Player Chess Clocks with Turn Countdown & Active Switching                                                                                                                                                                                                                                                                                                                                                                                                                      | Old Bear Brawl | Testing  | [Feature](#ob-158) |
 | OB-159 | Scoreboard & Resource Tracker (VP, CP, Casualties) with Audit Trail                                                                                                                                                                                                                                                                                                                                                                                                                  | Old Bear Brawl | Testing  | [Feature](#ob-159) |
 | OB-160 | Objective Marker Control Zone Calculation & Auto-Scoring                                                                                                                                                                                                                                                                                                                                                                                                                             | Old Bear Brawl | Testing  | [Feature](#ob-160) |
@@ -2732,16 +2732,14 @@ Real-time graph-based unit coherency validation engine:
   - Optional visual tether lines connecting models within valid coherency range.
   - Real-time evaluation during model dragging and movement.
 
-<a id="ob-157" class="task" data-project="brawl" data-status="testing" data-task-type="feature"></a>
+<a id="ob-157" class="task" data-project="brawl" data-status="done" data-task-type="feature"></a>
 ### Battle Round Stepper & Wargaming Phase Engine
 **ID:** OB-157
 **Project:** Old Bear Brawl
-**Status:** Testing
+**Status:** Done
 **Type:** Feature
 
-
 **Description:**
-
 **Depends On:** [OB-154](#ob-154)
 
 Battle round and turn phase management system for tabletop wargames:

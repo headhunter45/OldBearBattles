@@ -103,6 +103,7 @@ export const AppBrawl: React.FC = () => {
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
   const [activePlayerIndex, setActivePlayerIndex] = useState<1 | 2>(1);
   const [phaseAnnouncement, setPhaseAnnouncement] = useState<PhaseTransitionEvent | null>(null);
+  const [isChessClockEnabled, setIsChessClockEnabled] = useState(false);
   const [p1ClockSeconds, setP1ClockSeconds] = useState(5400); // 90 min default
   const [p2ClockSeconds, setP2ClockSeconds] = useState(5400);
   const [isClockRunning, setIsClockRunning] = useState(false);
@@ -232,9 +233,24 @@ export const AppBrawl: React.FC = () => {
     }
   };
 
-  // Chess Clock Tick Effect (OB-158)
+  // Chess Clock Toggle & Tick Effect (OB-158)
+  const handleToggleChessClockEnabled = () => {
+    setIsChessClockEnabled((prev) => {
+      const next = !prev;
+      if (next) {
+        setShowChessClockHUD(true);
+        showToast('Match chess clocks enabled');
+      } else {
+        setIsClockRunning(false);
+        setShowChessClockHUD(false);
+        showToast('Chess clocks disabled');
+      }
+      return next;
+    });
+  };
+
   useEffect(() => {
-    if (!isClockRunning) return;
+    if (!isChessClockEnabled || !isClockRunning) return;
     const interval = setInterval(() => {
       if (activePlayerIndex === 1) {
         setP1ClockSeconds((prev) => {
@@ -253,7 +269,7 @@ export const AppBrawl: React.FC = () => {
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [isClockRunning, activePlayerIndex]);
+  }, [isChessClockEnabled, isClockRunning, activePlayerIndex]);
 
   // Phase Stepper (OB-157)
   const handleNextPhase = () => {
@@ -720,6 +736,8 @@ export const AppBrawl: React.FC = () => {
         p1ClockSeconds={p1ClockSeconds}
         p2ClockSeconds={p2ClockSeconds}
         isClockRunning={isClockRunning}
+        isChessClockEnabled={isChessClockEnabled}
+        onToggleChessClockEnabled={handleToggleChessClockEnabled}
         p1TotalVp={scoreboard.p1.totalVp}
         p2TotalVp={scoreboard.p2.totalVp}
         onToggleClock={() => setIsClockRunning((prev) => !prev)}
@@ -904,6 +922,7 @@ export const AppBrawl: React.FC = () => {
             showToast(`Match clocks reset to ${secs / 60} minutes`);
           }}
           onClose={() => setShowChessClockHUD(false)}
+          onDisable={handleToggleChessClockEnabled}
         />
       )}
 

@@ -291,10 +291,15 @@ This document provides step-by-step instructions for manually verifying all feat
    - Player 1's timer pauses; Player 2's timer begins counting down immediately.
 5. Click **Pause**:
    - Both timers pause cleanly.
-6. Verify synchronization across two browser windows connected to the same room.
+6. Verify disabling / hiding clocks:
+   - Click the `X` button on the top-bar clock strip (or **Disable Clocks** in the widget config) to hide the clock strip and pause timers.
+   - Click **Clock** in the top bar again to re-enable them on demand.
+7. Verify synchronization across two browser windows connected to the same room.
 
 #### Expected Result (Pass Criteria):
 
+- Clocks are disabled by default on load, keeping the top bar clean and spacious.
+- Clicking the **Clock** button in the top bar activates match clocks and opens the widget on demand.
 - Dual clocks count down accurately with smooth sub-second precision.
 - Passing turn switches active countdown instantaneously.
 - Clocks synchronize across all connected peers in real time.

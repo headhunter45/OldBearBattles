@@ -31,6 +31,7 @@ interface ChessClockWidgetProps {
   onSwitchPlayer: () => void;
   onResetClock: (timeLimitSeconds: number) => void;
   onClose?: () => void;
+  onDisable?: () => void;
 }
 
 export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
@@ -44,6 +45,7 @@ export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
   onSwitchPlayer,
   onResetClock,
   onClose,
+  onDisable,
 }) => {
   const [minimized, setMinimized] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
@@ -300,6 +302,26 @@ export const ChessClockWidget: React.FC<ChessClockWidgetProps> = ({
                 {preset.label}
               </button>
             ))}
+            {onDisable && (
+              <button
+                className="btn-glass"
+                onClick={() => {
+                  setShowConfig(false);
+                  onDisable();
+                }}
+                style={{
+                  fontSize: '0.7rem',
+                  padding: '3px 8px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  color: '#ef4444',
+                  borderColor: 'rgba(239, 68, 68, 0.4)',
+                }}
+                title="Turn off and hide chess clocks"
+              >
+                Disable Clocks
+              </button>
+            )}
           </div>
         </div>
       )}
