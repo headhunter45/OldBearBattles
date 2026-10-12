@@ -30,7 +30,7 @@ This document provides step-by-step instructions for manually verifying all feat
 | **[OB-207](#ob-207---unbound-token-resets-character-sheet-form-state)**                           | Unbound Token Resets Character Sheet Form State                                  | VTT / Character Sheet | Testing |
 | **[OB-211](#ob-211---remove-excess-display-from-info-commands)**                                  | Remove Excess Display from Info Commands                                         | Common / Chat         | Testing |
 | **[OB-232](#ob-232---system-feature-flags-environment-toggles--runtime-configuration)**           | System Feature Flags: Environment Toggles & Runtime Configuration                | Common / Config       | Testing |
-| **[OB-233](#ob-233---create-scene-from-map-asset-uses-natural-image-dimensions)**                | Create Scene from Map Asset Uses Natural Image Dimensions                        | Common / Maps         | Testing |
+| **[OB-233](#ob-233---create-scene-from-map-asset-uses-natural-image-dimensions)**                 | Create Scene from Map Asset Uses Natural Image Dimensions                        | Common / Maps         | Testing |
 
 ---
 
@@ -901,7 +901,7 @@ This document provides step-by-step instructions for manually verifying all feat
 
 #### Pre-requisites:
 
-- Run `npm run dev` and open the VTT client in a desktop browser window (viewport width > 768px).
+- Run `yarn dev` and open the VTT client in a desktop browser window (viewport width > 768px).
 
 #### Steps:
 
@@ -941,7 +941,7 @@ This document provides step-by-step instructions for manually verifying all feat
 
 #### Pre-requisites:
 
-- Run `npm run dev` and open the VTT client in a browser tab.
+- Run `yarn dev` and open the VTT client in a browser tab.
 
 #### Steps:
 
@@ -972,7 +972,7 @@ This document provides step-by-step instructions for manually verifying all feat
 
 #### Pre-requisites:
 
-- Run `npm run dev` and open the VTT client in a browser tab.
+- Run `yarn dev` and open the VTT client in a browser tab.
 
 #### Steps:
 
@@ -1013,7 +1013,7 @@ This document provides step-by-step instructions for manually verifying all feat
 
 #### Pre-requisites:
 
-- Run `npm run dev` and open the VTT client in a browser tab.
+- Run `yarn dev` and open the VTT client in a browser tab.
 
 #### Steps:
 

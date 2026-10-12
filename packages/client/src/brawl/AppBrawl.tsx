@@ -59,8 +59,16 @@ import {
   createStandardObjectives,
   evaluateAllObjectives,
 } from './domain/objectiveEngine.js';
-import { advanceWargamePhase, WARGAME_PHASES, PhaseTransitionEvent } from './domain/phaseEngine.js';
-import { playLowTimeWarningSound, playOvertimeAlarmSound, playClockSwitchSound } from './domain/chessClock.js';
+import {
+  advanceWargamePhase,
+  WARGAME_PHASES,
+  PhaseTransitionEvent,
+} from './domain/phaseEngine.js';
+import {
+  playLowTimeWarningSound,
+  playOvertimeAlarmSound,
+  playClockSwitchSound,
+} from './domain/chessClock.js';
 import {
   ScoreboardState,
   ScoreAuditEntry,
@@ -68,7 +76,14 @@ import {
   createInitialScoreboard,
   updatePlayerResource,
 } from './domain/scoreboardEngine.js';
-import { Mic, Radio, Compass, Check, AlertTriangle, RefreshCw } from 'lucide-react';
+import {
+  Mic,
+  Radio,
+  Compass,
+  Check,
+  AlertTriangle,
+  RefreshCw,
+} from 'lucide-react';
 
 const PHASES: WargamePhase[] = WARGAME_PHASES;
 
@@ -84,7 +99,9 @@ export const AppBrawl: React.FC = () => {
   const [session, setSession] = useState<GameSession | null>(null);
   const sessionRef = useRef<GameSession | null>(null);
   sessionRef.current = session;
-  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'error' | 'disconnected'>('connecting');
+  const [connectionStatus, setConnectionStatus] = useState<
+    'connecting' | 'connected' | 'error' | 'disconnected'
+  >('connecting');
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -101,20 +118,25 @@ export const AppBrawl: React.FC = () => {
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
   const [selectedTokens, setSelectedTokens] = useState<Token[]>([]);
-  const [selectedMarker, setSelectedMarker] = useState<ScreenMarker | null>(null);
+  const [selectedMarker, setSelectedMarker] = useState<ScreenMarker | null>(
+    null,
+  );
 
   // Brawl Specific State (Round, Phases, Chess Clocks)
   const [currentRound, setCurrentRound] = useState(1);
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
   const [activePlayerIndex, setActivePlayerIndex] = useState<1 | 2>(1);
-  const [phaseAnnouncement, setPhaseAnnouncement] = useState<PhaseTransitionEvent | null>(null);
+  const [phaseAnnouncement, setPhaseAnnouncement] =
+    useState<PhaseTransitionEvent | null>(null);
   const [isChessClockEnabled, setIsChessClockEnabled] = useState(false);
   const [p1ClockSeconds, setP1ClockSeconds] = useState(5400); // 90 min default
   const [p2ClockSeconds, setP2ClockSeconds] = useState(5400);
   const [isClockRunning, setIsClockRunning] = useState(false);
 
   // Modals & Flyouts
-  const [scoreboard, setScoreboard] = useState<ScoreboardState>(() => createInitialScoreboard());
+  const [scoreboard, setScoreboard] = useState<ScoreboardState>(() =>
+    createInitialScoreboard(),
+  );
   const [scoreAuditTrail, setScoreAuditTrail] = useState<ScoreAuditEntry[]>([]);
   const [showScoreboardModal, setShowScoreboardModal] = useState(false);
   const [objectives, setObjectives] = useState<ObjectiveMarker[]>([]);
@@ -131,7 +153,9 @@ export const AppBrawl: React.FC = () => {
     hideReservesFromSpectators: false,
   });
   const [showArmyRoster, setShowArmyRoster] = useState(false);
-  const [localArmy, setLocalArmy] = useState<WargameArmy>(() => loadSavedBrawlArmy());
+  const [localArmy, setLocalArmy] = useState<WargameArmy>(() =>
+    loadSavedBrawlArmy(),
+  );
   const isChessClockFeatureEnabled = useFeatureFlag('chess_clock');
   const isDiceRollerEnabled = useFeatureFlag('dice_roller');
   const isSoundboardEnabled = useFeatureFlag('soundboard');
@@ -149,7 +173,8 @@ export const AppBrawl: React.FC = () => {
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
   const [showTokenPickerModal, setShowTokenPickerModal] = useState(false);
   const [showBatchTransferModal, setShowBatchTransferModal] = useState(false);
-  const [showPlayerTokenPickerModal, setShowPlayerTokenPickerModal] = useState(false);
+  const [showPlayerTokenPickerModal, setShowPlayerTokenPickerModal] =
+    useState(false);
   const [tokenToEdit, setTokenToEdit] = useState<Token | null>(null);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -194,10 +219,15 @@ export const AppBrawl: React.FC = () => {
     };
   }, []);
 
-  const currentMap = session?.maps.find((m) => m.id === (gmPreviewMapId || session.activeMapId || '')) || session?.maps[0];
+  const currentMap =
+    session?.maps.find(
+      (m) => m.id === (gmPreviewMapId || session.activeMapId || ''),
+    ) || session?.maps[0];
 
   const handleAddMap = (newMap: GameMap) => {
-    setSession((prev) => (prev ? { ...prev, maps: [...prev.maps, newMap] } : prev));
+    setSession((prev) =>
+      prev ? { ...prev, maps: [...prev.maps, newMap] } : prev,
+    );
     handleSelectGmPreviewMap(newMap.id);
     networkRef.current?.send({ type: 'map-add', map: newMap });
   };
@@ -217,7 +247,8 @@ export const AppBrawl: React.FC = () => {
     setSession((prev) => {
       if (!prev) return prev;
       const remaining = prev.maps.filter((m) => m.id !== id);
-      const newActive = prev.activeMapId === id ? (remaining[0]?.id || '') : prev.activeMapId;
+      const newActive =
+        prev.activeMapId === id ? remaining[0]?.id || '' : prev.activeMapId;
       return {
         ...prev,
         maps: remaining,
@@ -241,7 +272,9 @@ export const AppBrawl: React.FC = () => {
     if (engineRef.current) {
       engineRef.current.setActiveMap(mapId, true);
     }
-    const targetMap = sessionRef.current?.maps.find((m) => m.id === mapId) || session?.maps.find((m) => m.id === mapId);
+    const targetMap =
+      sessionRef.current?.maps.find((m) => m.id === mapId) ||
+      session?.maps.find((m) => m.id === mapId);
     if (targetMap) {
       showToast(`Viewing scene: ${targetMap.name}`);
     }
@@ -311,7 +344,7 @@ export const AppBrawl: React.FC = () => {
         event.commandPointsGranted.player,
         'commandPoints',
         event.commandPointsGranted.amount,
-        'Turn turnover CP grant'
+        'Turn turnover CP grant',
       );
     }
 
@@ -333,10 +366,16 @@ export const AppBrawl: React.FC = () => {
   handleNextPhaseRef.current = handleNextPhase;
 
   // Phase Quick-Jump (OB-157)
-  const handleJumpPhase = (round: number, phaseIndex: number, playerIndex?: 1 | 2) => {
+  const handleJumpPhase = (
+    round: number,
+    phaseIndex: number,
+    playerIndex?: 1 | 2,
+  ) => {
     const nextPlayer = playerIndex || activePlayerIndex;
     const playersList = session ? Object.values(session.players) : [];
-    const activePlayerName = (nextPlayer === 1 ? playersList[0]?.name : playersList[1]?.name) || `Player ${nextPlayer}`;
+    const activePlayerName =
+      (nextPlayer === 1 ? playersList[0]?.name : playersList[1]?.name) ||
+      `Player ${nextPlayer}`;
     const newPhase = WARGAME_PHASES[phaseIndex] || 'Command';
 
     setCurrentRound(round);
@@ -355,7 +394,9 @@ export const AppBrawl: React.FC = () => {
     };
 
     setPhaseAnnouncement(event);
-    showToast(`Jumped to Round ${round} • ${newPhase} Phase (${activePlayerName})`);
+    showToast(
+      `Jumped to Round ${round} • ${newPhase} Phase (${activePlayerName})`,
+    );
 
     if (networkRef.current && session) {
       const auditMsg: ChatMessage = {
@@ -452,7 +493,9 @@ export const AppBrawl: React.FC = () => {
     const mapHeight = currentMap?.height || 2200;
     const std = createStandardObjectives(mapWidth, mapHeight);
     setObjectives(std);
-    showToast('Deployed standard 5 tournament objective markers with 3″ auras!');
+    showToast(
+      'Deployed standard 5 tournament objective markers with 3″ auras!',
+    );
   };
 
   const handleScoreObjectives = () => {
@@ -462,7 +505,7 @@ export const AppBrawl: React.FC = () => {
         1,
         'primaryVp',
         objectivesEvaluation.p1VpEarned,
-        `Objective Control (${objectivesEvaluation.p1ControlledCount} held)`
+        `Objective Control (${objectivesEvaluation.p1ControlledCount} held)`,
       );
       scored = true;
     }
@@ -471,7 +514,7 @@ export const AppBrawl: React.FC = () => {
         2,
         'primaryVp',
         objectivesEvaluation.p2VpEarned,
-        `Objective Control (${objectivesEvaluation.p2ControlledCount} held)`
+        `Objective Control (${objectivesEvaluation.p2ControlledCount} held)`,
       );
       scored = true;
     }
@@ -491,7 +534,9 @@ export const AppBrawl: React.FC = () => {
     setActivePlayerIndex(nextPlayer);
     setCurrentPhaseIndex(0); // Start at Command phase for newly active player
     const playersList = session ? Object.values(session.players) : [];
-    const nextPlayerName = (nextPlayer === 1 ? playersList[0]?.name : playersList[1]?.name) || `Player ${nextPlayer}`;
+    const nextPlayerName =
+      (nextPlayer === 1 ? playersList[0]?.name : playersList[1]?.name) ||
+      `Player ${nextPlayer}`;
 
     const event: PhaseTransitionEvent = {
       type: 'turn_change',
@@ -528,16 +573,25 @@ export const AppBrawl: React.FC = () => {
       const tokenList: Token[] = Array.isArray(session.tokens)
         ? (session.tokens as Token[])
         : Object.values(session.tokens || {});
-      const visibleTokens = brawlRole === 'spectator'
-        ? filterTokensForSpectator(tokenList, matchPrivacy, currentMap?.submaps)
-        : tokenList;
+      const visibleTokens =
+        brawlRole === 'spectator'
+          ? filterTokensForSpectator(
+              tokenList,
+              matchPrivacy,
+              currentMap?.submaps,
+            )
+          : tokenList;
       const coherentTokens = updateTokensCoherency(visibleTokens);
-      const coherentRecord: Record<string, Token> = coherentTokens.reduce((acc, t) => {
-        acc[t.id] = t;
-        return acc;
-      }, {} as Record<string, Token>);
+      const coherentRecord: Record<string, Token> = coherentTokens.reduce(
+        (acc, t) => {
+          acc[t.id] = t;
+          return acc;
+        },
+        {} as Record<string, Token>,
+      );
       engineRef.current.setSession({ ...session, tokens: coherentRecord });
-      const mapIdToView = gmPreviewMapId || session.activeMapId || session.maps[0]?.id || '';
+      const mapIdToView =
+        gmPreviewMapId || session.activeMapId || session.maps[0]?.id || '';
       if (mapIdToView) {
         const changed = engineRef.current.currentMapId !== mapIdToView;
         engineRef.current.setActiveMap(mapIdToView, changed);
@@ -548,7 +602,16 @@ export const AppBrawl: React.FC = () => {
     }
     engineRef.current.activeTool = activeTool;
     engineRef.current.snapEnabled = snapEnabled;
-  }, [session, localPlayer, activeTool, snapEnabled, brawlRole, matchPrivacy, currentMap, gmPreviewMapId]);
+  }, [
+    session,
+    localPlayer,
+    activeTool,
+    snapEnabled,
+    brawlRole,
+    matchPrivacy,
+    currentMap,
+    gmPreviewMapId,
+  ]);
 
   // Initialize CanvasEngine & Network
   useEffect(() => {
@@ -577,15 +640,24 @@ export const AppBrawl: React.FC = () => {
           const currentTokens: Token[] = Array.isArray(prev.tokens)
             ? (prev.tokens as Token[])
             : Object.values(prev.tokens || {});
-          const nextTokens = currentTokens.map((t) => (t.id === id ? { ...t, x, y } : t));
+          const nextTokens = currentTokens.map((t) =>
+            t.id === id ? { ...t, x, y } : t,
+          );
           const coherentTokens = updateTokensCoherency(nextTokens);
-          const coherentRecord: Record<string, Token> = coherentTokens.reduce((acc, t) => {
-            acc[t.id] = t;
-            return acc;
-          }, {} as Record<string, Token>);
+          const coherentRecord: Record<string, Token> = coherentTokens.reduce(
+            (acc, t) => {
+              acc[t.id] = t;
+              return acc;
+            },
+            {} as Record<string, Token>,
+          );
           return { ...prev, tokens: coherentRecord };
         });
-        networkRef.current?.send({ type: 'token-update', id, updates: { x, y } });
+        networkRef.current?.send({
+          type: 'token-update',
+          id,
+          updates: { x, y },
+        });
       },
       onMarkerSelect: (marker) => {
         setSelectedMarker(marker);
@@ -604,17 +676,35 @@ export const AppBrawl: React.FC = () => {
       },
       onMarkerDelete: (id) => {
         networkRef.current?.send({ type: 'marker-delete', id });
-        setSession((prev) => (prev ? { ...prev, markers: (prev.markers || []).filter((m) => m.id !== id) } : prev));
+        setSession((prev) =>
+          prev
+            ? {
+                ...prev,
+                markers: (prev.markers || []).filter((m) => m.id !== id),
+              }
+            : prev,
+        );
         setSelectedMarker((cur) => (cur?.id === id ? null : cur));
       },
       onMarkerUpdate: (id, updates) => {
         networkRef.current?.send({ type: 'marker-update', id, updates });
-        setSession((prev) => (prev ? { ...prev, markers: (prev.markers || []).map((m) => (m.id === id ? { ...m, ...updates } : m)) } : prev));
-        setSelectedMarker((cur) => (cur?.id === id ? { ...cur, ...updates } : cur));
+        setSession((prev) =>
+          prev
+            ? {
+                ...prev,
+                markers: (prev.markers || []).map((m) =>
+                  m.id === id ? { ...m, ...updates } : m,
+                ),
+              }
+            : prev,
+        );
+        setSelectedMarker((cur) =>
+          cur?.id === id ? { ...cur, ...updates } : cur,
+        );
       },
       onObjectiveMove: (id, x, y) => {
         setObjectives((prev) =>
-          prev.map((obj) => (obj.id === id ? { ...obj, x, y } : obj))
+          prev.map((obj) => (obj.id === id ? { ...obj, x, y } : obj)),
         );
       },
     };
@@ -645,7 +735,9 @@ export const AppBrawl: React.FC = () => {
         setLocalPlayer(msg.player);
         setSession(msg.session);
         setIsOrganizer(msg.isGm);
-        setGmPreviewMapId(msg.session.activeMapId || msg.session.maps[0]?.id || '');
+        setGmPreviewMapId(
+          msg.session.activeMapId || msg.session.maps[0]?.id || '',
+        );
       } else if (msg.type === 'sync-session') {
         setSession(msg.session);
       } else if (msg.type === 'map-added') {
@@ -659,7 +751,9 @@ export const AppBrawl: React.FC = () => {
           if (!prev) return prev;
           return {
             ...prev,
-            maps: prev.maps.map((m) => (m.id === msg.id ? { ...m, ...msg.updates } : m)),
+            maps: prev.maps.map((m) =>
+              m.id === msg.id ? { ...m, ...msg.updates } : m,
+            ),
           };
         });
       } else if (msg.type === 'map-deleted') {
@@ -669,7 +763,11 @@ export const AppBrawl: React.FC = () => {
           return {
             ...prev,
             maps: remaining,
-            activeMapId: msg.activeMapId || (prev.activeMapId === msg.mapId ? (remaining[0]?.id || '') : prev.activeMapId),
+            activeMapId:
+              msg.activeMapId ||
+              (prev.activeMapId === msg.mapId
+                ? remaining[0]?.id || ''
+                : prev.activeMapId),
           };
         });
       } else if (msg.type === 'map-switched') {
@@ -690,7 +788,10 @@ export const AppBrawl: React.FC = () => {
         setSession((prev) => {
           if (!prev) return prev;
           const currentTokens = Array.isArray(prev.tokens)
-            ? prev.tokens.reduce((acc, t) => ({ ...acc, [t.id]: t }), {} as Record<string, Token>)
+            ? prev.tokens.reduce(
+                (acc, t) => ({ ...acc, [t.id]: t }),
+                {} as Record<string, Token>,
+              )
             : { ...(prev.tokens || {}) };
           return {
             ...prev,
@@ -701,7 +802,10 @@ export const AppBrawl: React.FC = () => {
         setSession((prev) => {
           if (!prev) return prev;
           const currentTokens = Array.isArray(prev.tokens)
-            ? prev.tokens.reduce((acc, t) => ({ ...acc, [t.id]: t }), {} as Record<string, Token>)
+            ? prev.tokens.reduce(
+                (acc, t) => ({ ...acc, [t.id]: t }),
+                {} as Record<string, Token>,
+              )
             : { ...(prev.tokens || {}) };
           if (!currentTokens[msg.id]) return prev;
           return {
@@ -716,7 +820,10 @@ export const AppBrawl: React.FC = () => {
         setSession((prev) => {
           if (!prev) return prev;
           const currentTokens = Array.isArray(prev.tokens)
-            ? prev.tokens.reduce((acc, t) => ({ ...acc, [t.id]: t }), {} as Record<string, Token>)
+            ? prev.tokens.reduce(
+                (acc, t) => ({ ...acc, [t.id]: t }),
+                {} as Record<string, Token>,
+              )
             : { ...(prev.tokens || {}) };
           const next = { ...currentTokens };
           delete next[msg.id];
@@ -728,7 +835,14 @@ export const AppBrawl: React.FC = () => {
       }
     });
 
-    network.connect(currentRoomId, initialPlayerName, '#f59e0b', '', undefined, 'brawl');
+    network.connect(
+      currentRoomId,
+      initialPlayerName,
+      '#f59e0b',
+      '',
+      undefined,
+      'brawl',
+    );
 
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -740,12 +854,21 @@ export const AppBrawl: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
-      if (tag === 'input' || tag === 'textarea' || tag === 'select' || (e.target as HTMLElement)?.isContentEditable) {
+      if (
+        tag === 'input' ||
+        tag === 'textarea' ||
+        tag === 'select' ||
+        (e.target as HTMLElement)?.isContentEditable
+      ) {
         return;
       }
 
       // Toggle Chat (` or ~) (OB-221)
-      if ((e.key === '`' || e.key === '~' || e.code === 'Backquote') && !e.ctrlKey && !e.metaKey) {
+      if (
+        (e.key === '`' || e.key === '~' || e.code === 'Backquote') &&
+        !e.ctrlKey &&
+        !e.metaKey
+      ) {
         e.preventDefault();
         setIsChatOpen((v) => {
           if (!v) setUnreadChatCount(0);
@@ -755,7 +878,13 @@ export const AppBrawl: React.FC = () => {
       }
 
       // Next Phase via Spacebar (OB-157)
-      if (e.code === 'Space' && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+      if (
+        e.code === 'Space' &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.shiftKey &&
+        !e.altKey
+      ) {
         e.preventDefault();
         handleNextPhaseRef.current();
         return;
@@ -773,8 +902,24 @@ export const AppBrawl: React.FC = () => {
   }, [isChatOpen]);
 
   return (
-    <div className="app-root" style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
-      <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block', background: '#0f172a' }} />
+    <div
+      className="app-root"
+      style={{
+        width: '100vw',
+        height: '100vh',
+        overflow: 'hidden',
+        position: 'relative',
+      }}
+    >
+      <canvas
+        ref={canvasRef}
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'block',
+          background: '#0f172a',
+        }}
+      />
 
       {/* Brawl Top Bar */}
       <BrawlTopBar
@@ -870,12 +1015,20 @@ export const AppBrawl: React.FC = () => {
           }}
           onClose={() => setShowArmyRoster(false)}
           onDeployUnit={(unit, army) => {
-            const currentMapId = currentMap?.id || gmPreviewMapId || session?.activeMapId || session?.maps[0]?.id || '';
+            const currentMapId =
+              currentMap?.id ||
+              gmPreviewMapId ||
+              session?.activeMapId ||
+              session?.maps[0]?.id ||
+              '';
             let startX = 400;
             let startY = 400;
             if (engineRef.current) {
               try {
-                const center = engineRef.current.screenToWorld(window.innerWidth / 2, window.innerHeight / 2);
+                const center = engineRef.current.screenToWorld(
+                  window.innerWidth / 2,
+                  window.innerHeight / 2,
+                );
                 startX = Math.round(center.x);
                 startY = Math.round(center.y);
               } catch {}
@@ -888,7 +1041,13 @@ export const AppBrawl: React.FC = () => {
                 x: startX + (idx % 5) * spacing,
                 y: startY + Math.floor(idx / 5) * spacing,
               };
-              const tok = modelToToken(positionedModel, unit, army, DEFAULT_PX_PER_INCH, currentMapId);
+              const tok = modelToToken(
+                positionedModel,
+                unit,
+                army,
+                DEFAULT_PX_PER_INCH,
+                currentMapId,
+              );
               tok.id = `${tok.id}_${deployBatchId}_${idx}`;
               if (localPlayer?.id) {
                 tok.ownerId = localPlayer.id;
@@ -898,8 +1057,13 @@ export const AppBrawl: React.FC = () => {
 
             setSession((prev) => {
               if (!prev) return prev;
-              const currentTokensRecord: Record<string, Token> = Array.isArray(prev.tokens)
-                ? prev.tokens.reduce((acc, t) => ({ ...acc, [t.id]: t }), {} as Record<string, Token>)
+              const currentTokensRecord: Record<string, Token> = Array.isArray(
+                prev.tokens,
+              )
+                ? prev.tokens.reduce(
+                    (acc, t) => ({ ...acc, [t.id]: t }),
+                    {} as Record<string, Token>,
+                  )
                 : { ...(prev.tokens || {}) };
               newTokens.forEach((tok) => {
                 currentTokensRecord[tok.id] = tok;
@@ -918,7 +1082,9 @@ export const AppBrawl: React.FC = () => {
               networkRef.current?.send({ type: 'token-add', token: tok });
             });
 
-            showToast(`Deployed ${unit.name} (${unit.models.length} models) to battlefield!`);
+            showToast(
+              `Deployed ${unit.name} (${unit.models.length} models) to battlefield!`,
+            );
           }}
         />
       )}
@@ -928,19 +1094,52 @@ export const AppBrawl: React.FC = () => {
         <MarkerControls
           marker={selectedMarker}
           onDelete={(id) => {
-            setSession((prev) => (prev ? { ...prev, markers: (prev.markers || []).filter((m) => m.id !== id) } : prev));
+            setSession((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    markers: (prev.markers || []).filter((m) => m.id !== id),
+                  }
+                : prev,
+            );
             setSelectedMarker(null);
             if (engineRef.current) engineRef.current.selectedMarkerId = null;
             networkRef.current?.send({ type: 'marker-delete', id });
           }}
           onToggleLock={(id, locked) => {
-            setSession((prev) => (prev ? { ...prev, markers: (prev.markers || []).map((m) => (m.id === id ? { ...m, locked } : m)) } : prev));
-            setSelectedMarker((cur) => (cur && cur.id === id ? { ...cur, locked } : cur));
-            networkRef.current?.send({ type: 'marker-update', id, updates: { locked } });
+            setSession((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    markers: (prev.markers || []).map((m) =>
+                      m.id === id ? { ...m, locked } : m,
+                    ),
+                  }
+                : prev,
+            );
+            setSelectedMarker((cur) =>
+              cur && cur.id === id ? { ...cur, locked } : cur,
+            );
+            networkRef.current?.send({
+              type: 'marker-update',
+              id,
+              updates: { locked },
+            });
           }}
           onUpdate={(id, updates) => {
-            setSession((prev) => (prev ? { ...prev, markers: (prev.markers || []).map((m) => (m.id === id ? { ...m, ...updates } : m)) } : prev));
-            setSelectedMarker((cur) => (cur && cur.id === id ? { ...cur, ...updates } : cur));
+            setSession((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    markers: (prev.markers || []).map((m) =>
+                      m.id === id ? { ...m, ...updates } : m,
+                    ),
+                  }
+                : prev,
+            );
+            setSelectedMarker((cur) =>
+              cur && cur.id === id ? { ...cur, ...updates } : cur,
+            );
             networkRef.current?.send({ type: 'marker-update', id, updates });
           }}
           onClose={() => {
@@ -975,8 +1174,16 @@ export const AppBrawl: React.FC = () => {
           p2Seconds={p2ClockSeconds}
           activePlayer={activePlayerIndex}
           isRunning={isClockRunning}
-          p1Name={session ? Object.values(session.players)[0]?.name || 'Player 1' : 'Player 1'}
-          p2Name={session ? Object.values(session.players)[1]?.name || 'Player 2' : 'Player 2'}
+          p1Name={
+            session
+              ? Object.values(session.players)[0]?.name || 'Player 1'
+              : 'Player 1'
+          }
+          p2Name={
+            session
+              ? Object.values(session.players)[1]?.name || 'Player 2'
+              : 'Player 2'
+          }
           onToggleRunning={() => setIsClockRunning((prev) => !prev)}
           onSwitchPlayer={handleSwitchActivePlayer}
           onResetClock={(secs) => {
@@ -1026,13 +1233,19 @@ export const AppBrawl: React.FC = () => {
       {showDeploymentModal && currentMap && (
         <DeploymentStagingModal
           map={currentMap}
-          tokens={Array.isArray(session?.tokens) ? session.tokens : Object.values(session?.tokens || {})}
+          tokens={
+            Array.isArray(session?.tokens)
+              ? session.tokens
+              : Object.values(session?.tokens || {})
+          }
           selectedTokenIds={selectedTokens.map((t) => t.id)}
           onClose={() => setShowDeploymentModal(false)}
           onUpdateMap={(updatedMap) => {
             setSession((prev) => {
               if (!prev) return prev;
-              const nextMaps = prev.maps.map((m) => (m.id === updatedMap.id ? updatedMap : m));
+              const nextMaps = prev.maps.map((m) =>
+                m.id === updatedMap.id ? updatedMap : m,
+              );
               return { ...prev, maps: nextMaps };
             });
             if (networkRef.current && session) {
@@ -1046,8 +1259,13 @@ export const AppBrawl: React.FC = () => {
           onUpdateTokens={(updatedTokens) => {
             setSession((prev) => {
               if (!prev) return prev;
-              const currentTokensRecord: Record<string, Token> = Array.isArray(prev.tokens)
-                ? prev.tokens.reduce((acc, t) => ({ ...acc, [t.id]: t }), {} as Record<string, Token>)
+              const currentTokensRecord: Record<string, Token> = Array.isArray(
+                prev.tokens,
+              )
+                ? prev.tokens.reduce(
+                    (acc, t) => ({ ...acc, [t.id]: t }),
+                    {} as Record<string, Token>,
+                  )
                 : { ...(prev.tokens || {}) };
               updatedTokens.forEach((t) => {
                 currentTokensRecord[t.id] = t;
@@ -1055,7 +1273,11 @@ export const AppBrawl: React.FC = () => {
               return { ...prev, tokens: currentTokensRecord };
             });
             updatedTokens.forEach((t) => {
-              networkRef.current?.send({ type: 'token-update', id: t.id, updates: t });
+              networkRef.current?.send({
+                type: 'token-update',
+                id: t.id,
+                updates: t,
+              });
             });
           }}
           onRecordCasualties={(player, count, reason) => {
@@ -1103,7 +1325,11 @@ export const AppBrawl: React.FC = () => {
         <DataBackupModal
           session={session}
           isGm={isOrganizer}
-          tokens={Array.isArray(session?.tokens) ? session.tokens.reduce((acc, t) => ({ ...acc, [t.id]: t }), {}) : (session?.tokens || {})}
+          tokens={
+            Array.isArray(session?.tokens)
+              ? session.tokens.reduce((acc, t) => ({ ...acc, [t.id]: t }), {})
+              : session?.tokens || {}
+          }
           activeMapId={currentMap?.id || session?.activeMapId || ''}
           maps={session.maps}
           currentGmPreviewMapId={gmPreviewMapId || session.activeMapId}
@@ -1112,7 +1338,9 @@ export const AppBrawl: React.FC = () => {
           onAddMap={handleAddMap}
           onUpdateMap={handleUpdateMap}
           onDeleteMap={handleDeleteMap}
-          onCenterOnPosition={(x, y) => engineRef.current?.centerOnPosition(x, y)}
+          onCenterOnPosition={(x, y) =>
+            engineRef.current?.centerOnPosition(x, y)
+          }
           onClose={() => setShowBackupModal(false)}
         />
       )}
@@ -1123,7 +1351,12 @@ export const AppBrawl: React.FC = () => {
           isGm={isOrganizer}
           onClose={() => setShowSoundboard(false)}
           onBroadcastAudioAction={(trackId, action, volume) => {
-            networkRef.current?.send({ type: 'audio-action', trackId, action, volume });
+            networkRef.current?.send({
+              type: 'audio-action',
+              trackId,
+              action,
+              volume,
+            });
           }}
         />
       )}
@@ -1176,7 +1409,9 @@ export const AppBrawl: React.FC = () => {
             } else {
               setP2ClockSeconds((prev) => prev + delta);
             }
-            showToast(`Adjusted Player ${player} clock by ${delta > 0 ? `+${delta / 60}m` : `${delta / 60}m`}`);
+            showToast(
+              `Adjusted Player ${player} clock by ${delta > 0 ? `+${delta / 60}m` : `${delta / 60}m`}`,
+            );
           }}
           onToggleClockRunning={() => setIsClockRunning((prev) => !prev)}
           onIssueRuling={(ruling) => {
@@ -1198,12 +1433,21 @@ export const AppBrawl: React.FC = () => {
         isOpen={isMobileDrawerOpen}
         onClose={() => setIsMobileDrawerOpen(false)}
         localPlayer={localPlayer}
-        players={session ? Object.values(session.players).filter((p) => p.connected !== false) : []}
+        players={
+          session
+            ? Object.values(session.players).filter(
+                (p) => p.connected !== false,
+              )
+            : []
+        }
         onUpdatePlayerName={(name, color) => {
           if (localPlayer) {
             const updated = { ...localPlayer, name, color };
             setLocalPlayer(updated);
-            networkRef.current?.send({ type: 'player-update', updates: { name, color } });
+            networkRef.current?.send({
+              type: 'player-update',
+              updates: { name, color },
+            });
           }
         }}
         onAddNewToken={() => setShowTokenPickerModal(true)}
@@ -1224,15 +1468,20 @@ export const AppBrawl: React.FC = () => {
       {localPlayer && (
         <ChatPanel
           player={localPlayer}
-          tokens={
-            (() => {
-              const owned = Object.values(session?.tokens || {}).filter(
-                (t) => t.ownerId === localPlayer.id || localPlayer.assignedTokenIds?.includes(t.id)
-              );
-              const list = owned.length > 0 ? owned : (isOrganizer ? Object.values(session?.tokens || {}) : []);
-              return [...list].sort((a, b) => a.name.localeCompare(b.name));
-            })()
-          }
+          tokens={(() => {
+            const owned = Object.values(session?.tokens || {}).filter(
+              (t) =>
+                t.ownerId === localPlayer.id ||
+                localPlayer.assignedTokenIds?.includes(t.id),
+            );
+            const list =
+              owned.length > 0
+                ? owned
+                : isOrganizer
+                  ? Object.values(session?.tokens || {})
+                  : [];
+            return [...list].sort((a, b) => a.name.localeCompare(b.name));
+          })()}
           selectedToken={selectedTokens[0] || null}
           messages={chatMessages}
           onSendMessage={(m) => {
@@ -1301,7 +1550,8 @@ export const AppBrawl: React.FC = () => {
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
             }}
           >
-            {connectionStatus === 'error' || connectionStatus === 'disconnected' ? (
+            {connectionStatus === 'error' ||
+            connectionStatus === 'disconnected' ? (
               <div>
                 <div
                   style={{
@@ -1318,26 +1568,57 @@ export const AppBrawl: React.FC = () => {
                 >
                   <AlertTriangle size={32} />
                 </div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem', color: '#fff' }}>
+                <h3
+                  style={{
+                    fontSize: '1.25rem',
+                    fontWeight: 800,
+                    marginBottom: '0.5rem',
+                    color: '#fff',
+                  }}
+                >
                   Connection Failed
                 </h3>
-                <p style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '1.5rem', lineHeight: 1.5 }}>
-                  {connectionError || 'Unable to connect to the backend server. Please verify the server is running (`npm run dev`).'}
+                <p
+                  style={{
+                    fontSize: '0.9rem',
+                    color: '#94a3b8',
+                    marginBottom: '1.5rem',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {connectionError ||
+                    'Unable to connect to the backend server. Please verify the server is running (`yarn dev`).'}
                 </p>
 
                 <button
                   className="btn btn-primary"
-                  style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '8px' }}
+                  style={{
+                    width: '100%',
+                    justifyContent: 'center',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
                   onClick={() => {
                     setConnectionStatus('connecting');
                     setConnectionError(null);
                     const net = networkRef.current;
                     if (net) {
-                      const searchParams = new URLSearchParams(window.location.search);
+                      const searchParams = new URLSearchParams(
+                        window.location.search,
+                      );
                       const roomParam = searchParams.get('room');
-                      const path = window.location.pathname.replace(/^\/|\/$/g, '');
+                      const path = window.location.pathname.replace(
+                        /^\/|\/$/g,
+                        '',
+                      );
                       const currentRoomId = roomParam || path || 'brawl-table';
-                      net.connect(currentRoomId, generateRandomName('random'), '#f59e0b', '');
+                      net.connect(
+                        currentRoomId,
+                        generateRandomName('random'),
+                        '#f59e0b',
+                        '',
+                      );
                     } else {
                       window.location.reload();
                     }
@@ -1364,7 +1645,14 @@ export const AppBrawl: React.FC = () => {
                 >
                   <Compass size={32} />
                 </div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem', color: '#fff' }}>
+                <h3
+                  style={{
+                    fontSize: '1.25rem',
+                    fontWeight: 800,
+                    marginBottom: '0.5rem',
+                    color: '#fff',
+                  }}
+                >
                   Joining Brawl Table...
                 </h3>
                 <p style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
@@ -1378,4 +1666,3 @@ export const AppBrawl: React.FC = () => {
     </div>
   );
 };
-

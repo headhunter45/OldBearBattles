@@ -492,7 +492,7 @@ if __name__ == "__main__":
         print("  oldbearchat")
         print("  oldbearchat my-room-code")
         print("  oldbearchat 'http://localhost:3000/?room=my-room-code'")
-        print("  npm run oldbearchat -- 'http://localhost:3000/?room=my-room-code'")
+        print("  yarn oldbearchat -- 'http://localhost:3000/?room=my-room-code'")
         sys.exit(0)
     target = sys.argv[1] if len(sys.argv) > 1 else None
     client = OldBearChatClient()

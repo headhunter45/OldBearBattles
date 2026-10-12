@@ -36,7 +36,7 @@ export TASKS_FILE="$REPO_ROOT/docs/tasks.md"
 # export TASK_ID_PREFIX="OT"
 
 # Define Aliases
-alias run-editor='(cd Editor/App && npm run tauri dev -- -- "../../Content/Episodes/Episode 1/Episode.xml")'
+alias run-editor='(cd Editor/App && yarn tauri dev -- -- "../../Content/Episodes/Episode 1/Episode.xml")'
 alias get-ready-tasks="$SCRIPTS_DIR/get-tasks | sed -E 's/ +\\|$/ |/; s/-{10,}/---/'"
 alias get-planning-tasks="$SCRIPTS_DIR/get-tasks --planning | sed -E 's/ +\\|$/ |/; s/-{10,}/---/'"
 alias add-task="$SCRIPTS_DIR/add-task"

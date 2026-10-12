@@ -161,7 +161,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 <a id="tasks-list"></a>
 
 | ID     | Title                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Project        | Status   | Type               |
-| :----- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------- | :------- | :----------------- |
+|:-----|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------|:-------|:-----------------|
 | OB-001 | In voice and audio settings the 4th button for streaming is mostly off screen                                                                                                                                                                                                                                                                                                                                                                                                        | Old Bear VTT   | Done     | [Feature](#ob-001) |
 | OB-002 | When adding a new token to the board try to not put it on top of an existing one                                                                                                                                                                                                                                                                                                                                                                                                     | Old Bear VTT   | Done     | [Feature](#ob-002) |
 | OB-003 | When uploading files allow selecting multiple files at once                                                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Done     | [Feature](#ob-003) |
@@ -297,23 +297,23 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-134 | Custom Image "Spray" Indicator Tool                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Old Bear VTT   | Done     | [Feature](#ob-134) |
 | OB-135 | Universal `.binder` Export/Import Pipeline                                                                                                                                                                                                                                                                                                                                                                                                                                           | Old Bear VTT   | Done     | [Bug](#ob-135)     |
 | OB-136 | Client Architectural Refactoring: Restructure into `src/common`, `src/vtt`, and `src/brawl`                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Done     | [Chore](#ob-136)   |
-| OB-137 | _Mobile Touch Hit-Box & Finger Offset Calibration_                                                                                                                                                                                                                                                                                                                                                                                                                                   | Old Bear VTT   | Planning | [Feature](#ob-137) |
-| OB-138 | _Mobile Token Interaction Bar & Left Menu Clipping_                                                                                                                                                                                                                                                                                                                                                                                                                                  | Old Bear VTT   | Planning | [Feature](#ob-138) |
+| OB-137 | Mobile Touch Hit-Box & Finger Offset Calibration                                                                                                                                                                                                                                                                                                                                                                                                                                     | Old Bear VTT   | Blocked  | [Feature](#ob-137) |
+| OB-138 | Mobile Token Interaction Bar & Left Menu Clipping                                                                                                                                                                                                                                                                                                                                                                                                                                    | Old Bear VTT   | Blocked  | [Feature](#ob-138) |
 | OB-139 | Reusable Help & Tooltip Component                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Old Bear VTT   | Done     | [Feature](#ob-139) |
 | OB-140 | Direct JSON Paste / Drop Import for Characters & Monsters                                                                                                                                                                                                                                                                                                                                                                                                                            | Old Bear VTT   | Done     | [Feature](#ob-140) |
 | OB-141 | `/item` Command with Local Caching & D&D Beyond Fetch                                                                                                                                                                                                                                                                                                                                                                                                                                | Old Bear VTT   | Done     | [Feature](#ob-141) |
 | OB-142 | D&D Beyond Monster, Item & Character Direct Fetch by URL/ID                                                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Done     | [Feature](#ob-142) |
 | OB-143 | Direct Token Creation from D&D Beyond Monster/Character URL                                                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Done     | [Feature](#ob-143) |
 | OB-144 | Pathbuilder 2e (PF2e) JSON Character Import                                                                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Done     | [Feature](#ob-144) |
-| OB-145 | _Live Video Feed Tokens_                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Old Bear VTT   | Planning | [Feature](#ob-145) |
-| OB-146 | _WebRTC Webcam Video Mesh with Draggable PIP Tiles_                                                                                                                                                                                                                                                                                                                                                                                                                                  | Old Bear VTT   | Planning | [Feature](#ob-146) |
-| OB-147 | _Discord Two-Way Bot Sync Gateway_                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Old Bear VTT   | Planning | [Feature](#ob-147) |
-| OB-148 | _D&D Beyond CobaltSession Auth & Private Sheets Support_                                                                                                                                                                                                                                                                                                                                                                                                                             | Old Bear VTT   | Planning | [Feature](#ob-148) |
-| OB-149 | _Discord Embedded App SDK Activity Integration_                                                                                                                                                                                                                                                                                                                                                                                                                                      | Old Bear VTT   | Planning | [Feature](#ob-149) |
-| OB-150 | _System-Agnostic Ruleset Manifest & Characterfiles Integration_                                                                                                                                                                                                                                                                                                                                                                                                                      | Old Bear VTT   | Planning | [Feature](#ob-150) |
+| OB-145 | Live Video Feed Tokens                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Old Bear VTT   | Blocked  | [Feature](#ob-145) |
+| OB-146 | WebRTC Webcam Video Mesh with Draggable PIP Tiles                                                                                                                                                                                                                                                                                                                                                                                                                                    | Old Bear VTT   | Blocked  | [Feature](#ob-146) |
+| OB-147 | Discord Two-Way Bot Sync Gateway                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Old Bear VTT   | Blocked  | [Feature](#ob-147) |
+| OB-148 | D&D Beyond CobaltSession Auth & Private Sheets Support                                                                                                                                                                                                                                                                                                                                                                                                                               | Old Bear VTT   | Blocked  | [Feature](#ob-148) |
+| OB-149 | Discord Embedded App SDK Activity Integration                                                                                                                                                                                                                                                                                                                                                                                                                                        | Old Bear VTT   | Blocked  | [Feature](#ob-149) |
+| OB-150 | *System-Agnostic Ruleset Manifest & Characterfiles Integration*                                                                                                                                                                                                                                                                                                                                                                                                                      | Old Bear VTT   | Planning | [Feature](#ob-150) |
 | OB-151 | Switch Container CI/CD to GitHub Container Registry (ghcr.io)                                                                                                                                                                                                                                                                                                                                                                                                                        | Old Bear VTT   | Done     | [Bug](#ob-151)     |
-| OB-152 | _Integrate Help & Tooltip Component Across UI_                                                                                                                                                                                                                                                                                                                                                                                                                                       | Old Bear VTT   | Triage   | [Feature](#ob-152) |
-| OB-153 | _Pathfinder 2e (PF2e) Ruleset Support_                                                                                                                                                                                                                                                                                                                                                                                                                                               | Old Bear VTT   | Triage   | [Feature](#ob-153) |
+| OB-152 | *Integrate Help & Tooltip Component Across UI*                                                                                                                                                                                                                                                                                                                                                                                                                                       | Old Bear VTT   | Triage   | [Feature](#ob-152) |
+| OB-153 | *Pathfinder 2e (PF2e) Ruleset Support*                                                                                                                                                                                                                                                                                                                                                                                                                                               | Old Bear VTT   | Triage   | [Feature](#ob-153) |
 | OB-154 | `GAME_MODE` Environment Configuration & Deployment Toggles                                                                                                                                                                                                                                                                                                                                                                                                                           | Old Bear VTT   | Done     | [Feature](#ob-154) |
 | OB-155 | Army, Unit, and Model Domain Hierarchy & Disambiguation                                                                                                                                                                                                                                                                                                                                                                                                                              | Old Bear Brawl | Done     | [Feature](#ob-155) |
 | OB-156 | Unit Coherency Graph Engine & Real-Time Warning Halos                                                                                                                                                                                                                                                                                                                                                                                                                                | Old Bear Brawl | Done     | [Feature](#ob-156) |
@@ -362,9 +362,9 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-199 | Make fog be a single layer.                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Testing  | [Feature](#ob-199) |
 | OB-200 | I want to be able to add attacks to a token without syncing it with a character.                                                                                                                                                                                                                                                                                                                                                                                                     | Old Bear VTT   | Done     | [Feature](#ob-200) |
 | OB-201 | When a player spawns a token it should automatically be controlled by them. See [OB-143](#ob-143).                                                                                                                                                                                                                                                                                                                                                                                   | Old Bear VTT   | Done     | [Bug](#ob-201)     |
-| OB-202 | _Make help in chat look better._                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Common         | Triage   | [Feature](#ob-202) |
+| OB-202 | *Make help in chat look better.*                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Common         | Triage   | [Feature](#ob-202) |
 | OB-203 | Make draggable windows resizable on desktop. Especially chat.                                                                                                                                                                                                                                                                                                                                                                                                                        | Common         | Testing  | [Feature](#ob-203) |
-| OB-204 | _Error when trying to import pf2 content with /import_                                                                                                                                                                                                                                                                                                                                                                                                                               | Old Bear VTT   | Triage   | [Bug](#ob-204)     |
+| OB-204 | *Error when trying to import pf2 content with /import*                                                                                                                                                                                                                                                                                                                                                                                                                               | Old Bear VTT   | Triage   | [Bug](#ob-204)     |
 | OB-205 | The add to character sheet button on an inspected spell adds to the currently selected character. Not the as token.                                                                                                                                                                                                                                                                                                                                                                  | Old Bear VTT   | Done     | [Bug](#ob-205)     |
 | OB-206 | Inspecting a spell like /spell? magic missile' shows the spell, but it has the wrong buttons.                                                                                                                                                                                                                                                                                                                                                                                        | Old Bear VTT   | Done     | [Bug](#ob-206)     |
 | OB-207 | Changing to a token without a bound character sheet should reset the form to the token's state.                                                                                                                                                                                                                                                                                                                                                                                      | Old Bear VTT   | Done     | [Bug](#ob-207)     |
@@ -375,7 +375,7 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-212 | Add a way to request variants like the 2014 vs 2024 srds, between pf1, sf1, pf2+sf2, and between 5e and pf*/sf*.                                                                                                                                                                                                                                                                                                                                                                     | Old Bear VTT   | Testing  | [Feature](#ob-212) |
 | OB-213 | Tokens without a character show the wrong sheet.                                                                                                                                                                                                                                                                                                                                                                                                                                     | Old Bear VTT   | Testing  | [Feature](#ob-213) |
 | OB-214 | Allow saving custom characters.                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Old Bear VTT   | Testing  | [Feature](#ob-214) |
-| OB-215 | _Find a source for icons and images._                                                                                                                                                                                                                                                                                                                                                                                                                                                | Old Bear VTT   | Planning | [Feature](#ob-215) |
+| OB-215 | *Find a source for icons and images.*                                                                                                                                                                                                                                                                                                                                                                                                                                                | Old Bear VTT   | Planning | [Feature](#ob-215) |
 | OB-216 | Add to character on an item card does nothing. It should add the attack/ability to the character sheet,                                                                                                                                                                                                                                                                                                                                                                              | Old Bear VTT   | Testing  | [Bug](#ob-216)     |
 | OB-217 | Allow /attack? to query compendium weapons and attacks from Open5e and PF2e                                                                                                                                                                                                                                                                                                                                                                                                          | Old Bear VTT   | Testing  | [Feature](#ob-217) |
 | OB-218 | Chat textbox does not give up focus when you click away.                                                                                                                                                                                                                                                                                                                                                                                                                             | Common         | Testing  | [Bug](#ob-218)     |
@@ -384,15 +384,15 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 | OB-221 | Make the ` or ~ key toggle the chat display like c togles the character sheet.                                                                                                                                                                                                                                                                                                                                                                                                       | Common         | Testing  | [Feature](#ob-221) |
 | OB-222 | The brawl map is very zoomed in and blury.                                                                                                                                                                                                                                                                                                                                                                                                                                           | Old Bear Brawl | Done     | [Bug](#ob-222)     |
 | OB-223 | The hamburger menu is bright purple in vtt and dark like the backgournd color in brawl.                                                                                                                                                                                                                                                                                                                                                                                              | Old Bear Brawl | Done     | [Bug](#ob-223)     |
-| OB-224 | Separate map and token instances between VTT and Brawl modes                                                                                                                                                                                                                                                                                                                                                                                                                         | Old Bear Brawl | Ready    | [Bug](#ob-224)     |
-| OB-225 | Add floating token bar and model wargear inspector when selecting tokens in Brawl mode                                                                                                                                                                                                                                                                                                                                                                                               | Old Bear Brawl | Ready    | [Bug](#ob-225)     |
-| OB-226 | Add dedicated UI controls to place custom objective markers and wargaming tokens onto the canvas                                                                                                                                                                                                                                                                                                                                                                                     | Old Bear Brawl | Ready    | [Feature](#ob-226) |
-| OB-227 | Fix unit deployment assigning all units to Player 1 regardless of deploying player                                                                                                                                                                                                                                                                                                                                                                                                   | Old Bear Brawl | Ready    | [Bug](#ob-227)     |
-| OB-228 | Prevent re-deploying a unit from replacing previously deployed tokens on the map                                                                                                                                                                                                                                                                                                                                                                                                     | Old Bear Brawl | Ready    | [Bug](#ob-228)     |
-| OB-229 | Display Objective Control (OC) stats on tokens, selection HUD, and model stat cards                                                                                                                                                                                                                                                                                                                                                                                                  | Old Bear Brawl | Ready    | [Feature](#ob-229) |
-| OB-230 | Separate army roster storage and selection between Player 1 and Player 2                                                                                                                                                                                                                                                                                                                                                                                                             | Old Bear Brawl | Ready    | [Feature](#ob-230) |
-| OB-231 | Make wargaming rulesets, phase sequences, scoring, and resource rules data-driven                                                                                                                                                                                                                                                                                                                                                                                                    | Old Bear Brawl | Ready    | [Feature](#ob-231) |
-| OB-232 | Add a system of feature flags that can be toggled after deployment.                                                                                                                                                                                                                                                                                                                                                                                                                  | Common         | Testing  | [Feature](#ob-232) |
+| OB-224 | **Separate map and token instances between VTT and Brawl modes**                                                                                                                                                                                                                                                                                                                                                                                                                     | Old Bear Brawl | Ready    | [Bug](#ob-224)     |
+| OB-225 | **Add floating token bar and model wargear inspector when selecting tokens in Brawl mode**                                                                                                                                                                                                                                                                                                                                                                                           | Old Bear Brawl | Ready    | [Bug](#ob-225)     |
+| OB-226 | **Add dedicated UI controls to place custom objective markers and wargaming tokens onto the canvas**                                                                                                                                                                                                                                                                                                                                                                                 | Old Bear Brawl | Ready    | [Feature](#ob-226) |
+| OB-227 | **Fix unit deployment assigning all units to Player 1 regardless of deploying player**                                                                                                                                                                                                                                                                                                                                                                                               | Old Bear Brawl | Ready    | [Bug](#ob-227)     |
+| OB-228 | **Prevent re-deploying a unit from replacing previously deployed tokens on the map**                                                                                                                                                                                                                                                                                                                                                                                                 | Old Bear Brawl | Ready    | [Bug](#ob-228)     |
+| OB-229 | **Display Objective Control (OC) stats on tokens, selection HUD, and model stat cards**                                                                                                                                                                                                                                                                                                                                                                                              | Old Bear Brawl | Ready    | [Feature](#ob-229) |
+| OB-230 | **Separate army roster storage and selection between Player 1 and Player 2**                                                                                                                                                                                                                                                                                                                                                                                                         | Old Bear Brawl | Ready    | [Feature](#ob-230) |
+| OB-231 | **Make wargaming rulesets, phase sequences, scoring, and resource rules data-driven**                                                                                                                                                                                                                                                                                                                                                                                                | Old Bear Brawl | Ready    | [Feature](#ob-231) |
+| OB-232 | Add a system of feature flags that can be toggled after deployment.                                                                                                                                                                                                                                                                                                                                                                                                                  | Common         | Done     | [Feature](#ob-232) |
 | OB-233 | Create scene from map asset uses natural image dimensions instead of default 2000x1500                                                                                                                                                                                                                                                                                                                                                                                               | Common         | Testing  | [Bug](#ob-233)     |
 
 ---
@@ -402,949 +402,876 @@ You can manage tasks using the provided automation scripts in `./scripts/` (or v
 ## Detailed Tasks
 
 <a id="ob-001" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### In voice and audio settings the 4th button for streaming is mostly off screen
-
 **ID:** OB-001
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 In voice and audio settings the 4th button for streaming is mostly off screen
 
 <a id="ob-002" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### When adding a new token to the board try to not put it on top of an existing one
-
 **ID:** OB-002
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 When adding a new token to the board try to not put it on top of an existing one
 
 <a id="ob-003" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### When uploading files allow selecting multiple files at once
-
 **ID:** OB-003
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 When uploading files allow selecting multiple files at once
 
 <a id="ob-004" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### When uploading files allow drag and drop onto the window
-
 **ID:** OB-004
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 When uploading files allow drag and drop onto the window
 
 <a id="ob-005" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### Fix map upload trigger
-
 **ID:** OB-005
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 
 Fix map upload trigger
 
 <a id="ob-006" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Carry over image when syncing D&D Beyond with a token
-
 **ID:** OB-006
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Carry over image when syncing D&D Beyond with a token
 
 <a id="ob-007" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Save user characters in player and GM local storage during D&D Beyond import
-
 **ID:** OB-007
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Save user characters in player and GM local storage during D&D Beyond import
 
 <a id="ob-008" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Show ability score modifier large and score small
-
 **ID:** OB-008
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Show ability score modifier large and score small
 
 <a id="ob-009" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Add trained and expertise skills to character sheet
-
 **ID:** OB-009
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Add trained and expertise skills to character sheet
 
 <a id="ob-010" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Add proficiency bonus to character sheet
-
 **ID:** OB-010
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Add proficiency bonus to character sheet
 
 <a id="ob-011" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Add export/import option for all data (characters, uploaded files, maps, tokens)
-
 **ID:** OB-011
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Add export/import option for all data (characters, uploaded files, maps, tokens)
 
 <a id="ob-012" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### Fix initiative tracker button
-
 **ID:** OB-012
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 
 Fix initiative tracker button
 
 <a id="ob-013" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### Fix dice roller button
-
 **ID:** OB-013
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 
 Fix dice roller button
 
 <a id="ob-014" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Configure available UI colors in source code
-
 **ID:** OB-014
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Configure available UI colors in source code
 
 <a id="ob-015" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Allow GM to add sounds to the soundboard
-
 **ID:** OB-015
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Allow GM to add sounds to the soundboard
 
 <a id="ob-016" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Duplicate selected token
-
 **ID:** OB-016
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Duplicate selected token
 
 <a id="ob-017" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Allow assigning a player control over multiple tokens
-
 **ID:** OB-017
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Allow assigning a player control over multiple tokens
 
 <a id="ob-018" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Make token preview icon square on bottom interaction bar
-
 **ID:** OB-018
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Make token preview icon square on bottom interaction bar
 
 <a id="ob-019" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Cycle selection through overlapping tokens on click/tap
-
 **ID:** OB-019
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Cycle selection through overlapping tokens on click/tap
 
 <a id="ob-020" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Specify map dimensions in tiles or tile pixel size and grid offset on import
-
 **ID:** OB-020
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Specify map dimensions in tiles or tile pixel size and grid offset on import
 
 <a id="ob-021" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Render configurable grid on top of map but under tokens
-
 **ID:** OB-021
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Render configurable grid on top of map but under tokens
 
 <a id="ob-022" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Animate mic and headphone icons in top bar when sending or receiving audio
-
 **ID:** OB-022
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Animate mic and headphone icons in top bar when sending or receiving audio
 
 <a id="ob-023" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### Fix "Send Players" on map to properly direct player view
-
 **ID:** OB-023
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 
 Fix "Send Players" on map to properly direct player view
 
 <a id="ob-024" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Make map edit component a modal or positioned non-obstructively
-
 **ID:** OB-024
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Make map edit component a modal or positioned non-obstructively
 
 <a id="ob-025" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### Fix grid size input backspace behavior and auto-select text on focus
-
 **ID:** OB-025
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 
 Fix grid size input backspace behavior and auto-select text on focus
 
 <a id="ob-026" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Restructure map settings layout into two clean columns
-
 **ID:** OB-026
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Restructure map settings layout into two clean columns
 
 <a id="ob-027" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Remove redundant "Back to Maps List" button in modal context
-
 **ID:** OB-027
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Remove redundant "Back to Maps List" button in modal context
 
 <a id="ob-028" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Add map deletion and map renaming
-
 **ID:** OB-028
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Add map deletion and map renaming
 
 <a id="ob-029" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Separate maps from scenes to allow sharing maps across multiple scenes
-
 **ID:** OB-029
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Separate maps from scenes to allow sharing maps across multiple scenes
 
 <a id="ob-030" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Asset manager listing tokens, maps, and sounds with hash deduplication
-
 **ID:** OB-030
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Asset manager listing tokens, maps, and sounds with hash deduplication
 
 <a id="ob-031" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Asset manager UI grouping with previews, bulk delete, and rename
-
 **ID:** OB-031
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Asset manager UI grouping with previews, bulk delete, and rename
 
 <a id="ob-032" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Token image selection prompt when adding token with + button
-
 **ID:** OB-032
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Token image selection prompt when adding token with + button
 
 <a id="ob-033" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Token asset settings: border shape and clip/zoom/pan controls
-
 **ID:** OB-033
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Token asset settings: border shape and clip/zoom/pan controls
 
 <a id="ob-034" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Map background color picker for imageless grids and outer canvas
-
 **ID:** OB-034
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Map background color picker for imageless grids and outer canvas
 
 <a id="ob-035" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### Fix hex grid snapping alignment
-
 **ID:** OB-035
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 
 Fix hex grid snapping alignment
 
 <a id="ob-036" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Quick control to cover entire map in fog
-
 **ID:** OB-036
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Quick control to cover entire map in fog
 
 <a id="ob-037" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### Fog persistence fix and transparent fog rendering in GM view
-
 **ID:** OB-037
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 
 Fog persistence fix and transparent fog rendering in GM view
 
 <a id="ob-038" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### Fix trackpad pinch-to-zoom vs two-finger scroll on mobile and desktop
-
 **ID:** OB-038
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 
 Fix trackpad pinch-to-zoom vs two-finger scroll on mobile and desktop
 
 <a id="ob-039" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Keyboard shortcuts for highlights (1-5), pan (h), select (s), fog (f), reveal (r), duplicate (d)
-
 **ID:** OB-039
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Keyboard shortcuts for highlights (1-5), pan (h), select (s), fog (f), reveal (r), duplicate (d)
 
 <a id="ob-040" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Bulk move group of tokens to another map
-
 **ID:** OB-040
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Bulk move group of tokens to another map
 
 <a id="ob-041" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Spawn synced D&D Beyond token off map edge and update selected token
-
 **ID:** OB-041
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Spawn synced D&D Beyond token off map edge and update selected token
 
 <a id="ob-042" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Pre-create claimable player tokens when player joins
-
 **ID:** OB-042
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Pre-create claimable player tokens when player joins
 
 <a id="ob-043" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Animated roll announcement toast with player name, formula, and result
-
 **ID:** OB-043
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Animated roll announcement toast with player name, formula, and result
 
 <a id="ob-044" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Remember previously used characters in local storage for quick selection
-
 **ID:** OB-044
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Remember previously used characters in local storage for quick selection
 
 <a id="ob-045" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Chat command system (/roll, /attack, /skill, /spell with adv/dis)
-
 **ID:** OB-045
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Chat command system (/roll, /attack, /skill, /spell with adv/dis)
 
 <a id="ob-046" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Move client, server, and nginx ports to .env and .env.example
-
 **ID:** OB-046
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Move client, server, and nginx ports to .env and .env.example
 
 <a id="ob-047" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Default mic to muted and defer permission request until unmuted
-
 **ID:** OB-047
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Default mic to muted and defer permission request until unmuted
 
 <a id="ob-048" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Syllable-Based Fantasy Name Generator
-
 **ID:** OB-048
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Generates random fantasy names for newly connected users from customizable syllable arrays for male, female, and neutral profiles.
 
 <a id="ob-049" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Default GM user name to "GM" instead of "Adventurer"
-
 **ID:** OB-049
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Default GM user name to "GM" instead of "Adventurer"
 
 <a id="ob-050" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### D&D Beyond Attacks and Actions Import Parsing
-
 **ID:** OB-050
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Parse weapon and natural attack blocks from D&D Beyond character endpoints, generating structured attack actions with reach/range, to-hit modifiers, and damage dice formulas.
 
 <a id="ob-051" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Import and display initiative bonus, saving throws, passive perception, currency
-
 **ID:** OB-051
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Import and display initiative bonus, saving throws, passive perception, currency
 
 <a id="ob-052" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Automatically apply character initiative bonus in initiative tracker rolls
-
 **ID:** OB-052
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Automatically apply character initiative bonus in initiative tracker rolls
 
 <a id="ob-053" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Allow GM to manually set initiative scores in tracker
-
 **ID:** OB-053
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Allow GM to manually set initiative scores in tracker
 
 <a id="ob-054" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Ephemeral /help and parameter validation for /attack, /spell, and /skill
-
 **ID:** OB-054
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Ephemeral /help and parameter validation for /attack, /spell, and /skill
 
 <a id="ob-055" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Support token index parameter in /sync command
-
 **ID:** OB-055
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Support token index parameter in /sync command
 
 <a id="ob-056" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Add /tokens command listing controllable tokens and their indices
-
 **ID:** OB-056
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Add /tokens command listing controllable tokens and their indices
 
 <a id="ob-057" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Move hamburger menu to far left of top bar
-
 **ID:** OB-057
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Move hamburger menu to far left of top bar
 
 <a id="ob-058" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Consolidate fog controls into submenu under single fog button
-
 **ID:** OB-058
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Consolidate fog controls into submenu under single fog button
 
 <a id="ob-059" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Consolidate highlights and pointers into submenu under single button
-
 **ID:** OB-059
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Consolidate highlights and pointers into submenu under single button
 
 <a id="ob-060" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Rebind select tool to 's' key
-
 **ID:** OB-060
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Rebind select tool to 's' key
 
 <a id="ob-061" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Rebind hand/grab tool to 'g' key
-
 **ID:** OB-061
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Rebind hand/grab tool to 'g' key
 
 <a id="ob-062" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Add box select tool below hand tool bound to 'b' key
-
 **ID:** OB-062
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Add box select tool below hand tool bound to 'b' key
 
 <a id="ob-063" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### Fix chat bubble text color and remove bottom-left chat capsule
-
 **ID:** OB-063
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 
 Fix chat bubble text color and remove bottom-left chat capsule
 
 <a id="ob-064" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Auto-dismiss full-map fog notification toasts
-
 **ID:** OB-064
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Auto-dismiss full-map fog notification toasts
 
 <a id="ob-065" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Adaptive top and left toolbars for mobile and narrow screens
-
 **ID:** OB-065
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Adaptive top and left toolbars for mobile and narrow screens
 
 <a id="ob-066" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Draggable non-modal windows with animated minimize chevrons
-
 **ID:** OB-066
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Draggable non-modal windows with animated minimize chevrons
 
 <a id="ob-067" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Drag to reorder initiative tracker rows and inline score editing
-
 **ID:** OB-067
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Drag to reorder initiative tracker rows and inline score editing
 
 <a id="ob-068" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Per-user scrollable roll history in dice roller window
-
 **ID:** OB-068
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Per-user scrollable roll history in dice roller window
 
 <a id="ob-069" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Configurable toast display duration in .env
-
 **ID:** OB-069
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Configurable toast display duration in .env
 
 <a id="ob-070" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Create scene directly from map card in Asset Manager
-
 **ID:** OB-070
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Create scene directly from map card in Asset Manager
 
 <a id="ob-071" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Highlight bonus actions and reactions in attacks list
-
 **ID:** OB-071
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Highlight bonus actions and reactions in attacks list
 
 <a id="ob-072" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Interactive zoom, crop, and pan preview for token avatars
-
 **ID:** OB-072
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Interactive zoom, crop, and pan preview for token avatars
 
 <a id="ob-073" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### TetraCube .monster Import with Dual-Drop Support
-
 **ID:** OB-073
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -1355,416 +1282,384 @@ Support importing TetraCube `.monster` files as monster/NPC assets with full sta
 - Spawning tokens from Asset Manager auto-numbers duplicate names (e.g. Ankheg 1, Ankheg 2) with clickable statblock actions.
 
 <a id="ob-074" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Multi-File Drag-and-Drop Batch Asset Import Dialog
-
 **ID:** OB-074
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 When multiple image files are dragged into the window simultaneously, present a unified batch import dialog allowing each file to be classified as a Map, Token, or Prop with bulk selection buttons ("Set all to Tokens", "Set all to Maps", "Set all to Props").
 
 <a id="ob-075" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Immediate player nickname update in top bar icons on change
-
 **ID:** OB-075
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Immediate player nickname update in top bar icons on change
 
 <a id="ob-076" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Nickname persistence in player settings
-
 **ID:** OB-076
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Nickname persistence in player settings
 
 <a id="ob-077" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Animate hamburger menu slide-in from the left
-
 **ID:** OB-077
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Animate hamburger menu slide-in from the left
 
 <a id="ob-078" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Multi-token box select for bulk movement, assignment, and duplication
-
 **ID:** OB-078
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Multi-token box select for bulk movement, assignment, and duplication
 
 <a id="ob-079" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Inline initiative score editing in tracker row
-
 **ID:** OB-079
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Inline initiative score editing in tracker row
 
 <a id="ob-080" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Persist reordered initiative tracker rows
-
 **ID:** OB-080
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Persist reordered initiative tracker rows
 
 <a id="ob-081" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Pan/focus canvas on token click in initiative tracker
-
 **ID:** OB-081
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Pan/focus canvas on token click in initiative tracker
 
 <a id="ob-082" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### Fix minimized initiative tracker window clipping
-
 **ID:** OB-082
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 
 Fix minimized initiative tracker window clipping
 
 <a id="ob-083" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Record chat command rolls in dice roller history
-
 **ID:** OB-083
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Record chat command rolls in dice roller history
 
 <a id="ob-084" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Prevent duplicate player connection entries on page refresh
-
 **ID:** OB-084
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Prevent duplicate player connection entries on page refresh
 
 <a id="ob-085" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### Fix submenu flyout visibility for selection and fog tools
-
 **ID:** OB-085
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 
 Fix submenu flyout visibility for selection and fog tools
 
 <a id="ob-086" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Combine grid tools into single flyout (snap toggle and show/hide icons)
-
 **ID:** OB-086
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Combine grid tools into single flyout (snap toggle and show/hide icons)
 
 <a id="ob-087" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Remove standalone sound icons from top bar
-
 **ID:** OB-087
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Remove standalone sound icons from top bar
 
 <a id="ob-088" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Move toggle chat button into left menu toolbar
-
 **ID:** OB-088
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Move toggle chat button into left menu toolbar
 
 <a id="ob-089" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Reorganize tools and audio controls in hamburger menu
-
 **ID:** OB-089
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Reorganize tools and audio controls in hamburger menu
 
 <a id="ob-090" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Prefill D&D Beyond sync URL when character ID is known
-
 **ID:** OB-090
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Prefill D&D Beyond sync URL when character ID is known
 
 <a id="ob-091" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Index-based selection for /spell, /skill, /attack, /item suggestions
-
 **ID:** OB-091
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Index-based selection for /spell, /skill, /attack, /item suggestions
 
 <a id="ob-092" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Add /spell quick link at top of chat
-
 **ID:** OB-092
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Add /spell quick link at top of chat
 
 <a id="ob-093" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Real-time Asset Manager refresh when dragging assets in
-
 **ID:** OB-093
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Real-time Asset Manager refresh when dragging assets in
 
 <a id="ob-094" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### Fix double vertical scrollbar in scene settings modal
-
 **ID:** OB-094
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 
 Fix double vertical scrollbar in scene settings modal
 
 <a id="ob-095" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### Fix hex grid rendering and snapping across scenes
-
 **ID:** OB-095
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 
 Fix hex grid rendering and snapping across scenes
 
 <a id="ob-096" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Display imported monsters and characters in Asset Manager
-
 **ID:** OB-096
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Display imported monsters and characters in Asset Manager
 
 <a id="ob-097" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Interactive measuring tape tool
-
 **ID:** OB-097
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Interactive measuring tape tool
 
 <a id="ob-098" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Live dimensions preview while drawing shapes (radius, length, box)
-
 **ID:** OB-098
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Live dimensions preview while drawing shapes (radius, length, box)
 
 <a id="ob-099" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Ensure microphone starts muted by default
-
 **ID:** OB-099
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Ensure microphone starts muted by default
 
 <a id="ob-100" class="task" data-project="vtt" data-status="done" data-task-type="chore"></a>
-
 ### Pass client and server ports from .env into Dockerfile
-
 **ID:** OB-100
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Chore
+
 
 **Description:**
 
 Pass client and server ports from .env into Dockerfile
 
 <a id="ob-101" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Production compose.yaml and .env.production configuration
-
 **ID:** OB-101
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Production compose.yaml and .env.production configuration
 
 <a id="ob-102" class="task" data-project="vtt" data-status="done" data-task-type="chore"></a>
-
 ### Production CI container build script (scripts/ci-build.sh)
-
 **ID:** OB-102
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Chore
+
 
 **Description:**
 
 Production CI container build script (scripts/ci-build.sh)
 
 <a id="ob-103" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Log initiative rolls to dice history with modifiers
-
 **ID:** OB-103
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Log initiative rolls to dice history with modifiers
 
 <a id="ob-104" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Inline input positioning during initiative tracker row editing
-
 **ID:** OB-104
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Inline input positioning during initiative tracker row editing
 
 <a id="ob-105" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Discord Webhook One-Way Chat & Roll Sync
-
 **ID:** OB-105
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -1777,13 +1672,12 @@ Add one-way sync from OldBearBattles to a Discord text channel via a Discord web
 - Automatically relays all public chat messages and dice rolls to Discord.
 
 <a id="ob-106" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### CLI / Terminal Chat Client (oldbearchat)
-
 **ID:** OB-106
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -1795,26 +1689,24 @@ Lightweight terminal chat and dice rolling client (`bin/oldbearchat`):
 - Inspired by IRC/mIRC command ergonomics.
 
 <a id="ob-107" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Track props like tokens in Asset Manager
-
 **ID:** OB-107
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Track props like tokens in Asset Manager
 
 <a id="ob-108" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Reorganize Hamburger Menu Hierarchy
-
 **ID:** OB-108
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -1830,39 +1722,36 @@ Standardize hamburger menu ordering:
 8. Voice & Audio Settings
 
 <a id="ob-109" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Favicon generation prompt (FAVICON_PROMPT.md)
-
 **ID:** OB-109
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Favicon generation prompt (FAVICON_PROMPT.md)
 
 <a id="ob-110" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Add dedicated Props tab to Asset Manager
-
 **ID:** OB-110
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Add dedicated Props tab to Asset Manager
 
 <a id="ob-111" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Persistent Highlights and Drawings with Lock & Delete
-
 **ID:** OB-111
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -1874,13 +1763,12 @@ Persistent canvas drawings and spell templates:
 - Floating toolbar with Delete `🗑️` and Lock `🔒` toggle.
 
 <a id="ob-112" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Floating Non-Modal Asset Manager with Map Drag-Drop
-
 **ID:** OB-112
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -1892,39 +1780,36 @@ Make the Asset Manager a draggable, non-modal floating window without a dark bac
 - Includes minimize/collapse and close controls.
 
 <a id="ob-113" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Support decimal tile dimensions for props
-
 **ID:** OB-113
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Support decimal tile dimensions for props
 
 <a id="ob-114" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Prop rotation controls in settings and bottom toolbar
-
 **ID:** OB-114
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Prop rotation controls in settings and bottom toolbar
 
 <a id="ob-115" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Prop Versatility, Rotation Widget, and Token Lock/Unlock
-
 **ID:** OB-115
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -1935,26 +1820,24 @@ Refine prop and token toolbar controls:
 - Add lock/unlock toggle `🔒` for tokens and props (locked entities can be selected but not moved).
 
 <a id="ob-116" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Display application version in top bar
-
 **ID:** OB-116
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Display application version in top bar
 
 <a id="ob-117" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Trackpad Scrolling vs Zooming Separation and Auto-Revert Box Select
-
 **ID:** OB-117
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -1965,13 +1848,12 @@ Input ergonomics refinement:
 - Auto-revert to the Select (`s`) arrow tool immediately after a box select completes.
 
 <a id="ob-118" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Arc / Cone Spell Template Indicator Tool with Dual-Color Visualization
-
 **ID:** OB-118
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -1983,117 +1865,108 @@ Directional cone and arc drawing tool:
 - Fully supports `📌 Persist` toggle, selection, rotation, locking, and deletion.
 
 <a id="ob-119" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Draggable target indicator with distance preview
-
 **ID:** OB-119
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Draggable target indicator with distance preview
 
 <a id="ob-120" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Draggable floating dice roller window
-
 **ID:** OB-120
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Draggable floating dice roller window
 
 <a id="ob-121" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Draggable floating character sheet window
-
 **ID:** OB-121
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Draggable floating character sheet window
 
 <a id="ob-123" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Maintain battlemap visibility during asset drag-and-drop
-
 **ID:** OB-123
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Maintain battlemap visibility during asset drag-and-drop
 
 <a id="ob-124" class="task" data-project="vtt" data-status="done" data-task-type="chore"></a>
-
 ### Build Version with Short Git Hash in Top Bar and CI
-
 **ID:** OB-124
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Chore
+
 
 **Description:**
 
 Single source of truth for application version (`VERSION` file) passed into CI build scripts, Docker tags, and rendered in top bar subtitle with short git commit hash (e.g. `v0.1.0-alpha5 (c292e59)`).
 
 <a id="ob-125" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Add feedback and GitHub repository links
-
 **ID:** OB-125
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Add feedback and GitHub repository links
 
 <a id="ob-126" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Add MIT License file
-
 **ID:** OB-126
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Add MIT License file
 
 <a id="ob-127" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Window Z-Index Elevation on Drag
-
 **ID:** OB-127
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 When dragging any floating non-modal window (chat, initiative tracker, dice roller, asset manager, character sheet), automatically elevate its `z-index` above all other open floating windows so it stays visibly on top during interaction.
 
 <a id="ob-128" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Modular / Tileable Maps & Snapping Map Tiles
-
 **ID:** OB-128
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -2106,13 +1979,12 @@ Dynamic map tile assembly on the canvas during play:
 - In-play deployment: pick specific tiles or draw randomly from the deck (card deck style) and drag/spawn them adjacent to existing tiles.
 
 <a id="ob-129" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Persistent Indicator Properties Bar, Multi-Aura Labeling & Token Tethering
-
 **ID:** OB-129
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -2133,13 +2005,12 @@ Bottom context toolbar for persistent indicators and multi-aura support:
   - Line dynamically follows both connected entities on move.
 
 <a id="ob-130" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Submaps & Secondary Logical Maps per Scene
-
 **ID:** OB-130
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -2158,13 +2029,12 @@ Support multiple logical submaps within a single canvas scene:
 - Scene Templates: duplicate a base scene layout (including all submaps and staging boxes) and swap just the primary map image.
 
 <a id="ob-131" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Custom Configurable Statuses with Counters & Turn Lifecycles
-
 **ID:** OB-131
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -2188,13 +2058,12 @@ System-agnostic token status conditions with automatic numeric counters and turn
 - Automatic updates: advances counters or clears statuses on turn change based on `beginning_of_turn` or `end_of_turn`.
 
 <a id="ob-132" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Timers & Segmented Pie-Wedge Progress Clocks
-
 **ID:** OB-132
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -2212,13 +2081,12 @@ Round timers and Blades in the Dark style progress clocks:
   - Click `+` to light up the next clockwise wedge; click `-` to dim a wedge.
 
 <a id="ob-133" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Advanced Dice Expression Engine & Action-Tied Rolls
-
 **ID:** OB-133
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -2231,13 +2099,12 @@ Tie custom dice macros directly to action buttons on tokens, units, and monsters
 - Dice pool botch/glitch tracking (e.g. 1s counting as botches for Shadowrun / Vampire: The Masquerade, reporting net successes, total successes, and glitch alerts).
 
 <a id="ob-134" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Custom Image "Spray" Indicator Tool
-
 **ID:** OB-134
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -2249,13 +2116,12 @@ Deploy custom image decals, objective markers, and hazard overlays:
 - When `📌 Persist` is enabled, position and dimensions remain editable with selection, locking `🔒`, and rotation controls.
 
 <a id="ob-135" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### Universal `.binder` Export/Import Pipeline
-
 **ID:** OB-135
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 
@@ -2276,13 +2142,12 @@ Establish an open, system-agnostic `.binder` (`application/json`) interchange fo
   - Single-file `.binder` export and import for campaigns, army rosters, scenes, and cross-session asset transfer.
 
 <a id="ob-136" class="task" data-project="vtt" data-status="done" data-task-type="chore"></a>
-
 ### Client Architectural Refactoring: Restructure into `src/common`, `src/vtt`, and `src/brawl`
-
 **ID:** OB-136
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Chore
+
 
 **Description:**
 
@@ -2296,13 +2161,11 @@ Reorganize `packages/client/src/` into three distinct domain folders to decouple
   - `src/vtt/` and `src/brawl/` import from `src/common/`, but never import from each other.
 - Execution Priority: **ASAP (Step 0)**. Must be executed first upon resuming active development so tasks OB-128 through OB-135 land directly in `src/common/`.
 
-<a id="ob-137" class="task" data-project="vtt" data-status="planning" data-task-type="feature"></a>
-
+<a id="ob-137" class="task" data-project="vtt" data-status="blocked" data-task-type="feature"></a>
 ### Mobile Touch Hit-Box & Finger Offset Calibration
-
 **ID:** OB-137
 **Project:** Old Bear VTT
-**Status:** Planning
+**Status:** Blocked
 **Type:** Feature
 
 **Description:**
@@ -2329,13 +2192,11 @@ On touchscreen devices, dragging a token with a finger or thumb covers the token
 
 - [ ]
 
-<a id="ob-138" class="task" data-project="vtt" data-status="planning" data-task-type="feature"></a>
-
+<a id="ob-138" class="task" data-project="vtt" data-status="blocked" data-task-type="feature"></a>
 ### Mobile Token Interaction Bar & Left Menu Clipping
-
 **ID:** OB-138
 **Project:** Old Bear VTT
-**Status:** Planning
+**Status:** Blocked
 **Type:** Feature
 
 **Description:**
@@ -2361,51 +2222,47 @@ On mobile viewports (<768px width and short landscape screens), the floating Tok
 - [ ]
 
 <a id="ob-139" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Reusable Help & Tooltip Component
-
 **ID:** OB-139
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
 
+
 **Description:**
 Build an accessible, reusable `<HelpTip text="..." />` component with a subtle `?` icon, smooth hover/focus tooltip balloon, and a hotkey cheat-sheet modal triggered by `?` or `Shift + /`. (Integration of tooltips across application views is tracked in follow-up task [OB-152](#ob-152---integrate-help--tooltip-component-across-ui)).
 
 <a id="ob-140" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Direct JSON Paste / Drop Import for Characters & Monsters
-
 **ID:** OB-140
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Add a drag-and-drop listener for pre-exported D&D Beyond or generic character/monster JSON files, enabling instant local import without requiring network scraping or authentication. Any file we can import I want to be able to drag and drop onto the app and have it either auto import and be added to the current scene or if that doesn't make sense like a map for instance or sound file added to just assets. When importing more complex objects or multiple items at once we should ask for confirmation with a reasonable description of what we are importing (full backup with 48 assets 0.5 MB or binder with 37 npcs and 2 characters).
 
 <a id="ob-141" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### `/item` Command with Local Caching & D&D Beyond Fetch
-
 **ID:** OB-141
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Client-side command parser for `/item <query>`, `/item? <query>`, and `/item list`, caching fetched D&D Beyond / Open5e items locally in storage by ID (`slug`) for fast offline access and chat card rendering.
 
 <a id="ob-142" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### D&D Beyond Monster, Item & Character Direct Fetch by URL/ID
-
 **ID:** OB-142
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -2414,13 +2271,12 @@ Client-side command parser for `/item <query>`, `/item? <query>`, and `/item lis
 Fetch public D&D Beyond / Open5e monsters, items, and characters directly by URL, ID, or `/monster? <query>`, mapping stats into local entities and caching images in local asset storage.
 
 <a id="ob-143" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Direct Token Creation from D&D Beyond Monster/Character URL
-
 **ID:** OB-143
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -2429,13 +2285,12 @@ Fetch public D&D Beyond / Open5e monsters, items, and characters directly by URL
 Spawn tokens directly onto the active battlemap from D&D Beyond monster or character URLs/IDs, caching the official avatar art and populating the statblock and attack actions on the token.
 
 <a id="ob-144" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Pathbuilder 2e (PF2e) JSON Character Import
-
 **ID:** OB-144
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -2575,13 +2430,11 @@ The top-level JSON contains a status flag and a `build` object housing all chara
 - `ability`: Casting attribute (e.g., `"cha"`).
 - `spells`: An array of objects indexed by spell level containing spell names and prepared/known status.
 
-<a id="ob-145" class="task" data-project="vtt" data-status="planning" data-task-type="feature"></a>
-
+<a id="ob-145" class="task" data-project="vtt" data-status="blocked" data-task-type="feature"></a>
 ### Live Video Feed Tokens
-
 **ID:** OB-145
 **Project:** Old Bear VTT
-**Status:** Planning
+**Status:** Blocked
 **Type:** Feature
 
 **Description:**
@@ -2618,13 +2471,11 @@ Reference: [docs/backlog-implementation-guide.md](file:///Users/tom/Projects/Old
 
 - [ ]
 
-<a id="ob-146" class="task" data-project="vtt" data-status="planning" data-task-type="feature"></a>
-
+<a id="ob-146" class="task" data-project="vtt" data-status="blocked" data-task-type="feature"></a>
 ### WebRTC Webcam Video Mesh with Draggable PIP Tiles
-
 **ID:** OB-146
 **Project:** Old Bear VTT
-**Status:** Planning
+**Status:** Blocked
 **Type:** Feature
 
 **Description:**
@@ -2650,13 +2501,11 @@ Reference: [docs/backlog-implementation-guide.md](file:///Users/tom/Projects/Old
 
 - [ ]
 
-<a id="ob-147" class="task" data-project="vtt" data-status="planning" data-task-type="feature"></a>
-
+<a id="ob-147" class="task" data-project="vtt" data-status="blocked" data-task-type="feature"></a>
 ### Discord Two-Way Bot Sync Gateway
-
 **ID:** OB-147
 **Project:** Old Bear VTT
-**Status:** Planning
+**Status:** Blocked
 **Type:** Feature
 
 **Description:**
@@ -2682,13 +2531,11 @@ Reference: [docs/backlog-implementation-guide.md](file:///Users/tom/Projects/Old
 
 - [ ]
 
-<a id="ob-148" class="task" data-project="vtt" data-status="planning" data-task-type="feature"></a>
-
+<a id="ob-148" class="task" data-project="vtt" data-status="blocked" data-task-type="feature"></a>
 ### D&D Beyond CobaltSession Auth & Private Sheets Support
-
 **ID:** OB-148
 **Project:** Old Bear VTT
-**Status:** Planning
+**Status:** Blocked
 **Type:** Feature
 
 **Description:**
@@ -2714,13 +2561,11 @@ Reference: [docs/backlog-implementation-guide.md](file:///Users/tom/Projects/Old
 
 - [ ]
 
-<a id="ob-149" class="task" data-project="vtt" data-status="planning" data-task-type="feature"></a>
-
+<a id="ob-149" class="task" data-project="vtt" data-status="blocked" data-task-type="feature"></a>
 ### Discord Embedded App SDK Activity Integration
-
 **ID:** OB-149
 **Project:** Old Bear VTT
-**Status:** Planning
+**Status:** Blocked
 **Type:** Feature
 
 **Description:**
@@ -2745,13 +2590,12 @@ Reference: [docs/backlog-implementation-guide.md](file:///Users/tom/Projects/Old
 - [ ]
 
 <a id="ob-150" class="task" data-project="vtt" data-status="planning" data-task-type="feature"></a>
-
 ### System-Agnostic Ruleset Manifest & Characterfiles Integration
-
 **ID:** OB-150
 **Project:** Old Bear VTT
 **Status:** Planning
 **Type:** Feature
+
 
 **Description:**
 Triaged on 2026-10-09:
@@ -2783,13 +2627,12 @@ Reference: [docs/backlog-implementation-guide.md](file:///Users/tom/Projects/Old
 - [ ]
 
 <a id="ob-151" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### Switch Container CI/CD to GitHub Container Registry (ghcr.io)
-
 **ID:** OB-151
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 
@@ -2801,13 +2644,12 @@ Transition the production container publishing pipeline from the private registr
 - Keep images private until ready for public release, accessible to production hosts via GitHub Personal Access Token (PAT).
 
 <a id="ob-152" class="task" data-project="vtt" data-status="triage" data-task-type="feature"></a>
-
 ### Integrate Help & Tooltip Component Across UI
-
 **ID:** OB-152
 **Project:** Old Bear VTT
 **Status:** Triage
 **Type:** Feature
+
 
 **Description:**
 Triaged on 2026-10-09:
@@ -2844,13 +2686,12 @@ Triaged on 2026-10-09:
 - [ ]
 
 <a id="ob-153" class="task" data-project="vtt" data-status="triage" data-task-type="feature"></a>
-
 ### Pathfinder 2e (PF2e) Ruleset Support
-
 **ID:** OB-153
 **Project:** Old Bear VTT
 **Status:** Triage
 **Type:** Feature
+
 
 **Description:**
 Triaged on 2026-10-09:
@@ -2884,13 +2725,12 @@ Triaged on 2026-10-09:
 - [ ]
 
 <a id="ob-154" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### `GAME_MODE` Environment Configuration & Deployment Toggles
-
 **ID:** OB-154
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 Support multi-mode deployment and runtime game mode selection via environment variables (`GAME_MODE=vtt`, `GAME_MODE=brawl`, or `GAME_MODES=vtt,brawl`):
@@ -2900,13 +2740,12 @@ Support multi-mode deployment and runtime game mode selection via environment va
 - Update top navigation branding, module headers, and feature availability based on active game mode.
 
 <a id="ob-155" class="task" data-project="brawl" data-status="done" data-task-type="feature"></a>
-
 ### Army, Unit, and Model Domain Hierarchy & Disambiguation
-
 **ID:** OB-155
 **Project:** Old Bear Brawl
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 **Depends On:** [OB-154](#ob-154)
@@ -2926,13 +2765,12 @@ Establish the core tabletop wargaming domain model (`Army` ➔ `Unit` ➔ `Model
 - **UI**: Interactive Army Roster Flyout and unit/model inspector panels.
 
 <a id="ob-156" class="task" data-project="brawl" data-status="done" data-task-type="feature"></a>
-
 ### Unit Coherency Graph Engine & Real-Time Warning Halos
-
 **ID:** OB-156
 **Project:** Old Bear Brawl
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 **Depends On:** [OB-155](#ob-155)
@@ -2949,13 +2787,12 @@ Real-time graph-based unit coherency validation engine:
   - Real-time evaluation during model dragging and movement.
 
 <a id="ob-157" class="task" data-project="brawl" data-status="done" data-task-type="feature"></a>
-
 ### Battle Round Stepper & Wargaming Phase Engine
-
 **ID:** OB-157
 **Project:** Old Bear Brawl
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 **Depends On:** [OB-154](#ob-154)
@@ -2968,13 +2805,12 @@ Battle round and turn phase management system for tabletop wargames:
 - **Turn Lifecycles**: Triggers phase-specific status counter updates and scoring checks.
 
 <a id="ob-158" class="task" data-project="brawl" data-status="testing" data-task-type="feature"></a>
-
 ### Dual-Player Chess Clocks with Turn Countdown & Active Switching
-
 **ID:** OB-158
 **Project:** Old Bear Brawl
 **Status:** Testing
 **Type:** Feature
+
 
 **Description:**
 
@@ -2989,13 +2825,12 @@ Dedicated wargaming chess clock system for competitive matches:
 - Draggable, floating HUD widget with compact minimization.
 
 <a id="ob-159" class="task" data-project="brawl" data-status="done" data-task-type="feature"></a>
-
 ### Scoreboard & Resource Tracker (VP, CP, Casualties) with Audit Trail
-
 **ID:** OB-159
 **Project:** Old Bear Brawl
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 **Depends On:** [OB-154](#ob-154)
@@ -3007,13 +2842,12 @@ Multi-metric match scoreboard and game resource tracker:
 - Action-tied resource triggers: model or stratagem action buttons can automatically deduct CP or grant VP.
 
 <a id="ob-160" class="task" data-project="brawl" data-status="testing" data-task-type="feature"></a>
-
 ### Objective Marker Control Zone Calculation & Auto-Scoring
-
 **ID:** OB-160
 **Project:** Old Bear Brawl
 **Status:** Testing
 **Type:** Feature
+
 
 **Description:**
 
@@ -3027,13 +2861,12 @@ Interactive objective markers with automated control calculation:
 - Automatically awards VP to the controlling player, logs audit messages in chat, and toasts score updates.
 
 <a id="ob-161" class="task" data-project="brawl" data-status="testing" data-task-type="chore"></a>
-
 ### Roster Ingestion Pipeline: NewRecruit JSON & BattleScribe `.rosz`
-
 **ID:** OB-161
 **Project:** Old Bear Brawl
 **Status:** Testing
 **Type:** Chore
+
 
 **Description:**
 
@@ -3047,13 +2880,12 @@ Army roster import pipeline for popular wargaming army builder exports:
 - Assign default base shapes/tokens with individual model customization, storing imported armies under the Armies tab in Asset Manager.
 
 <a id="ob-162" class="task" data-project="brawl" data-status="testing" data-task-type="feature"></a>
-
 ### Deployment Zones, Casualty Trays & Staging Submap Templates
-
 **ID:** OB-162
 **Project:** Old Bear Brawl
 **Status:** Testing
 **Type:** Feature
+
 
 **Description:**
 
@@ -3067,13 +2899,12 @@ Pre-configured submap templates tailored for wargaming battle scenes:
 - One-click model transfers between the primary battlefield and staging submaps.
 
 <a id="ob-163" class="task" data-project="brawl" data-status="testing" data-task-type="feature"></a>
-
 ### Tournament Organizer (TO) Mode, Match Privacy & Spectator Controls
-
 **ID:** OB-163
 **Project:** Old Bear Brawl
 **Status:** Testing
 **Type:** Feature
+
 
 **Description:**
 
@@ -3086,130 +2917,120 @@ Match administration and spectator management for events and tournaments:
 - **Match Report Export**: Export completed match summaries (scores, round history, casualty tallies, and timestamps) in JSON or printable format.
 
 <a id="ob-164" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### My persistent indicators disappear when I change to another type of tool and they change to a different type of indicator when I change to a different indicator tool.
-
 **ID:** OB-164
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 My persistent indicators disappear when I change to another type of tool and they change to a different type of indicator when I change to a different indicator tool.
 
 <a id="ob-165" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Token Tether is logically attached to two tokens, but is technically attached to one and pointing to the other. I can unattach it from one, but then can't attach it to another. I can't unattach it to the other token it is attached to.
-
 **ID:** OB-165
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Token Tether is logically attached to two tokens, but is technically attached to one and pointing to the other. I can unattach it from one, but then can't attach it to another. I can't unattach it to the other token it is attached to.
 
 <a id="ob-166" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### My browser (Brave) prevented me from downloading the .binder file by default and required me to click keep to keep it.
-
 **ID:** OB-166
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 My browser (Brave) prevented me from downloading the .binder file by default and required me to click keep to keep it.
 
 <a id="ob-167" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### The box to name/rename an indicator doesn't have a way to apply the value and it isn't realtime.
-
 **ID:** OB-167
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 The box to name/rename an indicator doesn't have a way to apply the value and it isn't realtime.
 
 <a id="ob-168" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Token bar is too spread out. Make things like HP, temp HP, and rotation stack their children vertically instead of horizontally, or take inspiration from the indicator bar for layout.
-
 **ID:** OB-168
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Token bar is too spread out. Make things like HP, temp HP, and rotation stack their children vertically instead of horizontally, or take inspiration from the indicator bar for layout.
 
 <a id="ob-169" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Add a square option for sprays.
-
 **ID:** OB-169
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Add a square option for sprays.
 
 <a id="ob-170" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Since they need settings edited to be useful non-persistent sprays don't make sense. They should not show up unless the mode is set to persistent. The reverse is true for the laser pointer. It should only be visible in non-persistent mode. That or they should always act in the only mode they support.
-
 **ID:** OB-170
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Since they need settings edited to be useful non-persistent sprays don't make sense. They should not show up unless the mode is set to persistent. The reverse is true for the laser pointer. It should only be visible in non-persistent mode. That or they should always act in the only mode they support.
 
 <a id="ob-171" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Remove the /roll 5(d6+2)/4 syntax for success threshold of 4. It should just be invalid syntax. The other option makes more sense.
-
 **ID:** OB-171
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Remove the /roll 5(d6+2)/4 syntax for success threshold of 4. It should just be invalid syntax. The other option makes more sense.
 
 <a id="ob-172" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### The timer seems to be using our draggable window wrong as well it has a close button, but no title or minimize button and the close button is an unstyled button with an x on it.
-
 **ID:** OB-172
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 The timer seems to be using our draggable window wrong as well it has a close button, but no title or minimize button and the close button is an unstyled button with an x on it.
 
 <a id="ob-173" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Floating Screen Widgets & Progress Clocks Overhaul
-
 **ID:** OB-173
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -3238,13 +3059,12 @@ Overhauls progress clocks into a new first-class **Widget** UI paradigm, standar
   - Clocks persist globally across scene changes until explicitly cleared or deleted.
 
 <a id="ob-174" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Universal .binder Collections & Card Schema Compliance
-
 **ID:** OB-174
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -3265,39 +3085,36 @@ Aligns `.binder` collection exports with the standard card schema (`docs/schema/
   - Non-destructively preserve any third-party `collections` and `dashboard` payloads during re-export.
 
 <a id="ob-175" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Like everything else that toasts the timer should log to chat when time is up.
-
 **ID:** OB-175
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Like everything else that toasts the timer should log to chat when time is up.
 
 <a id="ob-176" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### HelpTip components inside draggable windows have their tooltips clipped by the window. Can we make it float above the window like an ov4erlay?
-
 **ID:** OB-176
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 
 HelpTip components inside draggable windows have their tooltips clipped by the window. Can we make it float above the window like an ov4erlay?
 
 <a id="ob-177" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Pathfinder 2e Reference Data Import (Foundry PF2e Packs)
-
 **ID:** OB-177
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -3308,26 +3125,24 @@ Import public, open-licensed Pathfinder 2e / Starfinder 2e reference material (s
 - Support referencing via chat inspection (`/spell? <name>`, `/item? <name>`) or direct command (`/import pf2e <url>`).
 
 <a id="ob-178" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Make draggable windows use a common title bar component that contains an icon on the left then title text left aligned and ellipsized if it cant fit, followed by the minimize and close buttons. the minimize action should know what height to animate to based on the height of this component and possibly some extra padding/margin. Give an opinion on whether this should be part of a window component or something similar or if we should just have the title bar for now.
-
 **ID:** OB-178
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
 Make draggable windows use a common title bar component that contains an icon on the left then title text left aligned and ellipsized if it cant fit, followed by the minimize and close buttons. the minimize action should know what height to animate to based on the height of this component and possibly some extra padding/margin. Give an opinion on whether this should be part of a window component or something similar or if we should just have the title bar for now.
 
 <a id="ob-179" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### Chat Input Message History Navigation (Up/Down Arrow Keys)
-
 **ID:** OB-179
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 
@@ -3339,13 +3154,12 @@ Enable cycling through sent chat messages and commands in the chat panel input b
 - Allows fast fixing of typos in commands like `/roll`, `/spell`, or `/import` without retyping the entire string.
 
 <a id="ob-180" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### System-Agnostic EntityAction Schema & Statblock Card Renderer
-
 **ID:** OB-180
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -3356,13 +3170,12 @@ Create a unified, system-agnostic action and reference schema ([docs/system-agno
 - Create rich `<StatBlockCard />` component for rendering compact, beautiful markdown statblocks in chat and hover tooltips.
 
 <a id="ob-181" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Statblock Inspection Syntax (`?`) for Chat Commands
-
 **ID:** OB-181
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 
@@ -3375,13 +3188,12 @@ Add a trailing question mark (`?`) convention to chat commands to display refere
 - Inspection mode displays the formatted `<StatBlockCard />` in chat (or local popover) with action cost, traits, full rules text, and a `[+ Add to Character]` button.
 
 <a id="ob-182" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Associate Controllable Token with Chat Panel
-
 **ID:** OB-182
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 Enable associating a controllable token with the chat panel so commands like `/attack`, `/spell`, rolls, and in-character speech are attributed directly to that token:
@@ -3399,13 +3211,12 @@ Enable associating a controllable token with the chat panel so commands like `/a
   - Attributed rolls and messages display `Player (TokenName)` and render the token's avatar image.
 
 <a id="ob-183" class="task" data-project="vtt" data-status="done" data-task-type="chore"></a>
-
 ### Codebase Simplification & Refactoring Plan (docs/refactor-1.md)
-
 **ID:** OB-183
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Chore
+
 
 **Description:**
 Perform an architectural review of the codebase and create [docs/refactor-1.md](docs/refactor-1.md) detailing 8 high-impact refactoring tasks:
@@ -3420,13 +3231,12 @@ Perform an architectural review of the codebase and create [docs/refactor-1.md](
 - **REF-008**: Unified Storage Repository & Key Registry (centralizing `localStorage` and `IndexedDB` access).
 
 <a id="ob-184" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### HelpTip Component & Placement Guide (docs/helptip-locations.md)
-
 **ID:** OB-184
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 **Depends On:** [OB-176](#ob-176)
@@ -3438,13 +3248,12 @@ Audit the user interface across all modals, panels, and toolbars and create [doc
 - Details a 3-phase execution roadmap prioritizing high-traffic onboarding friction points (grid alignment, token status lifecycles, and chat commands).
 
 <a id="ob-185" class="task" data-project="vtt" data-status="testing" data-task-type="feature"></a>
-
 ### Backlog Research & Implementation Guide (docs/backlog-implementation-guide.md)
-
 **ID:** OB-185
 **Project:** Old Bear VTT
 **Status:** Testing
 **Type:** Feature
+
 
 **Description:**
 
@@ -3459,13 +3268,12 @@ Perform in-depth architectural and technical research across all backlog tasks a
 - **Wargaming Engine Roadmap (OB-154 through OB-163)**: Multi-mode deployment (`GAME_MODE`), BattleScribe/NewRecruit roster ingestion, unit coherency graph checks, dual chess clocks, and objective zone scoring.
 
 <a id="ob-186" class="task" data-project="shared" data-status="done" data-task-type="bug"></a>
-
 ### Unable to create new maps or duplicate existing ones.
-
 **ID:** OB-186
 **Project:** Shared
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 The buttons do nothing when clicked.
@@ -3473,13 +3281,12 @@ The buttons do nothing when clicked.
 - [x]
 
 <a id="ob-187" class="task" data-project="vtt" data-status="testing" data-task-type="feature"></a>
-
 ### Submap & Deployment Zone Customization UI (Position, Dimensions, Colors, Background Images)
-
 **ID:** OB-187
 **Project:** Old Bear VTT
 **Status:** Testing
 **Type:** Feature
+
 
 **Description:**
 Provide user interface controls to edit, position, resize, style, and set backgrounds for secondary submaps and deployment zones:
@@ -3491,13 +3298,12 @@ Provide user interface controls to edit, position, resize, style, and set backgr
 - [x] **Testing**: Automated unit tests for updating submap properties and preserving them across scene saves and template duplications.
 
 <a id="ob-188" class="task" data-project="vtt" data-status="testing" data-task-type="feature"></a>
-
 ### Relative Dragging for Tokens, Modular Tiles, and Props
-
 **ID:** OB-188
 **Project:** Old Bear VTT
 **Status:** Testing
 **Type:** Feature
+
 
 **Description:**
 Make dragging tokens, modular tiles, and props relative to the initial cursor grab point instead of jumping the token origin or pivot to the cursor position on drag start.
@@ -3511,13 +3317,12 @@ Make dragging tokens, modular tiles, and props relative to the initial cursor gr
 - [x] Verify dragging feels natural for both standard 1x1 tokens and large multi-tile props (e.g. 8x8 rooms, 4x1 corridors).
 
 <a id="ob-189" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
-
 ### Add a way to edit tiles after they have been uploaded.
-
 **ID:** OB-189
 **Project:** Common
 **Status:** Testing
 **Type:** Feature
+
 
 **Description:**
 Add a way to edit tiles after they have been uploaded. I can't set their sizes or anything, but name them. Draw a random tile should pan the view so the tile is in the center.
@@ -3525,13 +3330,12 @@ Add a way to edit tiles after they have been uploaded. I can't set their sizes o
 - [x]
 
 <a id="ob-190" class="task" data-project="cmn" data-status="done" data-task-type="bug"></a>
-
 ### When tiles is selected the tab bar in the asset manager is positioned up underneath the header.
-
 **ID:** OB-190
 **Project:** Common
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 When tiles is selected the tab bar in the asset manager is positioned up underneath the header. This happens for scenes as well once I make a third scene. It appears related to when the content height is large. When a scrollbar appears the tab bar moves up. When the scrollabe conten is even larger the tab bar moves up even further.
@@ -3540,13 +3344,12 @@ When tiles is selected the tab bar in the asset manager is positioned up underne
   Fixed by enforcing flexShrink: 0 on header, tabs, and bottom section, setting minHeight: 0 on the scrollable content container, and overriding maxHeight: 'none' when expanded on .draggable-window-body.
 
 <a id="ob-191" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
-
 ### Make no ring color be the default for props and tiles.
-
 **ID:** OB-191
 **Project:** Common
 **Status:** Testing
 **Type:** Feature
+
 
 **Description:**
 Describe task objectives and implementation requirements here.
@@ -3554,13 +3357,12 @@ Describe task objectives and implementation requirements here.
 - [x]
 
 <a id="ob-192" class="task" data-project="cmn" data-status="testing" data-task-type="bug"></a>
-
 ### Custom statuses can't be created.'
-
 **ID:** OB-192
 **Project:** Common
 **Status:** Testing
 **Type:** Bug
+
 
 **Description:**
 Custom statuses are saved and loaded at the global and scene levels, but they don't appear to be available in the add status dropdown on the token bar. There also does not appear to be any way to add/edit/remove them so there just aren't any. Even our 'DEFAULT_STATUS_DEFINITIONS' are only checked by the initiative tracker they are not displayed anywhere. See [OB-130](#ob-130).
@@ -3568,13 +3370,12 @@ Custom statuses are saved and loaded at the global and scene levels, but they do
 - [x]
 
 <a id="ob-193" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
-
 ### Add a way to change token images to existing images.
-
 **ID:** OB-193
 **Project:** Common
 **Status:** Testing
 **Type:** Feature
+
 
 **Description:**
 I should be able to change the image on a token after it has been created. I can upload a new image, but I should be able to browse my saved tokens and the preset tokens to use one of those as well.
@@ -3582,13 +3383,12 @@ I should be able to change the image on a token after it has been created. I can
 - [x]
 
 <a id="ob-194" class="task" data-project="cmn" data-status="done" data-task-type="bug"></a>
-
 ### The hitbox for tapping a token should be anywhere within it's ring or rectangle border.
-
 **ID:** OB-194
 **Project:** Common
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 Describe task objectives and implementation requirements here.
@@ -3597,13 +3397,12 @@ Describe task objectives and implementation requirements here.
   Implemented isPointInToken in TokenRenderer.ts and integrated with CanvasEngine.ts. Hitbox now accurately covers the full circular ring border for circular tokens, full rectangular bounds for square/rounded tokens and props/tiles, and circumscribed polygon boundaries for hexagon/octagon tokens. Correctly centers multi-tile tokens (e.g. size 2, 3) at (x + propW/2, y + propH/2).
 
 <a id="ob-195" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
-
 ### Add zoom and offset to the PRESET_TOKENS in TokenPickerModal.
-
 **ID:** OB-195
 **Project:** Common
 **Status:** Testing
 **Type:** Feature
+
 
 **Description:**
 I want to add zoom and offset or their equivalents to the PRESET_TOKENS in TokenPickerModal and use those values when showing the icons in the picker and when creating the tokens.
@@ -3611,13 +3410,12 @@ I want to add zoom and offset or their equivalents to the PRESET_TOKENS in Token
 - [x]
 
 <a id="ob-196" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
-
 ### Move chat back to the left sidebar. Put it below the measuring tape icon.
-
 **ID:** OB-196
 **Project:** Common
 **Status:** Testing
 **Type:** Feature
+
 
 **Description:**
 Describe task objectives and implementation requirements here.
@@ -3625,13 +3423,12 @@ Describe task objectives and implementation requirements here.
 - [x]
 
 <a id="ob-197" class="task" data-project="cmn" data-status="done" data-task-type="bug"></a>
-
 ### Brawl mode does not have a top bar so I cannot switch back. See [OB-154](#ob-154).
-
 **ID:** OB-197
 **Project:** Common
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 Describe task objectives and implementation requirements here.
@@ -3639,13 +3436,12 @@ Describe task objectives and implementation requirements here.
 - [x]
 
 <a id="ob-198" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### Reveal fog should be 'shift-f' instead of 'r' for the shortcut key.
-
 **ID:** OB-198
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 Describe task objectives and implementation requirements here.
@@ -3653,25 +3449,23 @@ Describe task objectives and implementation requirements here.
 - [x]
 
 <a id="ob-199" class="task" data-project="vtt" data-status="testing" data-task-type="feature"></a>
-
 ### Make fog be a single layer.
-
 **ID:** OB-199
 **Project:** Old Bear VTT
 **Status:** Testing
 **Type:** Feature
 
+
 **Description:**
 The Reveal fog tool only removes from the topmost layer of fog it encounters. We should only have 1 layer at a time and track it as an svg preferably or a raster image so we can brush it on and off later with a circular brush or a rectangle selection. The size of the brush should be adjustable somehow maybe the , and . keys, the [ ] keys, the - = keys, or preferably someting you can click on and drag up or down, it would how up either before or after the tool to switch your color.
 
 <a id="ob-200" class="task" data-project="vtt" data-status="done" data-task-type="feature"></a>
-
 ### I want to be able to add attacks to a token without syncing it with a character.
-
 **ID:** OB-200
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 Enable tokens to hold standalone attacks, actions, and spells directly (`token.actions` and `token.spells`) without requiring a synced D&D Beyond or Pathbuilder character sheet. Support viewing, adding, editing, and deleting attacks and spells in the Full Token Editor modal (`TokenEditorModal`) and Character Flyout for unsynced tokens, quick rolling via floating HUD `Swords` popup, and ensure adding spells and actions from chat updates both targeted tokens and active player character sheets.
@@ -3684,13 +3478,12 @@ Enable tokens to hold standalone attacks, actions, and spells directly (`token.a
   Updated `ChatPanel` `addBlockToTokenOrCharacter` so spells and actions added from chat update the target token's standalone properties and synchronize to active player character sheets when target matches player or no token is selected.
 
 <a id="ob-201" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### When a player spawns a token it should automatically be controlled by them. See [OB-143](#ob-143).
-
 **ID:** OB-201
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 Describe task objectives and implementation requirements here.
@@ -3700,13 +3493,12 @@ Describe task objectives and implementation requirements here.
   Added duplicate permissions check ensuring players can only duplicate their own tokens or unowned tokens (props, unclaimed player tokens). Players cannot duplicate GM monsters/bosses (preventing them from cloning a boss to view hidden attacks/statblocks) or other players' tokens.
 
 <a id="ob-202" class="task" data-project="cmn" data-status="triage" data-task-type="feature"></a>
-
 ### Make help in chat look better.
-
 **ID:** OB-202
 **Project:** Common
 **Status:** Triage
 **Type:** Feature
+
 
 **Description:**
 Triaged on 2026-10-09:
@@ -3729,13 +3521,12 @@ The current `/help` output in `ChatPanel.tsx` prints an unformatted, monolithic 
 - [ ]
 
 <a id="ob-203" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
-
 ### Make draggable windows resizable on desktop. Especially chat.
-
 **ID:** OB-203
 **Project:** Common
 **Status:** Testing
 **Type:** Feature
+
 
 **Description:**
 Describe task objectives and implementation requirements here.
@@ -3743,13 +3534,12 @@ Describe task objectives and implementation requirements here.
 - [x]
 
 <a id="ob-204" class="task" data-project="vtt" data-status="triage" data-task-type="bug"></a>
-
 ### Error when trying to import pf2 content with /import
-
 **ID:** OB-204
 **Project:** Old Bear VTT
 **Status:** Triage
 **Type:** Bug
+
 
 **Description:**
 Triaged on 2026-10-09:
@@ -3771,13 +3561,12 @@ Furthermore, in PF2e, saving throw statistics are Fortitude, Reflex, and Will (`
 - [ ]
 
 <a id="ob-205" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### The add to character sheet button on an inspected spell adds to the currently selected character. Not the as token.
-
 **ID:** OB-205
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 Inspecting a spell like '/spell? magic missile' shows the spell adds the spell to the wrong character/token. The add to character sheet button adds to the currently selected character on the character sheet page, not to the 'as->' character in chat. See [OB-177](#0b-177).
@@ -3789,13 +3578,12 @@ Inspecting a spell like '/spell? magic missile' shows the spell adds the spell t
 - Added comprehensive unit tests in `chat.test.ts`.
 
 <a id="ob-206" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### Inspecting a spell like /spell? magic missile' shows the spell, but it has the wrong buttons.
-
 **ID:** OB-206
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 Inspecting a spell like '/spell? magic missile' shows the spell, but it has a spawn token button. The spawn token button creates a token called "Animal Friendship" with what seem to be default values and no icon. The character sheet shows one of our default included icons thought. The sync url is `open5e-spell-animal-friendship` I believe this is the id of the first spell in the spells list. The spells seem to be coming from the open5e api.
@@ -3808,13 +3596,12 @@ Inspecting a spell like '/spell? magic missile' shows the spell, but it has a sp
 - Removed the useless 'Roll' button from monster stat blocks in StatBlockCard.tsx and ChatPanel.tsx (restricting roll/cast exclusively to spells, attacks, actions, and features).
 
 <a id="ob-207" class="task" data-project="vtt" data-status="done" data-task-type="bug"></a>
-
 ### Changing to a token without a bound character sheet should reset the form to the token's state.
-
 **ID:** OB-207
 **Project:** Old Bear VTT
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 I added a token via Create without image. I already have my character sheet window open. I click on another token and see all the details for that token's character. I click the new 'Hero' token and the character sheet doesn't change. When I click on a token without a bound hero the character sheet should go to the default state and then let me select a character from the dropdown to synchronize with.
@@ -3822,13 +3609,12 @@ I added a token via Create without image. I already have my character sheet wind
 - [x]
 
 <a id="ob-208" class="task" data-project="vtt" data-status="testing" data-task-type="feature"></a>
-
 ### Update the Open5EFetcher to use the v2 api.
-
 **ID:** OB-208
 **Project:** Old Bear VTT
 **Status:** Testing
 **Type:** Feature
+
 
 **Description:**
 Describe task objectives and implementation requirements here.
@@ -3836,13 +3622,12 @@ Describe task objectives and implementation requirements here.
 - [x]
 
 <a id="ob-209" class="task" data-project="cmn" data-status="done" data-task-type="bug"></a>
-
 ### There is no settings button next to the active scene name in the top bar.
-
 **ID:** OB-209
 **Project:** Common
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 Provide a dedicated settings button (gear icon) next to the active scene name in the top navigation bar to open the Scene Settings modal directly.
@@ -3854,13 +3639,12 @@ Provide a dedicated settings button (gear icon) next to the active scene name in
 - [x] Verify component rendering and permissions with unit tests in `TopBar.test.ts` and `BrawlTopBar.test.ts`.
 
 <a id="ob-210" class="task" data-project="cmn" data-status="done" data-task-type="chore"></a>
-
 ### Remove references to rodeo and obr to be nice.
-
 **ID:** OB-210
 **Project:** Common
 **Status:** Done
 **Type:** Chore
+
 
 **Description:**
 Describe task objectives and implementation requirements here.
@@ -3868,13 +3652,12 @@ Describe task objectives and implementation requirements here.
 - [ ]
 
 <a id="ob-211" class="task" data-project="cmn" data-status="done" data-task-type="feature"></a>
-
 ### Remove excess display from the info commands.
-
 **ID:** OB-211
 **Project:** Common
 **Status:** Done
 **Type:** Feature
+
 
 **Description:**
 Make the info responses for commands like /spell? and /monster? show only to the user that executed them and don't wrap them as if that player said them.
@@ -3882,13 +3665,12 @@ Make the info responses for commands like /spell? and /monster? show only to the
 - [x]
 
 <a id="ob-212" class="task" data-project="vtt" data-status="testing" data-task-type="feature"></a>
-
 ### Add a way to request variants like the 2014 vs 2024 srds, between pf1, sf1, pf2+sf2, and between 5e and pf*/sf*.
-
 **ID:** OB-212
 **Project:** Old Bear VTT
 **Status:** Testing
 **Type:** Feature
+
 
 **Description:**
 Document any missing backends, but assume we will have an api eventually. Stub out the actual requests and fail gracefully. This shouls apply to all info commands. If no system is specified check the character for the named action (attack/spell/item) then check the cached db this may have more item types like monsters and items if characters do not havke them. Plan for adding more commands later like /class? /race? /ability? /feat? etc... when making architectural decisions, but do not worry about implementing them now.
@@ -3896,25 +3678,23 @@ Document any missing backends, but assume we will have an api eventually. Stub o
 - [x]
 
 <a id="ob-213" class="task" data-project="vtt" data-status="testing" data-task-type="feature"></a>
-
 ### Tokens without a character show the wrong sheet.
-
 **ID:** OB-213
 **Project:** Old Bear VTT
 **Status:** Testing
 **Type:** Feature
 
+
 **Description:**
 when creating a token and then checking its character sheet I see some kind of id in the dndbeyond url block. That should be empty.
 
 <a id="ob-214" class="task" data-project="vtt" data-status="testing" data-task-type="feature"></a>
-
 ### Allow saving custom characters.
-
 **ID:** OB-214
 **Project:** Old Bear VTT
 **Status:** Testing
 **Type:** Feature
+
 
 **Description:**
 When I open the character sheet I should be able to save that character to my database as a character/token.
@@ -3922,13 +3702,12 @@ When I open the character sheet I should be able to save that character to my da
 - [x]
 
 <a id="ob-215" class="task" data-project="vtt" data-status="planning" data-task-type="feature"></a>
-
 ### Find a source for icons and images.
-
 **ID:** OB-215
 **Project:** Old Bear VTT
 **Status:** Planning
 **Type:** Feature
+
 
 **Description:**
 Triaged on 2026-10-09:
@@ -3953,13 +3732,12 @@ Triaged on 2026-10-09:
 - [ ]
 
 <a id="ob-216" class="task" data-project="vtt" data-status="testing" data-task-type="bug"></a>
-
 ### Add to character on an item card does nothing. It should add the attack/ability to the character sheet,
-
 **ID:** OB-216
 **Project:** Old Bear VTT
 **Status:** Testing
 **Type:** Bug
+
 
 **Description:**
 Describe task objectives and implementation requirements here.
@@ -3967,13 +3745,12 @@ Describe task objectives and implementation requirements here.
 - [x]
 
 <a id="ob-217" class="task" data-project="vtt" data-status="testing" data-task-type="feature"></a>
-
 ### Allow /attack? to query compendium weapons and attacks from Open5e and PF2e
-
 **ID:** OB-217
 **Project:** Old Bear VTT
 **Status:** Testing
 **Type:** Feature
+
 
 **Description:**
 When using /attack? <name> in chat, if the attack is not found in the active character's actions or token's actions, fall back to querying the Open5e weapons/SRD database and PF2e reference database. Display the resulting weapon or attack as an EntityStatBlock card with damage formula, damage type, reach/range, and an '+ Add to Sheet' / '+ Add to Token Attacks' button.
@@ -3981,25 +3758,23 @@ When using /attack? <name> in chat, if the attack is not found in the active cha
 - [x]
 
 <a id="ob-218" class="task" data-project="cmn" data-status="testing" data-task-type="bug"></a>
-
 ### Chat textbox does not give up focus when you click away.
-
 **ID:** OB-218
 **Project:** Common
 **Status:** Testing
 **Type:** Bug
 
+
 **Description:**
 Chat textbox does not lose focus when we click something else. I clicked a token and the box still had the cursor in it. I wasn't able to use hotkeys until I had selected some text elsewhere.
 
 <a id="ob-219" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
-
 ### Don't favor dnd on the character sheet.
-
 **ID:** OB-219
 **Project:** Common
 **Status:** Testing
 **Type:** Feature
+
 
 **Description:**
 We should not favor a specific ruleset. Currently the character sheet starts with dndbeyod selected. I think we should have a third option that is just our local character that everything imports to.
@@ -4007,13 +3782,12 @@ We should not favor a specific ruleset. Currently the character sheet starts wit
 - [x]
 
 <a id="ob-220" class="task" data-project="cmn" data-status="testing" data-task-type="bug"></a>
-
 ### Pinch zoom doesn't work right on token portraits.
-
 **ID:** OB-220
 **Project:** Common
 **Status:** Testing
 **Type:** Bug
+
 
 **Description:**
 pinch zooming on things like the face image when editing a token keep trying to zoom the whole page instead.
@@ -4021,13 +3795,12 @@ pinch zooming on things like the face image when editing a token keep trying to 
 - [x]
 
 <a id="ob-221" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
-
 ### Make the ` or ~ key toggle the chat display like c togles the character sheet.
-
 **ID:** OB-221
 **Project:** Common
 **Status:** Testing
 **Type:** Feature
+
 
 **Description:**
 Ideally this would combine with esc to make the textbox lose focus.
@@ -4035,13 +3808,12 @@ Ideally this would combine with esc to make the textbox lose focus.
 - [x]
 
 <a id="ob-222" class="task" data-project="brawl" data-status="done" data-task-type="bug"></a>
-
 ### The brawl map is very zoomed in and blury.
-
 **ID:** OB-222
 **Project:** Old Bear Brawl
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 It should be at the same zoom level. i.e. the same ratio of tiels to pixels as vtt mode.
@@ -4049,13 +3821,12 @@ It should be at the same zoom level. i.e. the same ratio of tiels to pixels as v
 - [x]
 
 <a id="ob-223" class="task" data-project="brawl" data-status="done" data-task-type="bug"></a>
-
 ### The hamburger menu is bright purple in vtt and dark like the backgournd color in brawl.
-
 **ID:** OB-223
 **Project:** Old Bear Brawl
 **Status:** Done
 **Type:** Bug
+
 
 **Description:**
 Describe task objectives and implementation requirements here.
@@ -4063,13 +3834,12 @@ Describe task objectives and implementation requirements here.
 - [x]
 
 <a id="ob-224" class="task" data-project="brawl" data-status="ready" data-task-type="bug"></a>
-
 ### Separate map and token instances between VTT and Brawl modes
-
 **ID:** OB-224
 **Project:** Old Bear Brawl
 **Status:** Ready
 **Type:** Bug
+
 
 **Description:**
 Brawl mode currently shares the same default session, maps, and tokens as VTT mode (e.g. showing Valeros the Fighter and Goblin Scout). VTT and Brawl sessions/maps should be isolated so Brawl tables have their own wargaming map instance and clean starting state without D&D/Pathfinder RPG tokens.
@@ -4078,13 +3848,12 @@ Brawl mode currently shares the same default session, maps, and tokens as VTT mo
 - [ ] Ensure switching modes or joining tables maintains separate map and token instances
 
 <a id="ob-225" class="task" data-project="brawl" data-status="ready" data-task-type="bug"></a>
-
 ### Add floating token bar and model wargear inspector when selecting tokens in Brawl mode
-
 **ID:** OB-225
 **Project:** Old Bear Brawl
 **Status:** Ready
 **Type:** Bug
+
 
 **Description:**
 When selecting tokens in Brawl mode, there is currently no floating token controls bar or inspector displaying model details. Players cannot inspect the selected model's wargear, weapon profiles, movement, wounds/HP, or saves.
@@ -4096,13 +3865,12 @@ When selecting tokens in Brawl mode, there is currently no floating token contro
 - [ ] Allow incrementing/decrementing wounds/HP on selected models directly from the token bar
 
 <a id="ob-226" class="task" data-project="brawl" data-status="ready" data-task-type="feature"></a>
-
 ### Add dedicated UI controls to place custom objective markers and wargaming tokens onto the canvas
-
 **ID:** OB-226
 **Project:** Old Bear Brawl
 **Status:** Ready
 **Type:** Feature
+
 
 **Description:**
 Provide dedicated UI tools, flyout palette, or token picker controls to add custom objective markers and miscellaneous wargaming tokens directly to the canvas in Brawl mode.
@@ -4110,13 +3878,12 @@ Provide dedicated UI tools, flyout palette, or token picker controls to add cust
 - [ ]
 
 <a id="ob-227" class="task" data-project="brawl" data-status="ready" data-task-type="bug"></a>
-
 ### Fix unit deployment assigning all units to Player 1 regardless of deploying player
-
 **ID:** OB-227
 **Project:** Old Bear Brawl
 **Status:** Ready
 **Type:** Bug
+
 
 **Description:**
 Fix unit deployment in AppBrawl and DeploymentStagingModal so models are assigned to the deploying player (Player 1 or Player 2) with correct ownership (ownerId, player index, and player accent color) instead of defaulting to Player 1.
@@ -4124,13 +3891,12 @@ Fix unit deployment in AppBrawl and DeploymentStagingModal so models are assigne
 - [ ]
 
 <a id="ob-228" class="task" data-project="brawl" data-status="ready" data-task-type="bug"></a>
-
 ### Prevent re-deploying a unit from replacing previously deployed tokens on the map
-
 **ID:** OB-228
 **Project:** Old Bear Brawl
 **Status:** Ready
 **Type:** Bug
+
 
 **Description:**
 Fix unit deployment replacing existing units when deployed again. Allow multiple instances or distinct squads of the same unit datasheet to be deployed without overwriting or deleting prior tokens.
@@ -4138,13 +3904,12 @@ Fix unit deployment replacing existing units when deployed again. Allow multiple
 - [ ]
 
 <a id="ob-229" class="task" data-project="brawl" data-status="ready" data-task-type="feature"></a>
-
 ### Display Objective Control (OC) stats on tokens, selection HUD, and model stat cards
-
 **ID:** OB-229
 **Project:** Old Bear Brawl
 **Status:** Ready
 **Type:** Feature
+
 
 **Description:**
 Display Objective Control (OC) stat values clearly on deployed model tokens, token badges/tooltips, selection HUD, and the army roster model stat cards.
@@ -4152,13 +3917,12 @@ Display Objective Control (OC) stat values clearly on deployed model tokens, tok
 - [ ]
 
 <a id="ob-230" class="task" data-project="brawl" data-status="ready" data-task-type="feature"></a>
-
 ### Separate army roster storage and selection between Player 1 and Player 2
-
 **ID:** OB-230
 **Project:** Old Bear Brawl
 **Status:** Ready
 **Type:** Feature
+
 
 **Description:**
 Separate army roster storage and selection per player so Player 1 and Player 2 each have independent army lists and imports rather than sharing a single global army array.
@@ -4166,26 +3930,23 @@ Separate army roster storage and selection per player so Player 1 and Player 2 e
 - [ ]
 
 <a id="ob-231" class="task" data-project="brawl" data-status="ready" data-task-type="feature"></a>
-
 ### Make wargaming rulesets, phase sequences, scoring, and resource rules data-driven
-
 **ID:** OB-231
 **Project:** Old Bear Brawl
 **Status:** Ready
 **Type:** Feature
+
 
 **Description:**
 Design and implement a data-driven wargaming ruleset schema allowing customizable phase step sequences, scoring rules (primary/secondary VP), resource pools (CP or other resources), and objective rules/presets beyond hardcoded 40k defaults.
 
 - [ ]
 
-<a id="ob-232" class="task" data-project="cmn" data-status="testing" data-task-type="feature"></a>
-
+<a id="ob-232" class="task" data-project="cmn" data-status="done" data-task-type="feature"></a>
 ### Add a system of feature flags that can be toggled after deployment.
-
 **ID:** OB-232
 **Project:** Common
-**Status:** Testing
+**Status:** Done
 **Type:** Feature
 
 **Description:**
@@ -4194,13 +3955,12 @@ Add a system of feature flags we can use to enable/disable individual features. 
 - [x]
 
 <a id="ob-233" class="task" data-project="cmn" data-status="testing" data-task-type="bug"></a>
-
 ### Create scene from map asset uses natural image dimensions instead of default 2000x1500
-
 **ID:** OB-233
 **Project:** Common
 **Status:** Testing
 **Type:** Bug
+
 
 **Description:**
 When importing legacy binders or map files where dimensions were omitted, making a scene from the map asset defaulted to 2000x1500 instead of inspecting the image's actual natural dimensions (e.g. 1024x1536). Inspect image dimensions on scene creation and file ingestion.

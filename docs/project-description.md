@@ -15,7 +15,7 @@ Old Bear Battles is a lightweight, mobile-friendly virtual tabletop (VTT) for ho
 
 ## Technology
 
-- TypeScript monorepo managed with npm workspaces.
+- TypeScript monorepo managed with yarn workspaces.
 - React and Vite client.
 - Node.js and WebSocket server.
 - HTML5 Canvas rendering.
@@ -34,4 +34,3 @@ Old Bear Battles is a lightweight, mobile-friendly virtual tabletop (VTT) for ho
 - Document ID: `Old Bear Battles`
 - Tags: `featured`, `open-source`
 - Last Verified UTC: `2026-10-11T07:00:26Z`
-
