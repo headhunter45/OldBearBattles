@@ -32,6 +32,7 @@ ACCEPTS=()
 REJECTS=()
 MODE=""
 SORT_DIR="desc"
+SELECT_COLS=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -97,11 +98,20 @@ while [[ $# -gt 0 ]]; do
                 echo "Error: $1 requires a column list argument" >&2
                 exit 1
             fi
-            SELECT_COLS="$2"
+            if [[ -n "$SELECT_COLS" ]]; then
+                SELECT_COLS="$SELECT_COLS,$2"
+            else
+                SELECT_COLS="$2"
+            fi
             shift 2
             ;;
-        --select=*)
-            SELECT_COLS="${1#*=}"
+        --select=*|-s=*)
+            arg_val="${1#*=}"
+            if [[ -n "$SELECT_COLS" ]]; then
+                SELECT_COLS="$SELECT_COLS,$arg_val"
+            else
+                SELECT_COLS="$arg_val"
+            fi
             shift
             ;;
         --sort)
@@ -144,7 +154,7 @@ fi
 
 if [ $((${#ACCEPTS[@]} + ${#REJECTS[@]})) -gt 0 ]; then
     ACCEPT_COUNT=${#ACCEPTS[@]}
-    NORMALIZED_PREDICATES="$(python3 "$SCRIPT_DIR/lib/filter_predicates.py" "$TASKS_FILE" "${ACCEPTS[@]}" "${REJECTS[@]}")"
+    NORMALIZED_PREDICATES="$(python3 "$SCRIPT_DIR/lib/filter_predicates.py" "$TASKS_FILE" --accept-count "$ACCEPT_COUNT" "${ACCEPTS[@]}" "${REJECTS[@]}")"
     ACCEPTS=()
     REJECTS=()
     PREDICATE_INDEX=0
@@ -158,7 +168,16 @@ if [ $((${#ACCEPTS[@]} + ${#REJECTS[@]})) -gt 0 ]; then
     done <<< "$NORMALIZED_PREDICATES"
 fi
 
-if command -v filter-table >/dev/null 2>&1; then
+has_duplicate_cols() {
+    [ -z "$1" ] && return 1
+    local col_count
+    local uniq_count
+    col_count=$(tr ',' '\n' <<< "$1" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' | wc -l | tr -d ' ')
+    uniq_count=$(tr ',' '\n' <<< "$1" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]' | grep -v '^$' | sort -u | wc -l | tr -d ' ')
+    [ "$col_count" -ne "$uniq_count" ]
+}
+
+if command -v filter-table >/dev/null 2>&1 && ! has_duplicate_cols "${SELECT_COLS:-}"; then
     FILTER_ARGS=("$TASKS_FILE")
     for acc in "${ACCEPTS[@]}"; do
         FILTER_ARGS+=(--accept "$acc")
@@ -206,6 +225,13 @@ def parse_predicates(pred_list):
             preds.append((col.strip().lower(), allowed))
     return preds
 
+def normalize_cell(s):
+    val = s.strip()
+    link_match = re.match(r'^\[(.*?)\]\(.*?\)$', val)
+    if link_match:
+        val = link_match.group(1).strip()
+    return re.sub(r'^[*_]+|[*_]+$', '', val).lower()
+
 parsed_accepts = parse_predicates(list(accepts) if isinstance(accepts, (list, tuple)) else [])
 parsed_rejects = parse_predicates(list(rejects) if isinstance(rejects, (list, tuple)) else [])
 
@@ -230,7 +256,7 @@ for line in lines:
             # Check accepts
             accept_ok = True
             for col, allowed in parsed_accepts:
-                val = row_dict.get(col, '').lower()
+                val = normalize_cell(row_dict.get(col, ''))
                 if val not in allowed:
                     accept_ok = False
                     break
@@ -240,7 +266,7 @@ for line in lines:
             # Check rejects
             reject_hit = False
             for col, disallowed in parsed_rejects:
-                val = row_dict.get(col, '').lower()
+                val = normalize_cell(row_dict.get(col, ''))
                 if val in disallowed:
                     reject_hit = True
                     break
@@ -255,9 +281,10 @@ raw_rows.sort(
     reverse=reverse_sort
 )
 
+header_case_map = {h.lower(): h for h in header_display}
 if select_cols_str:
     req_cols = [c.strip() for c in select_cols_str.split(',') if c.strip()]
-    out_headers = [c for c in req_cols if c.lower() in headers]
+    out_headers = [header_case_map.get(c.lower(), c) for c in req_cols if c.lower() in headers]
 else:
     if mode == 'all':
         out_headers = ['ID', 'Title', 'Project']

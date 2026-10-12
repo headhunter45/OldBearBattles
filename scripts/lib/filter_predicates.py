@@ -160,15 +160,105 @@ def normalize_predicate(predicate, frontmatter_or_epics):
     return f"{target_col}:{','.join(normalized_vals)}"
 
 
+def format_predicate_list(preds):
+    if len(preds) == 1:
+        return f"'{preds[0]}'"
+    if len(preds) == 2:
+        return f"'{preds[0]}' and '{preds[1]}'"
+    return ", ".join(f"'{p}'" for p in preds[:-1]) + f", and '{preds[-1]}'"
+
+
+def validate_accept_predicates(normalized_accepts, raw_accepts=None):
+    """
+    Check if multiple accept predicates targeting the same column have no overlapping values.
+    Raises ValueError if the intersection of allowed values for any column is empty.
+    """
+    if raw_accepts is None:
+        raw_accepts = normalized_accepts
+
+    col_values = {}
+    col_raw_predicates = {}
+
+    for raw_pred, norm_pred in zip(raw_accepts, normalized_accepts):
+        if ":" not in norm_pred:
+            continue
+
+        col, _, vals = norm_pred.partition(":")
+        canonical_col = col.strip()
+        col_key = canonical_col.lower()
+
+        val_list = [v.strip() for v in vals.split(",") if v.strip()]
+        if not val_list:
+            continue
+
+        val_set = {v.lower() for v in val_list}
+
+        if col_key not in col_values:
+            col_values[col_key] = val_set
+            col_raw_predicates[col_key] = [raw_pred]
+        else:
+            intersection = col_values[col_key] & val_set
+            col_raw_predicates[col_key].append(raw_pred)
+            if not intersection:
+                preds_formatted = format_predicate_list(col_raw_predicates[col_key])
+                raise ValueError(
+                    f"Impossible filter: conflicting --accept predicates for '{canonical_col}' ({preds_formatted}) have no overlapping values."
+                )
+            col_values[col_key] = intersection
+
+
 def main():
     try:
+        if len(sys.argv) < 2:
+            print("usage: filter_predicates.py <tasks_file> [--accept-count N] [predicates...]", file=sys.stderr)
+            sys.exit(1)
+
+        tasks_file = sys.argv[1]
         update = runpy.run_path(str(Path(__file__).resolve().parents[1] / "update-tasks"))
-        text = Path(sys.argv[1]).read_text(encoding="utf-8")
+        text = Path(tasks_file).read_text(encoding="utf-8")
         frontmatter = update["read_frontmatter"](text)
-        for predicate in sys.argv[2:]:
-            print(normalize_predicate(predicate, frontmatter))
-    except (OSError, ValueError) as error:
+
+        accept_count = None
+        pred_args = []
+        i = 2
+        while i < len(sys.argv):
+            arg = sys.argv[i]
+            if arg == "--accept-count" and i + 1 < len(sys.argv):
+                accept_count = int(sys.argv[i + 1])
+                i += 2
+            elif arg.startswith("--accept-count="):
+                accept_count = int(arg.split("=", 1)[1])
+                i += 1
+            else:
+                pred_args.append(arg)
+                i += 1
+
+        if accept_count is None:
+            accept_raw = pred_args
+            reject_raw = []
+        else:
+            accept_raw = pred_args[:accept_count]
+            reject_raw = pred_args[accept_count:]
+
+        accept_normalized = [normalize_predicate(p, frontmatter) for p in accept_raw]
+        reject_normalized = [normalize_predicate(p, frontmatter) for p in reject_raw]
+
+        validate_accept_predicates(accept_normalized, accept_raw)
+
+        for p in accept_normalized:
+            print(p)
+        for p in reject_normalized:
+            print(p)
+
+    except OSError as error:
         print(f"Error normalizing task filters: {error}", file=sys.stderr)
+        sys.exit(1)
+    except ValueError as error:
+        msg = str(error)
+        if "Impossible filter" in msg:
+            print(f"Error: {msg}", file=sys.stderr)
+        else:
+            print(f"Error normalizing task filters: {msg}", file=sys.stderr)
         sys.exit(1)
 
 

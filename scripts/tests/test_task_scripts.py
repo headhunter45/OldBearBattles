@@ -289,6 +289,65 @@ class TaskScriptsTest(unittest.TestCase):
         result = self.run_cli("get-tasks", "--accept", "Epic:poc", env=env, success=False)
         self.assertIn("Error normalizing task filters: YAML frontmatter not found", result.stderr)
 
+    def test_accept_predicates_conflict_validation(self):
+        self.run_cli("add-task", "Second task", "--status", "in_progress")
+        env = {**self.env, "PATH": "/usr/bin:/bin"}
+
+        # Conflicting --accept predicates on the same column should fail
+        result = self.run_cli(
+            "get-tasks", "--accept", "status:pending", "--accept", "status:in_progress",
+            env=env, success=False,
+        )
+        self.assertIn(
+            "Error: Impossible filter: conflicting --accept predicates for 'Status' ('status:pending' and 'status:in_progress') have no overlapping values.",
+            result.stderr,
+        )
+
+        # Multiple --accept predicates on different columns should succeed
+        output = self.run_cli(
+            "get-tasks", "--accept", "status:pending", "--accept", "type:feature", env=env,
+        ).stdout
+        self.assertIn("OT-001", output)
+        self.assertNotIn("OT-002", output)
+
+        # Overlapping --accept predicates on the same column should succeed and intersect
+        output = self.run_cli(
+            "get-tasks", "--accept", "status:pending,in_progress", "--accept", "status:in_progress", env=env,
+        ).stdout
+        self.assertIn("OT-002", output)
+        self.assertNotIn("OT-001", output)
+
+        # Multiple --reject predicates on the same column should succeed (ORed rejection)
+        output = self.run_cli(
+            "get-tasks", "--reject", "status:pending", "--reject", "status:in_progress", env=env,
+        ).stdout
+        self.assertNotIn("OT-001", output)
+        self.assertNotIn("OT-002", output)
+
+    def test_multiple_and_duplicate_select_projections(self):
+        # Test with fallback environment (no filter-table) and default environment
+        for env in ({**self.env, "PATH": "/usr/bin:/bin"}, self.env):
+            with self.subTest(has_filter_table="filter-table" in env.get("PATH", "")):
+                # Multiple --select params should append columns
+                out_multi = self.run_cli("get-tasks", "--all", "--select", "id", "--select", "title", env=env).stdout
+                out_comma = self.run_cli("get-tasks", "--all", "--select", "id,title", env=env).stdout
+                self.assertEqual(out_multi, out_comma)
+
+                # Duplicate column projections via comma or repeated --select should return duplicate columns
+                out_dup_comma = self.run_cli("get-tasks", "--all", "--select", "id,title,id", env=env).stdout
+                out_dup_multi = self.run_cli("get-tasks", "--all", "--select", "id,title", "--select", "id", env=env).stdout
+                self.assertEqual(out_dup_comma, out_dup_multi)
+
+                lines = [line.strip() for line in out_dup_comma.strip().splitlines() if line.strip()]
+                self.assertGreaterEqual(len(lines), 3)
+                header_cols = [c.strip() for c in lines[0].split("|")[1:-1]]
+                self.assertEqual(header_cols, ["ID", "Title", "ID"])
+
+                data_cols = [c.strip() for c in lines[2].split("|")[1:-1]]
+                self.assertEqual(data_cols[0], "OT-001")
+                self.assertEqual(data_cols[2], "OT-001")
+                self.assertEqual(data_cols[1], "Original")
+
     def test_workflow_surfaces(self):
         self.run_cli("update-task", "1", "--epic", "poc")
         output = self.run_cli("work-on-task", "1", "--start").stdout
