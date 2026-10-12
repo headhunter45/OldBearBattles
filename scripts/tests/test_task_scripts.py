@@ -492,6 +492,28 @@ Keep this description.
         output = self.run_cli("get-tasks", "--all", "--accept", "group:ready", env=env).stdout
         self.assertIn("OT-001", output)
 
+    def test_default_new_task_frontmatter_configuration(self):
+        text = self.path.read_text()
+        default_config = (
+            "default-new-task:\n"
+            "  project: 'shared'\n"
+            "  subproject: 'engine'\n"
+            "  type: 'feature'\n"
+            "  status: 'in_progress'\n"
+            "  description: 'Automated description'\n"
+        )
+        self.path.write_text(text.replace("projects:\n", f"{default_config}projects:\n"))
+        self.run_cli("update-tasks")
+
+        # add-task without optional flags should pick up default-new-task values
+        self.run_cli("add-task", "Created with defaults")
+        task = self.get_task("OT-002")
+        self.assertEqual(task["project"], "shared")
+        self.assertEqual(task["subproject"], "engine")
+        self.assertEqual(task["type"], "feature")
+        self.assertEqual(task["status"], "in_progress")
+        self.assertIn("Automated description", task["description"])
+
     def test_workflow_surfaces(self):
         self.run_cli("update-task", "1", "--epic", "poc")
         output = self.run_cli("work-on-task", "1", "--start").stdout

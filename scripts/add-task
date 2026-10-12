@@ -31,7 +31,7 @@ def load_update_tasks_module():
     return mod
 
 
-def add_task(title, project="shared", subproject=None, task_type="feature", status="triage", description=None, tasks_file=None, epic=None):
+def add_task(title, project=None, subproject=None, task_type=None, status=None, description=None, tasks_file=None, epic=None):
     update_mod = load_update_tasks_module()
     tasks_path = update_mod.find_tasks_file(tasks_file)
 
@@ -46,6 +46,21 @@ def add_task(title, project="shared", subproject=None, task_type="feature", stat
     fm_data = update_mod.parse_yaml_frontmatter(fm_match.group(1))
     prefix = update_mod.get_task_id_prefix(fm_data)
     epic_key, epic_label = update_mod.resolve_epic(epic, fm_data)
+
+    default_new = fm_data.get("default-new-task", {})
+    if not isinstance(default_new, dict):
+        default_new = {}
+
+    if project is None:
+        project = default_new.get("project") or "shared"
+    if subproject is None:
+        subproject = default_new.get("subproject") or None
+    if task_type is None:
+        task_type = default_new.get("type") or "feature"
+    if status is None:
+        status = default_new.get("status") or "triage"
+    if description is None:
+        description = default_new.get("description") or None
 
     project_list = fm_data.get("projects", [])
     subproject_list = fm_data.get("subprojects", [])
@@ -215,8 +230,8 @@ def main():
     parser.add_argument("--epic", default=None, help="Epic value or label from frontmatter (optional)")
     parser.add_argument(
         "-p", "--project",
-        default="shared",
-        help="Project name or value (default: shared)"
+        default=None,
+        help="Project name or value (defaults to default-new-task in frontmatter or shared)"
     )
     parser.add_argument(
         "-S", "--subproject",
@@ -225,13 +240,13 @@ def main():
     )
     parser.add_argument(
         "-t", "--type",
-        default="feature",
-        help="Task type (default: feature, e.g. chore, bug, feature, lint, docs)"
+        default=None,
+        help="Task type (defaults to default-new-task in frontmatter or feature)"
     )
     parser.add_argument(
         "-s", "--status",
-        default="triage",
-        help="Initial task status (default: triage, e.g. planning, triage, pending, fixed)"
+        default=None,
+        help="Initial task status (defaults to default-new-task in frontmatter or triage)"
     )
     parser.add_argument(
         "-d", "--description",
