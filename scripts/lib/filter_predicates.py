@@ -40,8 +40,9 @@ def build_lookup_for_column(col_lower, frontmatter):
         if "common" not in lookup and "cmn" in lookup:
             lookup["common"] = lookup["cmn"]
 
-    elif col_lower == "status":
+    elif col_lower in ("status", "group", "status-group"):
         statuses = frontmatter.get("task-statuses", [])
+        group_to_statuses = {}
         for s in statuses:
             val = s.get("value", "").strip()
             lbl = s.get("label", "").strip()
@@ -57,6 +58,42 @@ def build_lookup_for_column(col_lower, frontmatter):
                 lookup[lbl.lower()] = canonical
                 lookup[lbl.lower().replace(" ", "-")] = canonical
                 lookup[lbl.lower().replace(" ", "_")] = canonical
+
+            raw_groups = s.get("groups", [])
+            groups = [g.lower() for g in raw_groups] if isinstance(raw_groups, list) else [str(raw_groups).lower()]
+            for g in groups:
+                if g:
+                    group_to_statuses.setdefault(g, []).append(canonical)
+
+        for g, g_statuses in group_to_statuses.items():
+            unique_statuses = []
+            for item in g_statuses:
+                if item not in unique_statuses:
+                    unique_statuses.append(item)
+            g_val = ",".join(unique_statuses)
+            if col_lower in ("group", "status-group") or g not in lookup:
+                lookup[g] = g_val
+                lookup[g.replace("-", " ")] = g_val
+                lookup[g.replace("_", " ")] = g_val
+            else:
+                existing = [x.strip() for x in lookup[g].split(",") if x.strip()]
+                merged = list(dict.fromkeys(existing + unique_statuses))
+                lookup[g] = ",".join(merged)
+                lookup[g.replace("-", " ")] = lookup[g]
+                lookup[g.replace("_", " ")] = lookup[g]
+
+        if "planning" not in group_to_statuses:
+            fallback_planning = [lookup[k] for k in ("planning", "triage") if k in lookup]
+            if fallback_planning:
+                lookup.setdefault("planning", ",".join(dict.fromkeys(fallback_planning)))
+        if "initial" not in group_to_statuses:
+            fallback_initial = [lookup[k] for k in ("triage", "planning") if k in lookup]
+            if fallback_initial:
+                lookup.setdefault("initial", ",".join(dict.fromkeys(fallback_initial)))
+        if "ready" not in group_to_statuses:
+            fallback_ready = [lookup[k] for k in ("ready", "pending", "in_progress", "in-progress") if k in lookup]
+            if fallback_ready:
+                lookup.setdefault("ready", ",".join(dict.fromkeys(fallback_ready)))
 
         if "fixed" not in lookup and "done" in lookup:
             lookup["fixed"] = lookup["done"]
@@ -139,6 +176,8 @@ def normalize_predicate(predicate, frontmatter_or_epics):
     canonical_col_names = {
         "project": "Project",
         "status": "Status",
+        "group": "Status",
+        "status-group": "Status",
         "epic": "Epic",
         "subproject": "Subproject",
         "type": "Type",

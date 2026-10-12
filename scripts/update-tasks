@@ -61,35 +61,101 @@ def find_tasks_file(explicit_path=None):
 
 def parse_yaml_frontmatter(fm_text):
     sections = {}
-    current_section = None
-    current_item = None
+    lines = fm_text.splitlines()
+    i = 0
+    n = len(lines)
 
-    for line in fm_text.splitlines():
-        if line and not line.startswith(" ") and ":" in line and not line.endswith(":"):
-            key, value = line.split(":", 1)
-            sections[key.strip()] = value.strip().strip("\"'")
-            current_section = None
-            current_item = None
-        elif line and not line.startswith(" ") and line.endswith(":"):
-            current_section = line[:-1].strip()
-            sections[current_section] = []
-            current_item = None
-        elif current_section is not None:
-            stripped = line.strip()
-            if not stripped:
+    while i < n:
+        line = lines[i]
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            i += 1
+            continue
+
+        indent = len(line) - len(line.lstrip(" "))
+        if indent == 0 and ":" in line:
+            key, val = line.split(":", 1)
+            key = key.strip()
+            val = val.strip()
+
+            if val:
+                sections[key] = val.strip("\"'")
+                i += 1
                 continue
-            if line.startswith("  - "):
-                current_item = {}
-                sections[current_section].append(current_item)
-                kv = line[4:].strip()
-                if ":" in kv:
-                    k, v = kv.split(":", 1)
-                    current_item[k.strip()] = v.strip().strip("\"'")
-            elif line.startswith("    ") and current_item is not None:
-                kv = line.strip()
-                if ":" in kv:
-                    k, v = kv.split(":", 1)
-                    current_item[k.strip()] = v.strip().strip("\"'")
+
+            i += 1
+            while i < n and not lines[i].strip():
+                i += 1
+            if i >= n or (len(lines[i]) - len(lines[i].lstrip(" "))) == 0:
+                sections[key] = []
+                continue
+
+            child_indent = len(lines[i]) - len(lines[i].lstrip(" "))
+            first_child_stripped = lines[i].strip()
+
+            if first_child_stripped.startswith("- "):
+                items = []
+                current_item = None
+                sub_list_key = None
+
+                while i < n:
+                    cline = lines[i]
+                    cstrip = cline.strip()
+                    if not cstrip or cstrip.startswith("#"):
+                        i += 1
+                        continue
+                    cindent = len(cline) - len(cline.lstrip(" "))
+                    if cindent == 0:
+                        break
+
+                    if cline[child_indent:].startswith("- "):
+                        sub_list_key = None
+                        item_content = cline[child_indent + 2:].strip()
+                        if ":" in item_content:
+                            current_item = {}
+                            items.append(current_item)
+                            k, v = item_content.split(":", 1)
+                            k = k.strip()
+                            v = v.strip().strip("\"'")
+                            current_item[k] = v
+                        else:
+                            items.append(item_content.strip("\"'"))
+                            current_item = None
+                    elif cindent > child_indent:
+                        if current_item is not None:
+                            if cstrip.startswith("- ") and sub_list_key is not None:
+                                sub_val = cstrip[2:].strip().strip("\"'")
+                                current_item[sub_list_key].append(sub_val)
+                            elif ":" in cstrip:
+                                k, v = cstrip.split(":", 1)
+                                k = k.strip()
+                                v = v.strip()
+                                if not v:
+                                    sub_list_key = k
+                                    current_item[k] = []
+                                else:
+                                    sub_list_key = None
+                                    current_item[k] = v.strip("\"'")
+                    i += 1
+                sections[key] = items
+            else:
+                mapping = {}
+                while i < n:
+                    cline = lines[i]
+                    cstrip = cline.strip()
+                    if not cstrip or cstrip.startswith("#"):
+                        i += 1
+                        continue
+                    cindent = len(cline) - len(cline.lstrip(" "))
+                    if cindent == 0:
+                        break
+                    if ":" in cstrip:
+                        k, v = cstrip.split(":", 1)
+                        mapping[k.strip()] = v.strip().strip("\"'")
+                    i += 1
+                sections[key] = mapping
+        else:
+            i += 1
 
     return sections
 
@@ -522,9 +588,16 @@ def update_tasks_document(tasks_path):
                 clean_title = clean_title[1:-1].strip()
 
         st_lower = task["status"].lower()
-        if st_lower == "pending":
+        st_groups = []
+        for s in status_list:
+            if s.get("value", "").lower() == st_lower or s.get("label", "").lower() == st_lower:
+                raw_g = s.get("groups", [])
+                st_groups = [g.lower() for g in raw_g] if isinstance(raw_g, list) else [str(raw_g).lower()]
+                break
+
+        if "ready" in st_groups or st_lower in ("pending", "ready"):
             formatted_title = f"**{clean_title}**"
-        elif st_lower in ("triage", "planning"):
+        elif "planning" in st_groups or "initial" in st_groups or st_lower in ("triage", "planning"):
             formatted_title = f"*{clean_title}*"
         else:
             formatted_title = clean_title

@@ -419,6 +419,79 @@ class TaskScriptsTest(unittest.TestCase):
         updated_text = self.path.read_text()
         self.assertNotIn("default-000", updated_text.split("## Detailed Tasks")[1].split("## Notes")[0])
 
+    def test_status_groups_in_work_on_task_and_get_tasks(self):
+        # Update frontmatter with custom statuses and groups
+        frontmatter_with_groups = """---
+task-id-prefix: 'OT'
+projects:
+  - value: 'shared'
+    label: 'Shared'
+task-statuses:
+  - value: 'backlog'
+    label: 'Backlog'
+    groups:
+      - initial
+      - planning
+  - value: 'ready'
+    label: 'Ready'
+    groups:
+      - ready
+  - value: 'in_progress'
+    label: 'In Progress'
+    groups:
+      - ready
+      - in-progress
+  - value: 'done'
+    label: 'Done'
+    groups:
+      - final
+task-types:
+  - value: 'feature'
+    label: 'Feature'
+---
+# Tracker
+
+| ID | Title | Project | Status | Type |
+|:---|:------|:--------|:-------|:-----|
+| OT-001 | Original | Shared | Backlog | Feature |
+
+---
+
+## Detailed Tasks
+
+<a id="ot-001" class="task" data-project="shared" data-status="backlog" data-task-type="feature"></a>
+### Original
+**ID:** OT-001
+**Project:** Shared
+**Status:** Backlog
+**Type:** Feature
+
+**Description:**
+Keep this description.
+- [ ] First requirement
+
+---
+
+## Notes
+"""
+        self.path.write_text(frontmatter_with_groups)
+        self.run_cli("update-tasks")
+
+        # work-on-task fails on 'backlog' because it's not in the 'ready' group
+        res = self.run_cli("work-on-task", "1", success=False)
+        self.assertIn("not in the 'ready' group", res.stderr)
+
+        # Update to 'ready' (in 'ready' group) -> work-on-task succeeds
+        self.run_cli("update-task", "1", "--status", "ready")
+        res = self.run_cli("work-on-task", "1", "--start")
+        self.assertIn("Task OT-001", res.stdout)
+        self.assertEqual(self.get_task("1")["status"], "in_progress")
+
+        # get-tasks filtering by group
+        env = {**self.env, "PATH": "/usr/bin:/bin"}
+        output = self.run_cli("get-tasks", "--all", "--accept", "group:ready", env=env).stdout
+        self.assertIn("OT-001", output)
+
     def test_workflow_surfaces(self):
         self.run_cli("update-task", "1", "--epic", "poc")
         output = self.run_cli("work-on-task", "1", "--start").stdout

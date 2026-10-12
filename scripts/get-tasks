@@ -178,11 +178,11 @@ fi
 # Apply default accept if no explicit accept was provided
 if [ ${#ACCEPTS[@]} -eq 0 ]; then
     if [ "$MODE" = "planning" ]; then
-        ACCEPTS+=("Status:Triage,Planning")
+        ACCEPTS+=("group:planning")
     elif [ "$MODE" = "all" ]; then
         : # No default filter
     else
-        ACCEPTS+=("Status:Triage")
+        ACCEPTS+=("group:initial")
     fi
 fi
 
@@ -341,7 +341,7 @@ for r in raw_rows:
         if k == 'title' and not select_cols_str and mode != 'all':
             clean_t = val.strip('*').strip('_').strip()
             st = r.get('status', '').lower()
-            val = f'**{clean_t}**' if st == 'pending' else f'*{clean_t}*' if st in ('triage', 'planning') else clean_t
+            val = f'**{clean_t}**' if st in ('pending', 'ready') else f'*{clean_t}*' if st in ('triage', 'planning') else clean_t
         row_vals.append(val)
     formatted_rows.append(row_vals)
     for idx, v in enumerate(row_vals):

@@ -34,14 +34,42 @@ def main():
         sys.stderr.write(f"Error fetching task {args.task_id}: {e}\n")
         sys.exit(1)
 
-    status = task.get("status", "").strip().lower()
-    valid_work_statuses = ["pending", "in_progress"]
-    invalid_statuses = ["planning", "triage", "research", "done", "cancelled", "blocked"]
+    mod = load_get_task_module()
+    update_mod = mod.load_update_tasks_module()
+    tasks_path = update_mod.find_tasks_file(args.file)
+    with open(tasks_path, "r", encoding="utf-8") as f:
+        text = f.read()
+    fm_data = update_mod.read_frontmatter(text)
 
-    if status not in valid_work_statuses and not args.force:
+    status = task.get("status", "").strip().lower()
+    status_list = fm_data.get("task-statuses", [])
+    ready_statuses = set()
+    in_progress_status_val = None
+
+    for s in status_list:
+        val = s.get("value", "").strip().lower()
+        lbl = s.get("label", "").strip().lower()
+        raw_groups = s.get("groups", [])
+        groups = [g.lower() for g in raw_groups] if isinstance(raw_groups, list) else [str(raw_groups).lower()]
+        if "ready" in groups:
+            if val:
+                ready_statuses.add(val)
+            if lbl:
+                ready_statuses.add(lbl)
+        if "in-progress" in groups or "in_progress" in groups:
+            if not in_progress_status_val and val:
+                in_progress_status_val = s.get("value", "")
+
+    if not in_progress_status_val:
+        in_progress_status_val = "in-progress" if any(s.get("value") == "in-progress" for s in status_list) else "in_progress"
+
+    if not ready_statuses:
+        ready_statuses = {"ready", "pending", "in_progress", "in-progress"}
+
+    if status not in ready_statuses and not args.force:
         sys.stderr.write(
             f"WARNING: Task {task['id']} is currently in '{task['status']}' status.\n"
-            f"Tasks in '{task['status']}' are usually not ready to be worked on directly.\n"
+            f"Tasks in '{task['status']}' are not in the 'ready' group to be worked on directly.\n"
             f"To bypass this check, pass --force.\n"
         )
         sys.exit(2)
@@ -56,20 +84,28 @@ def main():
         print("\nRequirements & Description:")
         print(task["description"])
 
-    if args.start and status != "in_progress":
-        mod = load_get_task_module()
-        update_mod = mod.load_update_tasks_module()
-        script_dir = Path(__file__).resolve().parent
-        import importlib.machinery
-        import importlib.util
-        ut_script = script_dir / "update-task"
-        loader = importlib.machinery.SourceFileLoader("update_task_mod", str(ut_script))
-        spec = importlib.util.spec_from_loader("update_task_mod", loader)
-        ut_mod = importlib.util.module_from_spec(spec)
-        loader.exec_module(ut_mod)
+    if args.start:
+        already_in_progress = False
+        for s in status_list:
+            if s.get("value", "").lower() == status or s.get("label", "").lower() == status:
+                raw_groups = s.get("groups", [])
+                groups = [g.lower() for g in raw_groups] if isinstance(raw_groups, list) else [str(raw_groups).lower()]
+                if ("in-progress" in groups or "in_progress" in groups) and "ready" not in groups:
+                    already_in_progress = True
+                    break
 
-        ut_mod.update_task_detail(task["id"], status="in_progress", tasks_file=args.file)
-        print(f"\n[Status updated to 'in_progress']")
+        if not already_in_progress and status != in_progress_status_val.lower():
+            script_dir = Path(__file__).resolve().parent
+            import importlib.machinery
+            import importlib.util
+            ut_script = script_dir / "update-task"
+            loader = importlib.machinery.SourceFileLoader("update_task_mod", str(ut_script))
+            spec = importlib.util.spec_from_loader("update_task_mod", loader)
+            ut_mod = importlib.util.module_from_spec(spec)
+            loader.exec_module(ut_mod)
+
+            ut_mod.update_task_detail(task["id"], status=in_progress_status_val, tasks_file=args.file)
+            print(f"\n[Status updated to '{in_progress_status_val}']")
 
 
 if __name__ == "__main__":
