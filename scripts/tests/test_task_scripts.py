@@ -514,6 +514,70 @@ Keep this description.
         self.assertEqual(task["status"], "in_progress")
         self.assertIn("Automated description", task["description"])
 
+    def test_summary_columns_configuration_and_non_summary_lookups(self):
+        text = self.path.read_text()
+        summary_cols_config = (
+            "summary-columns:\n"
+            "  - label: 'ID'\n"
+            "    key: id\n"
+            "  - label: 'Title'\n"
+            "    key: title\n"
+            "  - label: 'Status'\n"
+            "    key: status\n"
+        )
+        self.path.write_text(text.replace("\nprojects:\n", f"\n{summary_cols_config}projects:\n"))
+        self.run_cli("update-tasks")
+
+        # Verify summary table in tasks file contains only ID, Title, Status
+        updated_content = self.path.read_text()
+        self.assertIn("| ID     | Title        | Status  |", updated_content)
+        self.assertNotIn("| Project", updated_content)
+
+        # 1. Select non-summary columns (Project, Type, Subproject)
+        env = {**self.env, "PATH": "/usr/bin:/bin"}
+        output = self.run_cli("get-tasks", "--all", "--select", "ID,Project,Type,Subproject", env=env).stdout
+        self.assertIn("ID", output)
+        self.assertIn("Project", output)
+        self.assertIn("Type", output)
+        self.assertIn("Subproject", output)
+        self.assertIn("Shared", output)
+        self.assertIn("Feature", output)
+        self.assertIn("Engine", output)
+
+        # 2. Select Description from body
+        output = self.run_cli("get-tasks", "--all", "--select", "ID,Description", env=env).stdout
+        self.assertIn("Description", output)
+        self.assertIn("Keep this description.", output)
+
+        # 3. Filter by non-summary column (subproject:engine from data-subproject)
+        output = self.run_cli("get-tasks", "--all", "--accept", "subproject:engine", env=env).stdout
+        self.assertIn("OT-001", output)
+
+        output = self.run_cli("get-tasks", "--all", "--accept", "subproject:other", env=env).stdout
+        self.assertNotIn("OT-001", output)
+
+        # 4. Filter by description from body
+        output = self.run_cli("get-tasks", "--all", "--accept", "description:Keep this description.", env=env).stdout
+        self.assertIn("OT-001", output)
+
+        output = self.run_cli("get-tasks", "--all", "--reject", "description:Keep this description.", env=env).stdout
+        self.assertNotIn("OT-001", output)
+
+        # 5. Filter and select arbitrary custom data-* attribute on anchor tag
+        cur_content = self.path.read_text()
+        custom_content = cur_content.replace(
+            'data-task-type="feature"',
+            'data-task-type="feature" data-owner="alice"',
+        )
+        self.path.write_text(custom_content)
+
+        output = self.run_cli("get-tasks", "--all", "--accept", "owner:alice", "--select", "ID,Owner", env=env).stdout
+        self.assertIn("OT-001", output)
+        self.assertIn("alice", output)
+
+        output = self.run_cli("get-tasks", "--all", "--accept", "owner:bob", env=env).stdout
+        self.assertNotIn("OT-001", output)
+
     def test_workflow_surfaces(self):
         self.run_cli("update-task", "1", "--epic", "poc")
         output = self.run_cli("work-on-task", "1", "--start").stdout

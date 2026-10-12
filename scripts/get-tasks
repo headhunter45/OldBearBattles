@@ -211,7 +211,51 @@ has_duplicate_cols() {
     [ "$col_count" -ne "$uniq_count" ]
 }
 
-if command -v filter-table >/dev/null 2>&1 && ! has_duplicate_cols "${SELECT_COLS:-}"; then
+summary_table_has_all_cols() {
+    local tasks_file="$1"
+    local select_cols="$2"
+    shift 2
+    local filter_preds=("$@")
+
+    local table_header
+    table_header=$(grep -m 1 '^| ID' "$tasks_file" 2>/dev/null || true)
+    [ -z "$table_header" ] && return 1
+
+    local header_cols=" "
+    IFS='|' read -ra parts <<< "$table_header"
+    for part in "${parts[@]}"; do
+        local col
+        col=$(echo "$part" | tr '[:upper:]' '[:lower:]' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        if [ -n "$col" ]; then
+            header_cols="${header_cols}${col} "
+        fi
+    done
+
+    if [ -n "$select_cols" ]; then
+        IFS=',' read -ra sel_parts <<< "$select_cols"
+        for sel in "${sel_parts[@]}"; do
+            local sc
+            sc=$(echo "$sel" | tr '[:upper:]' '[:lower:]' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            if [ -n "$sc" ] && [[ "$header_cols" != *" $sc "* ]]; then
+                return 1
+            fi
+        done
+    fi
+
+    for pred in "${filter_preds[@]}"; do
+        if [[ "$pred" == *:* ]]; then
+            local pc="${pred%%:*}"
+            pc=$(echo "$pc" | tr '[:upper:]' '[:lower:]' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            if [ -n "$pc" ] && [[ "$header_cols" != *" $pc "* ]]; then
+                return 1
+            fi
+        fi
+    done
+
+    return 0
+}
+
+if command -v filter-table >/dev/null 2>&1 && ! has_duplicate_cols "${SELECT_COLS:-}" && summary_table_has_all_cols "$TASKS_FILE" "${SELECT_COLS:-}" "${ACCEPTS[@]}" "${REJECTS[@]}"; then
     FILTER_ARGS=("$TASKS_FILE")
     for acc in "${ACCEPTS[@]}"; do
         FILTER_ARGS+=(--accept "$acc")
@@ -239,16 +283,50 @@ if command -v filter-table >/dev/null 2>&1 && ! has_duplicate_cols "${SELECT_COL
     exec filter-table "${FILTER_ARGS[@]}"
 else
     # Python fallback implementation
-    python3 - "$TASKS_FILE" "$SORT_DIR" "$MODE" "${SELECT_COLS:-}" "${#ACCEPTS[@]}" "${ACCEPTS[@]}" "${REJECTS[@]}" <<'PY'
-import sys, re
+    python3 - "$TASKS_FILE" "$SORT_DIR" "$MODE" "${SELECT_COLS:-}" "$SCRIPT_DIR" "${#ACCEPTS[@]}" "${ACCEPTS[@]}" "${REJECTS[@]}" <<'PY'
+import sys, os, re
+from pathlib import Path
+import importlib.machinery, importlib.util
 
-with open(sys.argv[1], 'r', encoding='utf-8') as f:
-    lines = f.readlines()
+tasks_file, sort_dir, mode, select_cols_str, script_dir = sys.argv[1:6]
+accept_count = int(sys.argv[6])
+accepts = sys.argv[7:7 + accept_count]
+rejects = sys.argv[7 + accept_count:]
 
-sort_dir, mode, select_cols_str = sys.argv[2:5]
-accept_count = int(sys.argv[5])
-accepts = sys.argv[6:6 + accept_count]
-rejects = sys.argv[6 + accept_count:]
+def load_update_tasks():
+    ut_path = Path(script_dir) / "update-tasks"
+    if ut_path.exists():
+        loader = importlib.machinery.SourceFileLoader("update_tasks", str(ut_path))
+        spec = importlib.util.spec_from_loader("update_tasks", loader)
+        mod = importlib.util.module_from_spec(spec)
+        loader.exec_module(mod)
+        return mod
+    return None
+
+update_mod = load_update_tasks()
+
+with open(tasks_file, 'r', encoding='utf-8') as f:
+    text = f.read()
+
+lines = text.splitlines(keepends=True)
+fm_data = update_mod.read_frontmatter(text) if update_mod else {}
+
+def make_label_map(items):
+    m = {}
+    for it in (items or []):
+        val = it.get("value", "").strip()
+        lbl = it.get("label", "").strip() or val.replace("-", " ").replace("_", " ").title()
+        if val:
+            m[val.lower()] = lbl
+        if lbl:
+            m[lbl.lower()] = lbl
+    return m
+
+project_label_map = make_label_map(fm_data.get("projects", []))
+status_label_map = make_label_map(fm_data.get("task-statuses", []))
+type_label_map = make_label_map(fm_data.get("task-types", []))
+epic_label_map = make_label_map(fm_data.get("epics", []))
+subproject_label_map = make_label_map(fm_data.get("subprojects", []))
 
 def parse_predicates(pred_list):
     preds = []
@@ -260,7 +338,7 @@ def parse_predicates(pred_list):
     return preds
 
 def normalize_cell(s):
-    val = s.strip()
+    val = str(s).strip()
     link_match = re.match(r'^\[(.*?)\]\(.*?\)$', val)
     if link_match:
         val = link_match.group(1).strip()
@@ -268,6 +346,76 @@ def normalize_cell(s):
 
 parsed_accepts = parse_predicates(list(accepts) if isinstance(accepts, (list, tuple)) else [])
 parsed_rejects = parse_predicates(list(rejects) if isinstance(rejects, (list, tuple)) else [])
+
+detail_tasks = {}
+detail_start = text.find("## Detailed Tasks")
+if detail_start != -1:
+    notes_start = text.find("\n---\n\n## Notes", detail_start)
+    if notes_start == -1:
+        notes_start = len(text)
+    detail_body = text[detail_start + len("## Detailed Tasks"):notes_start]
+    chunks = re.split(r'(?=<a\s+[^>]*\bid=|<id=)', detail_body)
+    for chunk in chunks:
+        chunk_clean = chunk.strip()
+        if not chunk_clean:
+            continue
+        anchor_m = re.search(r'<(?:a\s+[^>]*\bid=|\bid=)["\']([a-zA-Z][a-zA-Z0-9_-]*-\d+)["\']([^>]*)>', chunk_clean, re.IGNORECASE)
+        if not anchor_m:
+            continue
+        full_aid = anchor_m.group(1).lower()
+        num_m = re.search(r'\d+$', full_aid)
+        num_str = str(int(num_m.group(0))) if num_m else ""
+
+        anchor_tag_rest = anchor_m.group(2)
+        raw_attrs = {}
+        for attr_m in re.finditer(r'data-([a-zA-Z0-9_-]+)=["\']([^"\']*)["\']', anchor_tag_rest):
+            k = attr_m.group(1).lower()
+            raw_attrs[k] = attr_m.group(2)
+
+        if "task-type" in raw_attrs and "type" not in raw_attrs:
+            raw_attrs["type"] = raw_attrs["task-type"]
+
+        desc_m = re.search(r'\*\*Description:\*\*\s*\n(.*?)(?=\n###|\n<a\s|\n---\s*$|\Z)', chunk_clean, re.DOTALL)
+        if desc_m:
+            desc_val = desc_m.group(1).strip()
+        else:
+            desc_m2 = re.search(r'\*\*Description:\*\*\s*\n(.*)$', chunk_clean, re.DOTALL)
+            desc_val = desc_m2.group(1).strip() if desc_m2 else ""
+        raw_attrs["description"] = desc_val
+
+        if "subproject" not in raw_attrs:
+            subp_m = re.search(r'^\*\*Subproject:\*\*\s*([^\n]+)$', chunk_clean, re.MULTILINE)
+            if subp_m:
+                raw_attrs["subproject"] = subp_m.group(1).strip()
+
+        if "epic" not in raw_attrs:
+            epic_m = re.search(r'^\*\*Epic:\*\*\s*([^\n]+)$', chunk_clean, re.MULTILINE)
+            if epic_m:
+                raw_attrs["epic"] = epic_m.group(1).strip()
+
+        title_m = re.search(r'^###\s+(.+)$', chunk_clean, re.MULTILINE)
+        if title_m:
+            raw_attrs["title"] = title_m.group(1).strip()
+
+        disp_attrs = dict(raw_attrs)
+        if "project" in raw_attrs:
+            disp_attrs["project"] = project_label_map.get(raw_attrs["project"].lower(), raw_attrs["project"])
+        if "status" in raw_attrs:
+            disp_attrs["status"] = status_label_map.get(raw_attrs["status"].lower(), raw_attrs["status"])
+        if "type" in raw_attrs:
+            disp_attrs["type"] = type_label_map.get(raw_attrs["type"].lower(), raw_attrs["type"])
+        if "epic" in raw_attrs:
+            disp_attrs["epic"] = epic_label_map.get(raw_attrs["epic"].lower(), raw_attrs["epic"])
+        if "subproject" in raw_attrs:
+            disp_attrs["subproject"] = subproject_label_map.get(raw_attrs["subproject"].lower(), raw_attrs["subproject"])
+
+        task_info = {
+            "display": disp_attrs,
+            "raw": raw_attrs,
+        }
+        detail_tasks[full_aid] = task_info
+        if num_str:
+            detail_tasks[num_str] = task_info
 
 in_table = False
 headers = []
@@ -286,12 +434,35 @@ for line in lines:
         parts = [p.strip() for p in line.strip().split('|')[1:-1]]
         if len(parts) >= len(headers) and not parts[0].startswith(':-'):
             row_dict = {headers[i]: parts[i] for i in range(len(headers))}
-            
+
+            row_id = row_dict.get('id', '').strip()
+            row_id_clean = re.sub(r'^\[(.*?)\]\(.*?\)$', r'\1', row_id).strip()
+            num_m = re.search(r'\d+$', row_id_clean)
+            num_str = str(int(num_m.group(0))) if num_m else ""
+
+            task_info = detail_tasks.get(row_id_clean.lower()) or (detail_tasks.get(num_str) if num_str else None) or {"display": {}, "raw": {}}
+            disp_attrs = task_info["display"]
+            raw_attrs = task_info["raw"]
+
+            for k, v in disp_attrs.items():
+                if k not in row_dict:
+                    row_dict[k] = v
+
+            row_raw_attrs = dict(row_dict)
+            for k, v in raw_attrs.items():
+                row_raw_attrs[k] = v
+
             # Check accepts
             accept_ok = True
             for col, allowed in parsed_accepts:
                 val = normalize_cell(row_dict.get(col, ''))
-                if val not in allowed:
+                raw_val = normalize_cell(row_raw_attrs.get(col, ''))
+                desc_match = False
+                if col == 'description':
+                    clean_desc = normalize_cell(' '.join(row_dict.get(col, '').split()))
+                    if clean_desc in allowed or any(a in clean_desc for a in allowed):
+                        desc_match = True
+                if val not in allowed and raw_val not in allowed and not desc_match:
                     accept_ok = False
                     break
             if not accept_ok:
@@ -301,7 +472,13 @@ for line in lines:
             reject_hit = False
             for col, disallowed in parsed_rejects:
                 val = normalize_cell(row_dict.get(col, ''))
-                if val in disallowed:
+                raw_val = normalize_cell(row_raw_attrs.get(col, ''))
+                desc_match = False
+                if col == 'description':
+                    clean_desc = normalize_cell(' '.join(row_dict.get(col, '').split()))
+                    if clean_desc in disallowed or any(d in clean_desc for d in disallowed):
+                        desc_match = True
+                if val in disallowed or raw_val in disallowed or desc_match:
                     reject_hit = True
                     break
             if reject_hit:
@@ -316,15 +493,24 @@ raw_rows.sort(
 )
 
 header_case_map = {h.lower(): h for h in header_display}
+header_case_map.setdefault("id", "ID")
+header_case_map.setdefault("title", "Title")
+header_case_map.setdefault("project", "Project")
+header_case_map.setdefault("subproject", "Subproject")
+header_case_map.setdefault("epic", "Epic")
+header_case_map.setdefault("status", "Status")
+header_case_map.setdefault("type", "Type")
+header_case_map.setdefault("description", "Description")
+
 if select_cols_str:
     req_cols = [c.strip() for c in select_cols_str.split(',') if c.strip()]
-    out_headers = [header_case_map.get(c.lower(), c) for c in req_cols if c.lower() in headers]
+    out_headers = [header_case_map.get(c.lower(), c.replace('-', ' ').replace('_', ' ').title()) for c in req_cols]
 else:
     if mode == 'all':
         out_headers = ['ID', 'Title', 'Project']
-        if 'subproject' in headers:
+        if 'subproject' in headers or any(bool(r.get('subproject')) for r in raw_rows):
             out_headers.append('Subproject')
-        if 'epic' in headers:
+        if 'epic' in headers or any(bool(r.get('epic')) for r in raw_rows):
             out_headers.append('Epic')
         out_headers.append('Status')
     else:
@@ -342,6 +528,8 @@ for r in raw_rows:
             clean_t = val.strip('*').strip('_').strip()
             st = r.get('status', '').lower()
             val = f'**{clean_t}**' if st in ('pending', 'ready') else f'*{clean_t}*' if st in ('triage', 'planning') else clean_t
+        elif k == 'description':
+            val = ' '.join(val.split())
         row_vals.append(val)
     formatted_rows.append(row_vals)
     for idx, v in enumerate(row_vals):

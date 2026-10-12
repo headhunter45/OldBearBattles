@@ -516,6 +516,14 @@ def update_tasks_document(tasks_path):
         normalized_aid = normalized_id.lower()
         anchor_replacements[anchor_match.group(2).lower()] = normalized_aid
 
+        desc_m = re.search(r'\*\*Description:\*\*\s*\n(.*)$', chunk, re.DOTALL)
+        task_desc = desc_m.group(1).strip() if desc_m else ""
+
+        data_attrs = {}
+        for attr_m in re.finditer(r'data-([a-zA-Z0-9_-]+)=["\']([^"\']*)["\']', anchor_tag):
+            attr_k = attr_m.group(1).lower()
+            data_attrs[attr_k] = attr_m.group(2)
+
         if subproj_key:
             anchor_tag_str = f'<a id="{normalized_aid}" class="task" data-project="{proj_key}" data-subproject="{subproj_key}" data-status="{status_key}" data-task-type="{type_key}"></a>'
             subproj_line = f"**Subproject:** {expected_subproj}\n"
@@ -526,6 +534,14 @@ def update_tasks_document(tasks_path):
         if epic_key:
             anchor_tag_str = anchor_tag_str.replace('></a>', f' data-epic="{epic_key}"></a>')
         epic_line = f"**Epic:** {expected_epic}\n" if epic_key else ""
+
+        extra_attrs_str = "".join(
+            f' data-{k}="{v}"'
+            for k, v in data_attrs.items()
+            if k not in ("project", "subproject", "status", "task-type", "epic")
+        )
+        if extra_attrs_str:
+            anchor_tag_str = anchor_tag_str.replace('></a>', f'{extra_attrs_str}></a>')
 
         new_header_block = (
             f'{anchor_tag_str}\n'
@@ -547,7 +563,7 @@ def update_tasks_document(tasks_path):
 
         updated_detailed_chunks.append(updated_chunk)
 
-        updated_task_records.append({
+        task_rec = {
             "num": num,
             "id": normalized_id,
             "aid": normalized_aid,
@@ -557,23 +573,45 @@ def update_tasks_document(tasks_path):
             "epic": expected_epic,
             "status": expected_status,
             "type": expected_type,
-        })
+            "description": task_desc,
+        }
+        for k, v in data_attrs.items():
+            if k not in task_rec:
+                task_rec[k] = v
+        updated_task_records.append(task_rec)
 
     # Assemble sorted, updated Detailed Tasks section
     sorted_detailed_tasks = "\n\n".join(updated_detailed_chunks)
 
     # 5. Rebuild Summary Table (Rendered from the sorted, updated task details)
-    has_subprojects = any(bool(t.get("subproject")) for t in updated_task_records)
-    if has_subprojects:
-        summary_headers = ["ID", "Title", "Project", "Subproject", "Status", "Type"]
-        alignments = [":---", ":---", ":---", ":---", ":---", ":---"]
+    summary_cols_config = fm_data.get("summary-columns")
+    custom_summary_cols = []
+    if summary_cols_config and isinstance(summary_cols_config, list):
+        for col_item in summary_cols_config:
+            if isinstance(col_item, dict):
+                k = str(col_item.get("key") or col_item.get("label") or "").strip()
+                lbl = str(col_item.get("label") or k).strip()
+            else:
+                k = str(col_item).strip()
+                lbl = k.replace("-", " ").replace("_", " ").title()
+            if k:
+                custom_summary_cols.append({"key": k.lower(), "label": lbl})
+
+    if custom_summary_cols:
+        summary_headers = [c["label"] for c in custom_summary_cols]
+        alignments = [":---"] * len(summary_headers)
     else:
-        summary_headers = ["ID", "Title", "Project", "Status", "Type"]
-        alignments = [":---", ":---", ":---", ":---", ":---"]
-    has_epics = bool(epic_list)
-    if has_epics:
-        summary_headers.insert(-2, "Epic")
-        alignments.insert(-2, ":---")
+        has_subprojects = any(bool(t.get("subproject")) for t in updated_task_records)
+        if has_subprojects:
+            summary_headers = ["ID", "Title", "Project", "Subproject", "Status", "Type"]
+            alignments = [":---", ":---", ":---", ":---", ":---", ":---"]
+        else:
+            summary_headers = ["ID", "Title", "Project", "Status", "Type"]
+            alignments = [":---", ":---", ":---", ":---", ":---"]
+        has_epics = bool(epic_list)
+        if has_epics:
+            summary_headers.insert(-2, "Epic")
+            alignments.insert(-2, ":---")
 
     summary_rows = []
 
@@ -603,13 +641,39 @@ def update_tasks_document(tasks_path):
             formatted_title = clean_title
 
         formatted_type = f"[{task['type']}](#{task['aid']})"
-        row = [task["id"], formatted_title, task["project"]]
-        if has_subprojects:
-            row.append(task["subproject"])
-        if has_epics:
-            row.append(task["epic"])
-        row.extend([task["status"], formatted_type])
-        summary_rows.append(row)
+
+        if custom_summary_cols:
+            row = []
+            for col_info in custom_summary_cols:
+                k = col_info["key"]
+                if k == "id":
+                    row.append(task["id"])
+                elif k == "title":
+                    row.append(formatted_title)
+                elif k in ("type", "task-type"):
+                    row.append(formatted_type)
+                elif k == "status":
+                    row.append(task["status"])
+                elif k == "project":
+                    row.append(task["project"])
+                elif k == "subproject":
+                    row.append(task.get("subproject", ""))
+                elif k == "epic":
+                    row.append(task.get("epic", ""))
+                elif k == "description":
+                    clean_desc = " ".join(task.get("description", "").split())
+                    row.append(clean_desc)
+                else:
+                    row.append(task.get(k, ""))
+            summary_rows.append(row)
+        else:
+            row = [task["id"], formatted_title, task["project"]]
+            if has_subprojects:
+                row.append(task["subproject"])
+            if has_epics:
+                row.append(task["epic"])
+            row.extend([task["status"], formatted_type])
+            summary_rows.append(row)
 
     new_summary_table = build_markdown_table(
         summary_headers, summary_rows, alignments=alignments
