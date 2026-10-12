@@ -86,3 +86,19 @@ jobs:
             PUSH_FLAG="--push"
           fi
           bash scripts/ci-build.sh ${PUSH_FLAG}
+
+      - name: Run CI Build Script
+        env:
+          IMAGE_REGISTRY: ${{ inputs.registry || secrets.REGISTRY_PREFIX || format('ghcr.io/{0}/', github.repository_owner) }}
+          INPUT_PUSH: ${{ inputs.push }}
+          GITHUB_REF: ${{ github.ref }}
+        run: |
+          EXTRA_ARGS=()
+
+          if [ "$GITHUB_REF" = "refs/heads/develop" ]; then
+            EXTRA_ARGS+=(--push --tag dev --single-tag)
+          elif [ "$INPUT_PUSH" = "true" ] || [ "$GITHUB_REF" = "refs/heads/main" ] || [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            EXTRA_ARGS+=(--push)
+          fi
+
+          bash scripts/ci-build.sh "${EXTRA_ARGS[@]}"
