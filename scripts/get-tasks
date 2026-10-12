@@ -36,21 +36,55 @@ SELECT_COLS=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -h|--help)
-            echo "usage: get-tasks [-h] [-p|--planning] [--all] [--accept PREDICATE] [--reject PREDICATE] [--sort {asc,desc}] [-s|--select COLS] [-f|--file PATH]"
-            echo ""
-            echo "Lists tasks from docs/tasks.md sorted by ID."
-            echo ""
-            echo "options:"
-            echo "  -h, --help            Show this help message and exit"
-            echo "  -p, --planning        Show tasks in Triage and Planning status"
-            echo "  --all                 Show all tasks regardless of status"
-            echo "  --accept PREDICATE    Include rows matching predicate (e.g. 'Status:Fixed', 'Project:Engine', 'Epic:poc')"
-            echo "                       Epic filters accept frontmatter values or labels"
-            echo "  --reject PREDICATE    Exclude rows matching predicate (e.g. 'Status:Cancelled')"
-            echo "  --sort [asc|desc]     Sort order by task ID (default: desc)"
-            echo "  -s, --select COLS     Columns to display (e.g. 'ID,Title,Project,Epic,Status')"
-            echo "  -f, --file PATH       Path to tasks.md (overrides TASKS_FILE)"
+        -h|--help|help)
+            cat <<'EOF'
+usage: get-tasks [-h] [-p|--planning] [--all] [--accept PREDICATE]
+                 [--reject PREDICATE] [--sort {asc,desc}]
+                 [-s|--select COLS] [-f|--file PATH]
+
+Lists and filters tasks from docs/tasks.md sorted by task ID.
+
+Defaults:
+  Without filtering flags, lists tasks with Status: Triage.
+  Use -p/--planning or --all to view tasks in other statuses.
+
+options:
+  -h, --help            Show this help message and exit
+  -p, --planning        Show tasks in Triage and Planning status
+  --all                 Show all tasks regardless of status
+  --accept PREDICATE    Include tasks matching predicate (e.g. 'Status:Triage',
+                        'Type:Bug', 'Project:Shared', 'Epic:poc').
+                        Multiple --accept flags are ANDed together.
+                        Values for the same column intersect; conflicting values
+                        with no overlap trigger an impossible filter error.
+                        Predicates support comma-separated values (ORed within column).
+  --reject PREDICATE    Exclude tasks matching predicate (e.g. 'Status:Cancelled').
+                        Multiple --reject flags are ORed together.
+  --sort {asc,desc}     Sort order by task ID (default: desc)
+  -s, --select COLS     Columns to display (e.g. 'ID,Title,Status').
+                        Multiple --select flags append columns in order.
+                        Duplicate columns are preserved (e.g. -s id,title,id).
+  -f, --file PATH       Path to tasks.md (defaults to docs/tasks.md or TASKS_FILE)
+
+Predicate Syntax:
+  PREDICATE format is 'Column:value1,value2'. Both column names and values
+  are case-insensitive and match against frontmatter keys or labels
+  (e.g. 'epic:poc' and 'Epic:Proof of Concept' both match).
+
+Examples:
+  get-tasks                             # Show tasks in Triage status
+  get-tasks -p                          # Show tasks in Triage and Planning
+  get-tasks --all                       # Show all tasks
+  get-tasks --accept type:bug           # Show bugs in Triage status
+  get-tasks --all --accept status:done  # Show completed tasks
+  get-tasks --accept status:planning --accept type:feature
+                                        # Show planning features (ANDed)
+  get-tasks --reject status:done --reject status:cancelled
+                                        # Exclude finished tasks (ORed)
+  get-tasks --select id,title,status    # Select specific columns
+  get-tasks -s id -s title -s id        # Append columns with duplicates
+  get-tasks --sort asc                  # Sort by task ID ascending
+EOF
             exit 0
             ;;
         -p|--planning)

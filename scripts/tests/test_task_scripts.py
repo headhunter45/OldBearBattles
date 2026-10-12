@@ -348,6 +348,17 @@ class TaskScriptsTest(unittest.TestCase):
                 self.assertEqual(data_cols[2], "OT-001")
                 self.assertEqual(data_cols[1], "Original")
 
+    def test_get_tasks_help_option(self):
+        env = {**self.env, "PATH": "/usr/bin:/bin"}
+        for flag in ("-h", "--help", "help"):
+            with self.subTest(flag=flag):
+                output = self.run_cli("get-tasks", flag, env=env).stdout
+                self.assertIn("usage: get-tasks", output)
+                self.assertIn("Lists and filters tasks from docs/tasks.md", output)
+                self.assertIn("--accept PREDICATE", output)
+                self.assertIn("--select COLS", output)
+                self.assertIn("Examples:", output)
+
     def test_workflow_surfaces(self):
         self.run_cli("update-task", "1", "--epic", "poc")
         output = self.run_cli("work-on-task", "1", "--start").stdout
