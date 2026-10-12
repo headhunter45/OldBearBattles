@@ -36,14 +36,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: 'yarn'
-
       - name: Enable Corepack
         run: corepack enable
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: 'yarn'
 
       - name: Install dependencies
         run: yarn install --immutable
