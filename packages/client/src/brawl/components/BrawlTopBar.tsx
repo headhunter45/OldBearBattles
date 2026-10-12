@@ -236,7 +236,12 @@ export const BrawlTopBar: React.FC<BrawlTopBarProps> = ({
               flexShrink: 0,
             }}
           >
-            <span>🐻 VTT</span>
+            <img
+              src="/logo-transparent/favicon-32x32.png"
+              alt=""
+              style={{ width: '14px', height: '14px', objectFit: 'contain' }}
+            />
+            <span>VTT</span>
           </button>
         )}
 

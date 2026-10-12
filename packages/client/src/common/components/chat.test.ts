@@ -140,6 +140,7 @@ describe('Dice Parser & Slash Command Utilities', () => {
   });
 
   it('handles /sync command and token selection logic (Bug #55)', async () => {
+    updateActiveFlags({ dndbeyond: true });
     const testPlayer = {
       id: 'p-1',
       name: 'Ranger',
@@ -691,7 +692,7 @@ describe('Dice Parser & Slash Command Utilities', () => {
   });
 
   it('handles /import command for PF2e pack JSON and Open5e URLs (OB-177, OB-153)', async () => {
-    updateActiveFlags({ search_open5e: true });
+    updateActiveFlags({ search_open5e: true, dndbeyond: true });
     const testPlayer = {
       id: 'p-import',
       name: 'GameMaster',

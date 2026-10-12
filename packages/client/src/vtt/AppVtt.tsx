@@ -1420,11 +1420,15 @@ export const AppVtt: React.FC = () => {
       maxHp: char.maxHp,
       tempHp: 0,
       speed: char.speed,
+      initiativeBonus: char.initiativeBonus,
       ownerId: localPlayer.id,
       isPlayerToken: true,
       conditions: [],
       isProp: false,
       layer: 'token',
+      character: char,
+      actions: char.actions && char.actions.length > 0 ? char.actions : [],
+      spells: char.spells && char.spells.length > 0 ? char.spells : [],
     };
 
     setSession((prev) => {

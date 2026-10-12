@@ -179,7 +179,17 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '1.25rem' }}>🐻</span>
+            <img
+              src="/logo-transparent/icon-192x192.png"
+              alt="Old Bear Battles"
+              style={{
+                width: '28px',
+                height: '28px',
+                objectFit: 'contain',
+                filter: 'drop-shadow(0 0 6px var(--accent-glow))',
+                flexShrink: 0,
+              }}
+            />
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <span style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
                 Old Bear Battles
@@ -559,8 +569,19 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
               }}
             >
               <Swords size={16} />
-              <span>
-                {detectGameMode() === 'brawl' ? 'Switch to VTT Mode 🐻' : 'Switch to Brawl Mode ⚔️'}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                {detectGameMode() === 'brawl' ? (
+                  <>
+                    <span>Switch to VTT Mode</span>
+                    <img
+                      src="/logo-transparent/favicon-32x32.png"
+                      alt=""
+                      style={{ width: '16px', height: '16px', objectFit: 'contain' }}
+                    />
+                  </>
+                ) : (
+                  'Switch to Brawl Mode ⚔️'
+                )}
               </span>
             </button>
           </div>

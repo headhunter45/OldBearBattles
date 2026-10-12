@@ -107,7 +107,9 @@ describe('Standalone Token Attacks & Actions (OB-200)', () => {
     assert.ok(markup.includes('1d10 dmg'), 'Renders second attack damage');
     // Still shows the unlinked notice because character sheet is not synced
     assert.ok(
-      markup.includes('No D&amp;D Beyond character linked') || markup.includes('No D&D Beyond character linked'),
+      markup.includes('No D&amp;D Beyond character linked') ||
+        markup.includes('No D&D Beyond character linked') ||
+        markup.includes('No character sheet linked.'),
       'Retains unsynced notice while providing attacks'
     );
   });

@@ -47,18 +47,18 @@ describe('System-Wide Feature Flags (OB-232)', () => {
     assert.strictEqual(normalizeFeatureKey('FEATURE_BRAWL_MODE'), 'brawl_mode');
   });
 
-  it('provides default states where chess_clock and brawl_mode are false and others are true', () => {
+  it('provides default states matching standard platform defaults', () => {
     assert.strictEqual(DEFAULT_FEATURE_FLAGS.chess_clock, false);
     assert.strictEqual(DEFAULT_FEATURE_FLAGS.brawl_mode, false);
     assert.strictEqual(DEFAULT_FEATURE_FLAGS.voice_chat, true);
     assert.strictEqual(DEFAULT_FEATURE_FLAGS.soundboard, true);
     assert.strictEqual(DEFAULT_FEATURE_FLAGS.dice_roller, true);
-    assert.strictEqual(DEFAULT_FEATURE_FLAGS.scoreboard, true);
-    assert.strictEqual(DEFAULT_FEATURE_FLAGS.objectives, true);
+    assert.strictEqual(DEFAULT_FEATURE_FLAGS.scoreboard, false);
+    assert.strictEqual(DEFAULT_FEATURE_FLAGS.objectives, false);
     assert.strictEqual(DEFAULT_FEATURE_FLAGS.to_mode, true);
-    assert.strictEqual(DEFAULT_FEATURE_FLAGS.dndbeyond, true);
-    assert.strictEqual(DEFAULT_FEATURE_FLAGS.pathbuilder, true);
-    assert.strictEqual(DEFAULT_FEATURE_FLAGS.army_roster, true);
+    assert.strictEqual(DEFAULT_FEATURE_FLAGS.dndbeyond, false);
+    assert.strictEqual(DEFAULT_FEATURE_FLAGS.pathbuilder, false);
+    assert.strictEqual(DEFAULT_FEATURE_FLAGS.army_roster, false);
     assert.strictEqual(DEFAULT_FEATURE_FLAGS.fog_of_war, true);
   });
 

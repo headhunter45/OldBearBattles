@@ -122,7 +122,9 @@ describe('CharacterFlyout Unbound Token Reset (OB-207)', () => {
 
     // Should indicate no character linked and offer manual token HP
     assert.ok(
-      markup.includes('No D&amp;D Beyond character linked') || markup.includes('No D&D Beyond character linked'),
+      markup.includes('No D&amp;D Beyond character linked') ||
+        markup.includes('No D&D Beyond character linked') ||
+        markup.includes('No character sheet linked.'),
       'Displays no character linked notice'
     );
     assert.ok(markup.includes('Sync with Token (Hero)'), 'Offers sync button with the unbound token name');
@@ -164,13 +166,16 @@ describe('CharacterFlyout Unbound Token Reset (OB-207)', () => {
     // Target token has no character, so it should reset to default state for this token
     assert.ok(markup.includes('Character Sheet'), 'Header shows Character Sheet');
     assert.ok(
-      markup.includes('No D&amp;D Beyond character linked') || markup.includes('No D&D Beyond character linked'),
+      markup.includes('No D&amp;D Beyond character linked') ||
+        markup.includes('No D&D Beyond character linked') ||
+        markup.includes('No character sheet linked.'),
       'Does not bind player character automatically to unlinked token'
     );
     assert.ok(markup.includes('Sync with Token (Hero)'), 'Sync button targets the selected Hero token');
   });
 
   it('keeps D&D Beyond URL input empty for tokens with non-D&D Beyond IDs (OB-213)', () => {
+    updateActiveFlags({ dndbeyond: true });
     // When a token has a character with internal ID 'char-12345', it should NOT prefill the input with that ID
     const markup = renderToStaticMarkup(
       React.createElement(CharacterFlyout, {

@@ -407,6 +407,8 @@ export const CharacterFlyout: React.FC<CharacterFlyoutProps> = ({
       speed: char.speed,
       initiativeBonus: char.initiativeBonus,
       character: char,
+      actions: char.actions && char.actions.length > 0 ? char.actions : [],
+      spells: char.spells && char.spells.length > 0 ? char.spells : [],
     };
     if (char.avatarUrl) {
       updates.imageUrl = char.avatarUrl;

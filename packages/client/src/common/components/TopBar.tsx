@@ -99,24 +99,18 @@ export const TopBar: React.FC<TopBarProps> = ({
           <Menu size={18} />
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <div
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <img
+            src="/logo-transparent/icon-192x192.png"
+            alt="Old Bear Battles"
             style={{
               width: '28px',
               height: '28px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--accent-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 800,
-              fontSize: '14px',
-              color: 'white',
-              boxShadow: '0 0 10px var(--accent-glow)',
+              objectFit: 'contain',
+              filter: 'drop-shadow(0 0 6px var(--accent-glow))',
+              flexShrink: 0,
             }}
-          >
-            🐻
-          </div>
+          />
           <div
             style={{
               display: 'flex',
