@@ -113,7 +113,7 @@ def get_task(task_id_input, tasks_file=None):
 
 def main():
     parser = argparse.ArgumentParser(description="Get detailed info and metadata for a task in tasks.md")
-    parser.add_argument("task_id", help="Task number or prefixed ID (e.g. 18, PREFIX-018)")
+    parser.add_argument("task_id", nargs="+", help="One or more task numbers or prefixed IDs (e.g. 18, PREFIX-018)")
     parser.add_argument("-j", "--json", action="store_true", help="Output details as JSON")
     parser.add_argument("-d", "--description", "--description-only", dest="description", action="store_true", help="Output description and checklist")
     parser.add_argument("--id", action="store_true", help="Output task ID only")
@@ -129,41 +129,59 @@ def main():
     args = parser.parse_args()
 
     try:
-        task = get_task(args.task_id, tasks_file=args.file)
+        task_ids = []
+        for arg in args.task_id:
+            for item in arg.split(","):
+                item = item.strip()
+                if item:
+                    task_ids.append(item)
+
+        tasks = [get_task(tid, tasks_file=args.file) for tid in task_ids]
+
         if args.json:
-            print(json.dumps(task, indent=2))
+            if len(tasks) == 1:
+                print(json.dumps(tasks[0], indent=2))
+            else:
+                print(json.dumps(tasks, indent=2))
         elif args.metadata_only:
-            print(f"ID: {task['id']}")
-            print(f"Title: {task['title']}")
-            print(f"Project: {task['project']}")
-            if task.get("subproject"):
-                print(f"Subproject: {task['subproject']}")
-            if task.get("epic"):
-                print(f"Epic: {task['epic_label']}")
-            print(f"Status: {task['status']}")
-            print(f"Type: {task['type']}")
+            for i, task in enumerate(tasks):
+                if i > 0:
+                    print()
+                print(f"ID: {task['id']}")
+                print(f"Title: {task['title']}")
+                print(f"Project: {task['project']}")
+                if task.get("subproject"):
+                    print(f"Subproject: {task['subproject']}")
+                if task.get("epic"):
+                    print(f"Epic: {task['epic_label']}")
+                print(f"Status: {task['status']}")
+                print(f"Type: {task['type']}")
         elif any([args.id, args.title, args.project, args.subproject, args.epic, args.status, args.type, args.description]):
-            output_parts = []
-            if args.id:
-                output_parts.append(task["id"])
-            if args.title:
-                output_parts.append(task["title"])
-            if args.project:
-                output_parts.append(task["project"])
-            if args.subproject:
-                output_parts.append(task["subproject"])
-            if args.epic:
-                output_parts.append(task["epic"])
-            if args.status:
-                output_parts.append(task["status"])
-            if args.type:
-                output_parts.append(task["type"])
-            if args.description:
-                output_parts.append(task["description"])
-            for part in output_parts:
-                print(part)
+            for task in tasks:
+                output_parts = []
+                if args.id:
+                    output_parts.append(task["id"])
+                if args.title:
+                    output_parts.append(task["title"])
+                if args.project:
+                    output_parts.append(task["project"])
+                if args.subproject:
+                    output_parts.append(task["subproject"])
+                if args.epic:
+                    output_parts.append(task["epic"])
+                if args.status:
+                    output_parts.append(task["status"])
+                if args.type:
+                    output_parts.append(task["type"])
+                if args.description:
+                    output_parts.append(task["description"])
+                for part in output_parts:
+                    print(part)
         else:
-            print(task["raw_markdown"])
+            for i, task in enumerate(tasks):
+                if i > 0:
+                    print()
+                print(task["raw_markdown"])
     except Exception as e:
         sys.stderr.write(f"Error: {e}\n")
         sys.exit(1)

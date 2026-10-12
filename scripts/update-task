@@ -227,7 +227,7 @@ def update_task_detail(
 
 def main():
     parser = argparse.ArgumentParser(description="Modify task details and synchronize tasks.md")
-    parser.add_argument("task_id", help="Task number or prefixed ID (e.g. 18, PREFIX-018)")
+    parser.add_argument("task_id", nargs="+", help="One or more task numbers or prefixed IDs (e.g. 18, PREFIX-018)")
     parser.add_argument("--epic", default=None, help="Update epic using a frontmatter value or label")
     parser.add_argument("--clear-epic", action="store_true", help="Remove epic from task")
     parser.add_argument("-T", "--title", default=None, help="Update task title")
@@ -253,27 +253,42 @@ def main():
         with open(args.desc_file, "r", encoding="utf-8") as df:
             desc_content = df.read()
 
+    task_ids = []
+    for arg in args.task_id:
+        for item in arg.split(","):
+            item = item.strip()
+            if item:
+                task_ids.append(item)
+
+    updated_tasks = []
     try:
-        formatted_id, path = update_task_detail(
-            task_id_input=args.task_id,
-            title=args.title,
-            project=args.project,
-            subproject=args.subproject,
-            clear_subproject=args.clear_subproject,
-            status=args.status,
-            task_type=args.type,
-            description=desc_content,
-            append_description=args.append_description,
-            check_items=args.check,
-            uncheck_items=args.uncheck,
-            check_all=args.check_all,
-            uncheck_all=args.uncheck_all,
-            sync=not args.no_sync,
-            tasks_file=args.file,
-            epic=args.epic,
-            clear_epic=args.clear_epic,
-        )
-        print(f"Successfully updated task {formatted_id} in {path}")
+        try:
+            for tid in task_ids:
+                formatted_id, path = update_task_detail(
+                    task_id_input=tid,
+                    title=args.title,
+                    project=args.project,
+                    subproject=args.subproject,
+                    clear_subproject=args.clear_subproject,
+                    status=args.status,
+                    task_type=args.type,
+                    description=desc_content,
+                    append_description=args.append_description,
+                    check_items=args.check,
+                    uncheck_items=args.uncheck,
+                    check_all=args.check_all,
+                    uncheck_all=args.uncheck_all,
+                    sync=False,
+                    tasks_file=args.file,
+                    epic=args.epic,
+                    clear_epic=args.clear_epic,
+                )
+                print(f"Successfully updated task {formatted_id} in {path}")
+                updated_tasks.append((formatted_id, path))
+        finally:
+            if not args.no_sync and updated_tasks:
+                update_mod = load_update_tasks_module()
+                update_mod.update_tasks_document(updated_tasks[-1][1])
     except Exception as e:
         sys.stderr.write(f"Error: {e}\n")
         sys.exit(1)

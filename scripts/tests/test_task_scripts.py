@@ -359,6 +359,42 @@ class TaskScriptsTest(unittest.TestCase):
                 self.assertIn("--select COLS", output)
                 self.assertIn("Examples:", output)
 
+    def test_multiple_task_ids_in_get_task_and_update_task(self):
+        self.run_cli("add-task", "Second task", "--status", "pending")
+        self.run_cli("add-task", "Third task", "--status", "pending")
+
+        # get-task with multiple IDs (space-separated and comma-separated)
+        out_ids = self.run_cli("get-task", "1", "2", "--id").stdout.strip().splitlines()
+        self.assertEqual(out_ids, ["OT-001", "OT-002"])
+
+        out_comma = self.run_cli("get-task", "1,2,3", "--id").stdout.strip().splitlines()
+        self.assertEqual(out_comma, ["OT-001", "OT-002", "OT-003"])
+
+        # get-task with multiple IDs and --json returns a JSON array
+        json_tasks = json.loads(self.run_cli("get-task", "1", "2", "--json").stdout)
+        self.assertIsInstance(json_tasks, list)
+        self.assertEqual(len(json_tasks), 2)
+        self.assertEqual(json_tasks[0]["id"], "OT-001")
+        self.assertEqual(json_tasks[1]["id"], "OT-002")
+
+        # update-task with multiple IDs
+        res = self.run_cli("update-task", "1", "2", "--status", "in_progress")
+        self.assertIn("Successfully updated task OT-001", res.stdout)
+        self.assertIn("Successfully updated task OT-002", res.stdout)
+
+        self.assertEqual(self.get_task("1")["status"], "in_progress")
+        self.assertEqual(self.get_task("2")["status"], "in_progress")
+        self.assertEqual(self.get_task("3")["status"], "pending")
+
+        # update-task with comma-separated IDs
+        res = self.run_cli("update-task", "1,2,3", "--epic", "poc")
+        self.assertIn("Successfully updated task OT-001", res.stdout)
+        self.assertIn("Successfully updated task OT-002", res.stdout)
+        self.assertIn("Successfully updated task OT-003", res.stdout)
+
+        for tid in ("1", "2", "3"):
+            self.assertEqual(self.get_task(tid)["epic"], "poc")
+
     def test_workflow_surfaces(self):
         self.run_cli("update-task", "1", "--epic", "poc")
         output = self.run_cli("work-on-task", "1", "--start").stdout
