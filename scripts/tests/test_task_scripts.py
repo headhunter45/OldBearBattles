@@ -395,6 +395,30 @@ class TaskScriptsTest(unittest.TestCase):
         for tid in ("1", "2", "3"):
             self.assertEqual(self.get_task(tid)["epic"], "poc")
 
+    def test_default_template_in_notes_renders_new_tasks(self):
+        text = self.path.read_text()
+        template_block = (
+            '\n<a id="default-000" class="task" data-project="${task.project.value}" '
+            'data-status="${task.status.value}" data-task-type="${task.type.value}"></a>\n\n'
+            '### ${task.title}\n\n'
+            '**ID:** ${task.id}\n'
+            '**Project:** ${task.project.label}\n'
+            '**Status:** ${task.status.label}\n'
+            '**Type:** ${task.type.label}\n\n'
+            '**Description:**\n${task.description}\n'
+        )
+        self.path.write_text(text.replace("## Notes\n", f"## Notes\n{template_block}"))
+        self.run_cli("add-task", "Templated Task", "--project", "shared", "--status", "pending")
+        task2 = self.get_task("OT-002")
+        self.assertEqual(task2["title"], "Templated Task")
+        self.assertEqual(task2["id"], "OT-002")
+        self.assertIn('data-project="shared"', task2["raw_markdown"])
+
+        # Ensure default-000 is not counted as a real task in update-tasks sync
+        self.run_cli("update-tasks")
+        updated_text = self.path.read_text()
+        self.assertNotIn("default-000", updated_text.split("## Detailed Tasks")[1].split("## Notes")[0])
+
     def test_workflow_surfaces(self):
         self.run_cli("update-task", "1", "--epic", "poc")
         output = self.run_cli("work-on-task", "1", "--start").stdout

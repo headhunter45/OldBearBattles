@@ -122,11 +122,16 @@ def add_task(title, project="shared", subproject=None, task_type="feature", stat
         subproj_key = subproject_value_map.get(sp_in, sp_in)
         subproj_label = subproject_map.get(subproj_key, subproject_map.get(sp_in, subproject.strip().replace("-", " ").replace("_", " ").title()))
 
-    # 2. Find max task ID
+    # 2. Find max task ID (searching only Detailed Tasks, before Notes)
     detail_start = text.find("## Detailed Tasks\n")
     if detail_start == -1:
         raise ValueError("## Detailed Tasks heading not found")
-    ids = [int(m.group(2)) for m in re.finditer(update_mod.TASK_ID_PATTERN, text[detail_start:], re.IGNORECASE)]
+    notes_marker = "\n---\n\n## Notes\n"
+    notes_pos = text.find(notes_marker)
+    if notes_pos == -1:
+        notes_pos = text.find("\n## Notes\n")
+    detail_search_text = text[detail_start:notes_pos] if notes_pos != -1 else text[detail_start:]
+    ids = [int(m.group(2)) for m in re.finditer(update_mod.TASK_ID_PATTERN, detail_search_text, re.IGNORECASE)]
     next_num = (max(ids) + 1) if ids else 1
 
     # Digit width calculation (minimum 3 digits)
@@ -143,29 +148,49 @@ def add_task(title, project="shared", subproject=None, task_type="feature", stat
     else:
         desc_body = "Describe task objectives and implementation requirements here.\n- [ ] "
 
-    if subproj_key:
-        anchor_attrs = f'id="{formatted_aid}" class="task" data-project="{proj_key}" data-subproject="{subproj_key}" data-status="{status_key}" data-task-type="{type_key}"'
-        subproj_line = f"**Subproject:** {subproj_label}\n"
+    template_str = update_mod.extract_task_template(text)
+    if template_str:
+        new_task_chunk = update_mod.render_task_template(
+            template_str=template_str,
+            formatted_id=formatted_id,
+            formatted_aid=formatted_aid,
+            title=title,
+            proj_key=proj_key,
+            proj_label=proj_label,
+            status_key=status_key,
+            status_label=status_label,
+            type_key=type_key,
+            type_label=type_label,
+            desc_body=desc_body,
+            subproj_key=subproj_key,
+            subproj_label=subproj_label,
+            epic_key=epic_key,
+            epic_label=epic_label,
+        ) + "\n"
     else:
-        anchor_attrs = f'id="{formatted_aid}" class="task" data-project="{proj_key}" data-status="{status_key}" data-task-type="{type_key}"'
-        subproj_line = ""
+        if subproj_key:
+            anchor_attrs = f'id="{formatted_aid}" class="task" data-project="{proj_key}" data-subproject="{subproj_key}" data-status="{status_key}" data-task-type="{type_key}"'
+            subproj_line = f"**Subproject:** {subproj_label}\n"
+        else:
+            anchor_attrs = f'id="{formatted_aid}" class="task" data-project="{proj_key}" data-status="{status_key}" data-task-type="{type_key}"'
+            subproj_line = ""
 
-    if epic_key:
-        anchor_attrs += f' data-epic="{epic_key}"'
-    epic_line = f"**Epic:** {epic_label}\n" if epic_key else ""
+        if epic_key:
+            anchor_attrs += f' data-epic="{epic_key}"'
+        epic_line = f"**Epic:** {epic_label}\n" if epic_key else ""
 
-    new_task_chunk = (
-        f'<a {anchor_attrs}></a>\n'
-        f"### {title.strip()}\n"
-        f"**ID:** {formatted_id}\n"
-        f"**Project:** {proj_label}\n"
-        f"{subproj_line}"
-        f"{epic_line}"
-        f"**Status:** {status_label}\n"
-        f"**Type:** {type_label}\n\n"
-        f"**Description:**\n"
-        f"{desc_body}\n"
-    )
+        new_task_chunk = (
+            f'<a {anchor_attrs}></a>\n'
+            f"### {title.strip()}\n"
+            f"**ID:** {formatted_id}\n"
+            f"**Project:** {proj_label}\n"
+            f"{subproj_line}"
+            f"{epic_line}"
+            f"**Status:** {status_label}\n"
+            f"**Type:** {type_label}\n\n"
+            f"**Description:**\n"
+            f"{desc_body}\n"
+        )
 
     # 4. Insert before Notes marker
     notes_marker = "\n---\n\n## Notes\n"

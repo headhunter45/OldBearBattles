@@ -176,6 +176,80 @@ def build_markdown_table(headers, rows, alignments=None):
     return header_line + separator_line + "".join(row_lines)
 
 
+def extract_task_template(text):
+    notes_marker = "## Notes"
+    notes_pos = text.find(notes_marker)
+    if notes_pos == -1:
+        return None
+    notes_body = text[notes_pos + len(notes_marker):]
+    m = re.search(r'(<a\s+[^>]*\bid=["\']default-\d+["\'][^>]*>.*?)(?=\n\s*####|\n\s*---|\Z)', notes_body, re.DOTALL)
+    if m:
+        return m.group(1).strip()
+    return None
+
+
+def render_task_template(
+    template_str,
+    formatted_id,
+    formatted_aid,
+    title,
+    proj_key,
+    proj_label,
+    status_key,
+    status_label,
+    type_key,
+    type_label,
+    desc_body,
+    subproj_key=None,
+    subproj_label=None,
+    epic_key=None,
+    epic_label=None,
+):
+    chunk = template_str
+
+    # Replace id="default-000" or similar anchor id with formatted_aid
+    chunk = re.sub(r'\bid=["\']default-\d+["\']', f'id="{formatted_aid}"', chunk)
+
+    replacements = {
+        "${task.id}": formatted_id,
+        "${task.anchor_id}": formatted_aid,
+        "${task.title}": title.strip(),
+        "${task.project.value}": proj_key,
+        "${task.project.label}": proj_label,
+        "${task.status.value}": status_key,
+        "${task.status.label}": status_label,
+        "${task.type.value}": type_key,
+        "${task.type.label}": type_label,
+        "${task.description}": desc_body,
+        "${task.subproject.value}": subproj_key or "",
+        "${task.subproject.label}": subproj_label or "",
+        "${task.epic.value}": epic_key or "",
+        "${task.epic.label}": epic_label or "",
+    }
+
+    for k, v in replacements.items():
+        chunk = chunk.replace(k, v)
+
+    # If subproject is provided but not in anchor tag
+    if subproj_key:
+        if 'data-subproject=' not in chunk:
+            chunk = re.sub(r'(<a\s+[^>]*\bid=["\'][^"\']+["\'][^>]*)>', rf'\1 data-subproject="{subproj_key}">', chunk, count=1)
+        if '**Subproject:**' not in chunk:
+            chunk = re.sub(r'(\*\*Project:\*\*[^\n]*\n)', rf'\1**Subproject:** {subproj_label}\n', chunk, count=1)
+
+    # If epic is provided but not in anchor tag
+    if epic_key:
+        if 'data-epic=' not in chunk:
+            chunk = re.sub(r'(<a\s+[^>]*\bid=["\'][^"\']+["\'][^>]*)>', rf'\1 data-epic="{epic_key}">', chunk, count=1)
+        if '**Epic:**' not in chunk:
+            if '**Subproject:**' in chunk:
+                chunk = re.sub(r'(\*\*Subproject:\*\*[^\n]*\n)', rf'\1**Epic:** {epic_label}\n', chunk, count=1)
+            else:
+                chunk = re.sub(r'(\*\*Project:\*\*[^\n]*\n)', rf'\1**Epic:** {epic_label}\n', chunk, count=1)
+
+    return chunk
+
+
 def update_tasks_document(tasks_path):
     tasks_path = Path(tasks_path)
     with open(tasks_path, "r", encoding="utf-8") as f:
