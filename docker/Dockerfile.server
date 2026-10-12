@@ -6,18 +6,21 @@ ARG GIT_COMMIT_HASH=""
 ENV APP_VERSION=${APP_VERSION}
 ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH}
 
-COPY package*.json ./
-COPY VERSION* ./
-COPY packages/shared/package*.json ./packages/shared/
-COPY packages/server/package*.json ./packages/server/
+RUN corepack enable
 
-RUN npm install
+COPY package.json yarn.lock .yarnrc.yml ./
+COPY VERSION* ./
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/client/package.json ./packages/client/
+COPY packages/server/package.json ./packages/server/
+
+RUN yarn install --immutable
 
 COPY packages/shared ./packages/shared
-RUN npm run build -w @oldbear/shared
+RUN yarn workspace @oldbear/shared build
 
 COPY packages/server ./packages/server
-RUN npm run build -w @oldbear/server
+RUN yarn workspace @oldbear/server build
 
 FROM node:22-alpine AS runner
 WORKDIR /app
@@ -25,16 +28,15 @@ ARG SERVER_PORT=3001
 ENV NODE_ENV=production
 ENV PORT=${SERVER_PORT}
 
-COPY package*.json ./
+COPY package.json ./
 COPY VERSION* ./
-COPY packages/shared/package*.json ./packages/shared/
-COPY packages/server/package*.json ./packages/server/
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/server/package.json ./packages/server/
 
-RUN npm install --omit=dev
-
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/packages/server/dist ./packages/server/dist
 
 EXPOSE ${SERVER_PORT}
-CMD ["npm", "run", "start", "-w", "@oldbear/server"]
+CMD ["node", "packages/server/dist/index.js"]
 

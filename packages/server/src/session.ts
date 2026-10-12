@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { GameSession, GameMap, Token, FogState } from '@oldbear/shared';
+import { GameSession, GameMap, Token, FogState, parseFeatureFlags, isFeatureFlagActive } from '@oldbear/shared';
 import {
   saveSessionToDb,
   loadSessionFromDb,
@@ -41,7 +41,7 @@ export function generateRoomId(): string {
   return `${adj}-${noun}-${num}`;
 }
 
-export function createDefaultMap(mapId = 'map-default'): GameMap {
+export function createDefaultVttMap(mapId = 'map-default'): GameMap {
   return {
     id: mapId,
     name: 'Ancient Stone Ruins',
@@ -56,7 +56,27 @@ export function createDefaultMap(mapId = 'map-default'): GameMap {
   };
 }
 
-export function createDefaultTokens(mapId: string): Record<string, Token> {
+export function createDefaultBrawlMap(mapId = 'map-default'): GameMap {
+  return {
+    id: mapId,
+    name: 'Tactical Battlefield',
+    imageUrl: '',
+    gridSize: 50,
+    gridType: 'square',
+    gridColor: 'rgba(255, 255, 255, 0.25)',
+    gridOpacity: 0.25,
+    width: 2200,
+    height: 1500,
+    scaleFtPerCell: 1, // 1 inch per grid square
+    showGrid: true,
+  };
+}
+
+export function createDefaultMap(mapId = 'map-default', mode: 'vtt' | 'brawl' = 'vtt'): GameMap {
+  return mode === 'brawl' ? createDefaultBrawlMap(mapId) : createDefaultVttMap(mapId);
+}
+
+export function createDefaultVttTokens(mapId: string): Record<string, Token> {
   const t1Id = 'token-fighter';
   const t2Id = 'token-goblin';
 
@@ -104,16 +124,115 @@ export function createDefaultTokens(mapId: string): Record<string, Token> {
   };
 }
 
-export function createSession(name?: string, requestedId?: string): { session: GameSession; gmKey: string } {
+export function createDefaultBrawlTokens(mapId: string): Record<string, Token> {
+  const t1Id = 'token-brawl-unit-1';
+  const t2Id = 'token-brawl-unit-2';
+
+  return {
+    [t1Id]: {
+      id: t1Id,
+      mapId,
+      name: 'Strike Squad Sergeant',
+      imageUrl: '',
+      x: 350,
+      y: 350,
+      size: 1,
+      rotation: 0,
+      ringColor: '#38bdf8',
+      fillColor: '#0369a1',
+      clipCircle: true,
+      currentHp: 4,
+      maxHp: 4,
+      tempHp: 0,
+      speed: 30,
+      conditions: [],
+      isProp: false,
+      layer: 'token',
+      unitHaloColor: '#38bdf8',
+    },
+    [t2Id]: {
+      id: t2Id,
+      mapId,
+      name: 'Enemy Assault Specialist',
+      imageUrl: '',
+      x: 650,
+      y: 450,
+      size: 1,
+      rotation: 0,
+      ringColor: '#f43f5e',
+      fillColor: '#be123c',
+      clipCircle: true,
+      currentHp: 4,
+      maxHp: 4,
+      tempHp: 0,
+      speed: 30,
+      conditions: [],
+      isProp: false,
+      layer: 'token',
+      unitHaloColor: '#f43f5e',
+    },
+  };
+}
+
+export function createDefaultTokens(
+  mapId: string,
+  mode: 'vtt' | 'brawl' = 'vtt',
+  flags: Record<string, boolean> = parseFeatureFlags(process.env),
+): Record<string, Token> {
+  if (mode === 'brawl') {
+    return isFeatureFlagActive(flags, 'default_brawl_tokens')
+      ? createDefaultBrawlTokens(mapId)
+      : {};
+  }
+  return isFeatureFlagActive(flags, 'default_vtt_tokens')
+    ? createDefaultVttTokens(mapId)
+    : {};
+}
+
+export function createSession(
+  name?: string,
+  requestedId?: string,
+  mode: 'vtt' | 'brawl' = 'vtt',
+  customFlags?: Record<string, boolean>,
+): { session: GameSession; gmKey: string } {
   const id = requestedId || generateRoomId();
   const gmKey = crypto.randomUUID();
-  const defaultMap = createDefaultMap();
+  const flags = customFlags || parseFeatureFlags(process.env);
+  const defaultMap = createDefaultMap(undefined, mode);
 
   const initialFog: FogState = {
     mapId: defaultMap.id,
     globalCovered: false,
     shapes: [],
   };
+
+  const tokens = createDefaultTokens(defaultMap.id, mode, flags);
+
+  // RPG initiative items only populated when default tokens exist in VTT mode
+  const hasTokens = Object.keys(tokens).length > 0;
+  const initiativeItems =
+    mode === 'vtt' && hasTokens && tokens['token-fighter']
+      ? [
+          {
+            id: 'init-1',
+            tokenId: 'token-fighter',
+            name: 'Valeros the Fighter',
+            initiative: 16,
+            hp: 28,
+            maxHp: 28,
+            color: '#3b82f6',
+          },
+          {
+            id: 'init-2',
+            tokenId: 'token-goblin',
+            name: 'Goblin Scout',
+            initiative: 12,
+            hp: 7,
+            maxHp: 7,
+            color: '#ef4444',
+          },
+        ]
+      : [];
 
   const session: GameSession = {
     id,
@@ -122,20 +241,18 @@ export function createSession(name?: string, requestedId?: string): { session: G
     gmId: '',
     activeMapId: defaultMap.id,
     maps: [defaultMap],
-    tokens: createDefaultTokens(defaultMap.id),
+    tokens,
     fog: { [defaultMap.id]: initialFog },
     players: {},
     initiative: {
       round: 1,
       currentTurnIndex: 0,
-      items: [
-        { id: 'init-1', tokenId: 'token-fighter', name: 'Valeros the Fighter', initiative: 16, hp: 28, maxHp: 28, color: '#3b82f6' },
-        { id: 'init-2', tokenId: 'token-goblin', name: 'Goblin Scout', initiative: 12, hp: 7, maxHp: 7, color: '#ef4444' },
-      ],
+      items: initiativeItems,
     },
     markers: [],
     diceHistory: [],
     soundtracks: [],
+    clocks: [],
   };
 
   sessions.set(id, { session, gmKey });

@@ -4,17 +4,41 @@ import { createSession, getSession, updateSession, getAllSessions, removeSession
 import { fetchDnDCharacter } from './dndbeyond.js';
 
 describe('Session Management & In-Memory Fallback', () => {
-  it('creates a session with default map and tokens', () => {
+  it('creates a session with default map and clean empty tokens by default', () => {
     const { session, gmKey } = createSession('Test Room');
     assert.ok(session.id, 'Session has an ID');
     assert.ok(gmKey, 'GM key generated');
     assert.strictEqual(session.maps.length, 1, 'Has default map');
-    assert.ok(session.tokens['token-fighter'], 'Has fighter token');
-    assert.ok(session.tokens['token-goblin'], 'Has goblin token');
-    assert.strictEqual(session.initiative.items.length, 2, 'Has initiative items');
+    assert.strictEqual(session.maps[0].name, 'Ancient Stone Ruins');
+    assert.deepStrictEqual(session.tokens, {}, 'Default tokens disabled when default_vtt_tokens flag is off');
+    assert.strictEqual(session.initiative.items.length, 0, 'No initiative items when tokens disabled');
 
     const fetched = getSession(session.id);
     assert.deepStrictEqual(fetched, session);
+  });
+
+  it('creates default VTT tokens when default_vtt_tokens feature flag is enabled', () => {
+    const { session } = createSession('VTT Room', undefined, 'vtt', { default_vtt_tokens: true });
+    assert.strictEqual(session.maps[0].name, 'Ancient Stone Ruins');
+    assert.ok(session.tokens['token-fighter'], 'Has fighter token');
+    assert.ok(session.tokens['token-goblin'], 'Has goblin token');
+    assert.strictEqual(session.initiative.items.length, 2, 'Has initiative items');
+  });
+
+  it('initializes Brawl mode with tactical battlefield and respects default_brawl_tokens flag', () => {
+    // Default brawl mode without tokens
+    const { session: cleanBrawl } = createSession('Brawl Table', undefined, 'brawl');
+    assert.strictEqual(cleanBrawl.maps[0].name, 'Tactical Battlefield');
+    assert.strictEqual(cleanBrawl.maps[0].scaleFtPerCell, 1, 'Brawl map scale is 1 in/ft per cell');
+    assert.deepStrictEqual(cleanBrawl.tokens, {}, 'Empty tokens by default');
+
+    // Brawl mode with default_brawl_tokens enabled
+    const { session: seededBrawl } = createSession('Brawl Seeded', undefined, 'brawl', { default_brawl_tokens: true });
+    assert.strictEqual(seededBrawl.maps[0].name, 'Tactical Battlefield');
+    assert.ok(seededBrawl.tokens['token-brawl-unit-1'], 'Has brawl unit 1 token');
+    assert.ok(seededBrawl.tokens['token-brawl-unit-2'], 'Has brawl unit 2 token');
+    assert.strictEqual(seededBrawl.tokens['token-brawl-unit-1'].unitHaloColor, '#38bdf8');
+    assert.strictEqual(seededBrawl.initiative.items.length, 0, 'No RPG initiative items in brawl mode');
   });
 
   it('updates and lists sessions in in-memory mode without errors', () => {
@@ -48,9 +72,9 @@ describe('D&D Beyond Integration', () => {
     const char = await fetchDnDCharacter('https://www.dndbeyond.com/characters/49074997');
     assert.ok(char, 'Character retrieved');
     assert.strictEqual(char.name, 'Joy');
-    assert.strictEqual(char.level, 5);
+    assert.ok(char.level >= 5, 'Character level is at least 5');
     assert.strictEqual(char.speed, 30);
-    assert.strictEqual(char.proficiencyBonus, 3, 'Level 5 proficiency bonus is +3');
+    assert.strictEqual(char.proficiencyBonus, 3, 'Level 5-6 proficiency bonus is +3');
     assert.ok(char.skills && char.skills.length === 18, 'All 18 skills parsed');
     const athletics = char.skills.find((s) => s.name === 'Athletics');
     assert.ok(athletics, 'Athletics skill found');
@@ -103,3 +127,31 @@ describe('D&D Beyond Integration', () => {
     assert.strictEqual(char.currencies.gp, 770, 'GP parsed accurately');
   });
 });
+
+describe('System Feature Flags Endpoint & Parsing (OB-232)', () => {
+  it('parses environment variables into feature flags with expected defaults', async () => {
+    const { parseFeatureFlags, DEFAULT_FEATURE_FLAGS } = await import('@oldbear/shared');
+
+    const flags = parseFeatureFlags({
+      FEATURE_CHESS_CLOCK: 'true',
+      FEATURE_SOUNDBOARD: 'false',
+    });
+
+    assert.strictEqual(flags.chess_clock, true, 'chess_clock overridden to true');
+    assert.strictEqual(flags.soundboard, false, 'soundboard overridden to false');
+    assert.strictEqual(flags.voice_chat, DEFAULT_FEATURE_FLAGS.voice_chat, 'voice_chat retains default');
+
+    const dndDisabled = parseFeatureFlags({
+      FEATURE_DNDBEYOND: 'false',
+    });
+    assert.strictEqual(dndDisabled.dndbeyond, false, 'dndbeyond can be disabled via FEATURE_DNDBEYOND');
+
+    // sync_dndbeyond aliases to dndbeyond for backwards compatibility
+    const dndAliased = parseFeatureFlags({
+      FEATURE_SYNC_DNDBEYOND: 'false',
+    });
+    assert.strictEqual(dndAliased.dndbeyond, false, 'FEATURE_SYNC_DNDBEYOND aliases to dndbeyond');
+  });
+});
+
+

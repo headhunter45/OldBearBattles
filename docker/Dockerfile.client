@@ -6,19 +6,22 @@ ARG GIT_COMMIT_HASH=""
 ENV VITE_APP_VERSION=${APP_VERSION}
 ENV VITE_GIT_COMMIT_HASH=${GIT_COMMIT_HASH}
 
-# Copy root workspace and package files
-COPY package*.json ./
-COPY VERSION* ./
-COPY packages/shared/package*.json ./packages/shared/
-COPY packages/client/package*.json ./packages/client/
+RUN corepack enable
 
-RUN npm install
+# Copy root workspace and package files
+COPY package.json yarn.lock .yarnrc.yml ./
+COPY VERSION* ./
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/client/package.json ./packages/client/
+COPY packages/server/package.json ./packages/server/
+
+RUN yarn install --immutable
 
 COPY packages/shared ./packages/shared
-RUN npm run build -w @oldbear/shared
+RUN yarn workspace @oldbear/shared build
 
 COPY packages/client ./packages/client
-RUN npm run build -w @oldbear/client
+RUN yarn workspace @oldbear/client exec vite build
 
 FROM nginx:alpine
 ARG CLIENT_PORT=80

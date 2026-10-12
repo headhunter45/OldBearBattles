@@ -1,14 +1,24 @@
 import http from 'node:http';
+import net from 'node:net';
+import path from 'node:path';
 import express from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv';
 import { WebSocketServer } from 'ws';
 import { createSession, getSession, getAllSessions, initSessionsFromDb } from './session.js';
 import { setupWebSocket } from './signaling.js';
 import { fetchDnDCharacter } from './dndbeyond.js';
 import { initDb, isDbConnected, getDbPool } from './db.js';
+import { parseFeatureFlags, isFeatureFlagActive } from '@oldbear/shared';
+
+// Load environment variables from root workspace and local directory
+dotenv.config({ path: path.resolve(import.meta.dirname, '../../.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
+const PORT = parseInt(process.env.PORT || process.env.SERVER_PORT || '3001', 10);
 
 app.use(cors());
 app.use(express.json());
@@ -43,6 +53,19 @@ const healthHandler = async (_req: express.Request, res: express.Response) => {
 app.get('/health', healthHandler);
 app.get('/api/health', healthHandler);
 
+// System Feature Flags endpoint (OB-232)
+// Evaluated per-request from process.env (backed by .env in dev and container environment in prod)
+const featureFlagsHandler = (_req: express.Request, res: express.Response) => {
+  const flags = parseFeatureFlags(process.env);
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.json({
+    features: flags,
+  });
+};
+
+app.get('/api/features', featureFlagsHandler);
+app.get('/api/feature-flags', featureFlagsHandler);
+
 // List all active sessions
 app.get('/api/sessions', (_req, res) => {
   res.json({ sessions: getAllSessions() });
@@ -50,8 +73,8 @@ app.get('/api/sessions', (_req, res) => {
 
 // Create new game session
 app.post('/api/sessions', (req, res) => {
-  const { name } = req.body || {};
-  const { session, gmKey } = createSession(name);
+  const { name, mode } = req.body || {};
+  const { session, gmKey } = createSession(name, undefined, mode);
   res.json({
     roomId: session.id,
     gmKey,
@@ -71,6 +94,11 @@ app.get('/api/sessions/:roomId', (req, res) => {
 
 // Proxy and normalize D&D Beyond character data
 app.get('/api/dndbeyond/:characterId', async (req, res) => {
+  const flags = parseFeatureFlags(process.env);
+  if (!isFeatureFlagActive(flags, 'dndbeyond')) {
+    res.status(403).json({ error: 'D&D Beyond integration is currently disabled.' });
+    return;
+  }
   try {
     const character = await fetchDnDCharacter(req.params.characterId);
     if (!character) {
@@ -80,6 +108,31 @@ app.get('/api/dndbeyond/:characterId', async (req, res) => {
     res.json(character);
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to fetch character from D&D Beyond' });
+  }
+});
+
+// Proxy Pathbuilder 2e build exports
+app.get('/api/pathbuilder/:buildId', async (req, res) => {
+  try {
+    const buildId = req.params.buildId.replace(/[^\d]/g, '');
+    if (!buildId) {
+      res.status(400).json({ error: 'Invalid Pathbuilder 2e build ID' });
+      return;
+    }
+    const response = await fetch(`https://pathbuilder2e.com/json.php?id=${encodeURIComponent(buildId)}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) OldBearVTT/0.1.0',
+        Accept: 'application/json',
+      },
+    });
+    if (!response.ok) {
+      res.status(response.status).json({ error: `Pathbuilder returned status ${response.status}` });
+      return;
+    }
+    const data = await response.json();
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to fetch build from Pathbuilder' });
   }
 });
 
@@ -96,22 +149,52 @@ const wss = new WebSocketServer({ server });
 
 setupWebSocket(wss);
 
+function isPortFree(port: number, host = '0.0.0.0'): Promise<boolean> {
+  return new Promise((resolve) => {
+    const s = net.createServer();
+    s.unref();
+    s.once('error', () => resolve(false));
+    s.once('listening', () => s.close(() => resolve(true)));
+    s.listen(port, host);
+  });
+}
+
+async function findAvailablePort(startPort: number): Promise<number> {
+  let port = startPort;
+  while (port < 65535) {
+    const [v4, v4Loopback] = await Promise.all([
+      isPortFree(port, '0.0.0.0'),
+      isPortFree(port, '127.0.0.1'),
+    ]);
+    if (v4 && v4Loopback) return port;
+    port++;
+  }
+  return startPort;
+}
+
 async function start() {
+  const effectivePort = await findAvailablePort(PORT);
+  if (effectivePort !== PORT) {
+    console.log(`[OldBear Server] Port ${PORT} is in use; automatically selected port ${effectivePort}`);
+  }
+
+  // Start HTTP and WebSocket server immediately so clients and proxies can connect without delay
+  server.listen(effectivePort, '0.0.0.0', () => {
+    console.log(`[OldBear Server] Running on http://localhost:${effectivePort}`);
+    console.log(`[OldBear Server] WebSocket listening on ws://localhost:${effectivePort}`);
+    console.log(`[OldBear Server] Database mode: ${isDbConnected() ? 'PostgreSQL (Persistent)' : 'In-Memory'}`);
+  });
+
   // Attempt PostgreSQL initialization if configured
   try {
     const connected = await initDb(5, 2000);
     if (connected) {
       await initSessionsFromDb();
+      console.log('[OldBear Server] Sessions loaded from PostgreSQL.');
     }
   } catch (err: any) {
     console.warn('[OldBear Server] Database initialization notice:', err.message);
   }
-
-  server.listen(PORT, () => {
-    console.log(`[OldBear Server] Running on http://localhost:${PORT}`);
-    console.log(`[OldBear Server] WebSocket listening on ws://localhost:${PORT}`);
-    console.log(`[OldBear Server] Database mode: ${isDbConnected() ? 'PostgreSQL (Persistent)' : 'In-Memory'}`);
-  });
 }
 
 start();

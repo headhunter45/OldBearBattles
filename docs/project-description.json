@@ -7,7 +7,7 @@
   "tags": ["featured", "open-source"],
   "image": {
     "url": "/projects/old-bear-vtt/logo.png",
-    "alt": "OldBearVTT virtual tabletop",
+    "alt": "Old Bear Battles virtual tabletop",
     "width": 0,
     "height": 0,
     "backgroundClassName": "bg-surface"
@@ -40,5 +40,6 @@
     "IndexedDB",
     "PostgreSQL",
     "Docker Compose"
-  ]
+  ],
+  "lastVerifiedUtc": "2026-10-11T07:00:26Z"
 }

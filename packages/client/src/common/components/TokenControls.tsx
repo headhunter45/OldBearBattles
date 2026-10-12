@@ -1,6 +1,9 @@
 import React, { useRef, useState } from 'react';
-import { Token, Player, GameMap } from '@oldbear/shared';
-import { Heart, Shield, Plus, Minus, Settings, Trash2, ArrowRightLeft, Copy, UserCheck, Swords, RotateCw, Lock, Unlock } from 'lucide-react';
+import { Token, Player, GameMap, DnDAction } from '@oldbear/shared';
+import { Heart, Shield, Plus, Minus, Settings, Trash2, ArrowRightLeft, Copy, UserCheck, Swords, RotateCw, Lock, Unlock, Sparkles, Dices } from 'lucide-react';
+
+import { resolveStatusDefinitions, formatCondition } from '../status/StatusManager.js';
+import { CustomStatusModal } from './CustomStatusModal.js';
 
 interface TokenControlsProps {
   token: Token;
@@ -12,17 +15,14 @@ interface TokenControlsProps {
   onTransferToken: (id: string, toMapId: string) => void;
   onSetInitiative?: (token: Token, score: number) => void;
   onOpenFullEditor: () => void;
+  onAddAura?: (token: Token) => void;
+  onRollAction?: (action: DnDAction) => void;
   canControl: boolean;
   isGm: boolean;
   maps: GameMap[];
   players?: Player[];
+  onUpdateMap?: (mapId: string, updates: Partial<GameMap>) => void;
 }
-
-const ALL_CONDITIONS = [
-  'Blinded', 'Charmed', 'Deafened', 'Frightened', 'Grappled', 'Incapacitated',
-  'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained',
-  'Stunned', 'Unconscious', 'Concentrating', 'Exhaustion'
-];
 
 export const RotationCompass: React.FC<{
   rotation: number;
@@ -131,12 +131,26 @@ export const TokenControls: React.FC<TokenControlsProps> = ({
   onTransferToken,
   onSetInitiative,
   onOpenFullEditor,
+  onAddAura,
+  onRollAction,
   canControl,
   isGm,
   maps,
   players = [],
+  onUpdateMap,
 }) => {
   if (!canControl && !isGm) return null;
+
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const activeMap = maps.find((m) => m.id === token.mapId) || maps[0];
+  const statusDefs = resolveStatusDefinitions(activeMap);
+  const allAvailableStatuses = Object.keys(statusDefs).sort();
+
+  const [showAttacksMenu, setShowAttacksMenu] = useState(false);
+  const availableAttacks: DnDAction[] =
+    token.actions && token.actions.length > 0
+      ? token.actions
+      : token.character?.actions || [];
 
   const handleHpDelta = (delta: number) => {
     const newHp = Math.max(0, Math.min(token.maxHp, token.currentHp + delta));
@@ -145,27 +159,178 @@ export const TokenControls: React.FC<TokenControlsProps> = ({
 
   const toggleCondition = (cond: string) => {
     const existing = token.conditions || [];
-    const updated = existing.includes(cond)
-      ? existing.filter((c) => c !== cond)
-      : [...existing, cond];
+    const baseLabel = cond.split(':')[0];
+    const isPresent = existing.some((c) => c.split(':')[0] === baseLabel);
+    let updated: string[];
+    if (isPresent) {
+      updated = existing.filter((c) => c.split(':')[0] !== baseLabel);
+    } else {
+      const def = statusDefs[baseLabel];
+      const conditionFormatted =
+        def?.counter?.start !== undefined ? formatCondition(baseLabel, def.counter.start) : cond;
+      updated = [...existing, conditionFormatted];
+    }
     onUpdateToken(token.id, { conditions: updated });
   };
 
   return (
-    <div
-      className="floating-hud glass-panel animate-fade-in"
+    <>
+      <div
       style={{
+        position: 'absolute',
         bottom: '1.5rem',
         left: '50%',
         transform: 'translateX(-50%)',
-        padding: '0.6rem 1rem',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '1rem',
-        maxWidth: '75vw',
-        overflowX: 'auto',
+        zIndex: 30,
+        pointerEvents: 'auto',
       }}
     >
+      {/* Quick Token Attacks Menu Popup (OB-200) */}
+      {showAttacksMenu && !token.isProp && (
+        <div
+          className="glass-panel-elevated animate-fade-in"
+          style={{
+            position: 'absolute',
+            bottom: 'calc(100% + 10px)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            minWidth: '280px',
+            maxWidth: '360px',
+            maxHeight: '280px',
+            overflowY: 'auto',
+            padding: '0.75rem',
+            borderRadius: 'var(--radius-md)',
+            boxShadow: '0 12px 30px rgba(0,0,0,0.6)',
+            border: '1px solid var(--border-subtle)',
+            zIndex: 60,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '0.5rem',
+              borderBottom: '1px solid var(--border-subtle)',
+              paddingBottom: '0.4rem',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                color: 'var(--text-primary)',
+              }}
+            >
+              <Swords size={14} color="#818cf8" />
+              <span>{token.name} Attacks ({availableAttacks.length})</span>
+            </div>
+            <button
+              className="btn-icon"
+              style={{ width: '20px', height: '20px', padding: 0 }}
+              onClick={() => setShowAttacksMenu(false)}
+            >
+              ✕
+            </button>
+          </div>
+
+          {availableAttacks.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                No attacks configured for this token.
+              </div>
+              <button
+                className="btn btn-secondary"
+                style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
+                onClick={() => {
+                  setShowAttacksMenu(false);
+                  onOpenFullEditor();
+                }}
+              >
+                <Plus size={13} /> Add Attacks in Settings
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              {availableAttacks.map((action, idx) => (
+                <div
+                  key={`${action.name}-${idx}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    backgroundColor: 'var(--bg-surface)',
+                    padding: '0.4rem 0.6rem',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-subtle)',
+                  }}
+                >
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-primary)' }}>
+                      {action.name}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                      {action.toHitModifier !== undefined && (
+                        <span style={{ color: 'var(--accent-primary)', fontWeight: 600, marginRight: '4px' }}>
+                          {action.toHitModifier >= 0 ? `+${action.toHitModifier}` : action.toHitModifier} to hit
+                        </span>
+                      )}
+                      {action.damageDice && <span>• {action.damageDice}</span>}
+                    </div>
+                  </div>
+                  {onRollAction && (
+                    <button
+                      className="btn btn-primary"
+                      style={{
+                        padding: '0.2rem 0.5rem',
+                        fontSize: '0.72rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                        flexShrink: 0,
+                      }}
+                      onClick={() => {
+                        onRollAction(action);
+                      }}
+                      title={`Roll ${action.name}`}
+                    >
+                      <Dices size={12} /> Roll
+                    </button>
+                  )}
+                </div>
+              ))}
+              <div style={{ marginTop: '0.4rem', textAlign: 'center' }}>
+                <button
+                  className="btn btn-secondary"
+                  style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', width: '100%' }}
+                  onClick={() => {
+                    setShowAttacksMenu(false);
+                    onOpenFullEditor();
+                  }}
+                >
+                  <Settings size={12} /> Manage Attacks in Settings
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div
+        className="glass-panel animate-fade-in"
+        style={{
+          padding: '0.6rem 1rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.65rem',
+          maxWidth: '85vw',
+          overflowX: 'auto',
+        }}
+      >
       {/* Token Identity: Square, Non-Squished Avatar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
         {token.imageUrl ? (
@@ -233,74 +398,76 @@ export const TokenControls: React.FC<TokenControlsProps> = ({
         </div>
       </div>
 
-      {/* HP Quick Controls & Temp HP (Only for characters/monsters, not props - Task #115) */}
+      {/* HP Quick Controls & Temp HP (Only for characters/monsters, not props - Task #115 & OB-168) */}
       {!token.isProp && (
         <>
           <div style={{ width: '1px', height: '32px', background: 'var(--border-subtle)' }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <Heart size={16} color="#ef4444" />
-            <button
-              className="btn-icon"
-              style={{ width: '28px', height: '28px' }}
-              onClick={() => handleHpDelta(-5)}
-              title="Take 5 Damage"
-            >
-              -5
-            </button>
-            <button
-              className="btn-icon"
-              style={{ width: '28px', height: '28px' }}
-              onClick={() => handleHpDelta(-1)}
-              title="Take 1 Damage"
-            >
-              <Minus size={14} />
-            </button>
-            <span style={{ minWidth: '46px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.875rem' }}>
-              {token.currentHp}/{token.maxHp}
-            </span>
-            <button
-              className="btn-icon"
-              style={{ width: '28px', height: '28px' }}
-              onClick={() => handleHpDelta(1)}
-              title="Heal 1 HP"
-            >
-              <Plus size={14} />
-            </button>
-            <button
-              className="btn-icon"
-              style={{ width: '28px', height: '28px' }}
-              onClick={() => handleHpDelta(5)}
-              title="Heal 5 HP"
-            >
-              +5
-            </button>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            <span title="Temp HP" style={{ display: 'inline-flex' }}>
-              <Shield size={16} color="#0ea5e9" />
-            </span>
-            <span style={{ fontSize: '0.8rem', color: '#38bdf8', fontWeight: '600' }}>
-              +{token.tempHp || 0}
-            </span>
-            <button
-              className="btn-icon"
-              style={{ width: '24px', height: '24px' }}
-              onClick={() => onUpdateToken(token.id, { tempHp: (token.tempHp || 0) + 1 })}
-              title="Add 1 Temp HP"
-            >
-              <Plus size={12} />
-            </button>
-            {(token.tempHp || 0) > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', justifyContent: 'center' }}>
+            {/* HP Row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <Heart size={14} color="#ef4444" style={{ flexShrink: 0 }} />
               <button
                 className="btn-icon"
-                style={{ width: '24px', height: '24px' }}
-                onClick={() => onUpdateToken(token.id, { tempHp: Math.max(0, (token.tempHp || 0) - 1) })}
-                title="Subtract 1 Temp HP"
+                style={{ width: '22px', height: '22px', fontSize: '0.7rem', padding: 0 }}
+                onClick={() => handleHpDelta(-5)}
+                title="Take 5 Damage"
               >
-                <Minus size={12} />
+                -5
               </button>
-            )}
+              <button
+                className="btn-icon"
+                style={{ width: '22px', height: '22px', fontSize: '0.7rem', padding: 0 }}
+                onClick={() => handleHpDelta(-1)}
+                title="Take 1 Damage"
+              >
+                <Minus size={11} />
+              </button>
+              <span style={{ minWidth: '44px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.8rem' }}>
+                {token.currentHp}/{token.maxHp}
+              </span>
+              <button
+                className="btn-icon"
+                style={{ width: '22px', height: '22px', fontSize: '0.7rem', padding: 0 }}
+                onClick={() => handleHpDelta(1)}
+                title="Heal 1 HP"
+              >
+                <Plus size={11} />
+              </button>
+              <button
+                className="btn-icon"
+                style={{ width: '22px', height: '22px', fontSize: '0.7rem', padding: 0 }}
+                onClick={() => handleHpDelta(5)}
+                title="Heal 5 HP"
+              >
+                +5
+              </button>
+            </div>
+
+            {/* Temp HP Row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <Shield size={14} color="#0ea5e9" style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: '0.72rem', color: '#38bdf8', fontWeight: '600', minWidth: '44px' }}>
+                +{token.tempHp || 0} Temp
+              </span>
+              <button
+                className="btn-icon"
+                style={{ width: '20px', height: '20px', fontSize: '0.7rem', padding: 0 }}
+                onClick={() => onUpdateToken(token.id, { tempHp: (token.tempHp || 0) + 1 })}
+                title="Add 1 Temp HP"
+              >
+                <Plus size={10} />
+              </button>
+              {(token.tempHp || 0) > 0 && (
+                <button
+                  className="btn-icon"
+                  style={{ width: '20px', height: '20px', fontSize: '0.7rem', padding: 0 }}
+                  onClick={() => onUpdateToken(token.id, { tempHp: Math.max(0, (token.tempHp || 0) - 1) })}
+                  title="Subtract 1 Temp HP"
+                >
+                  <Minus size={10} />
+                </button>
+              )}
+            </div>
           </div>
         </>
       )}
@@ -310,41 +477,46 @@ export const TokenControls: React.FC<TokenControlsProps> = ({
         <>
           <div style={{ width: '1px', height: '32px', background: 'var(--border-subtle)' }} />
           <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            {(token.conditions || []).map((cond) => (
-              <span
-                key={cond}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  fontSize: '0.72rem',
-                  fontWeight: 600,
-                  padding: '2px 7px',
-                  borderRadius: '9999px',
-                  border: '1px solid #f43f5e',
-                  backgroundColor: 'rgba(244, 63, 94, 0.2)',
-                  color: '#f43f5e',
-                }}
-              >
-                {cond}
-                <button
-                  onClick={() => toggleCondition(cond)}
+            {(token.conditions || []).map((cond) => {
+              const baseLabel = cond.split(':')[0];
+              const def = statusDefs[baseLabel];
+              const badgeColor = def?.color || '#f43f5e';
+              return (
+                <span
+                  key={cond}
                   style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#f43f5e',
-                    cursor: 'pointer',
-                    fontSize: '11px',
-                    padding: '0 2px',
                     display: 'inline-flex',
                     alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
+                    padding: '2px 7px',
+                    borderRadius: '9999px',
+                    border: `1px solid ${badgeColor}`,
+                    backgroundColor: `${badgeColor}22`,
+                    color: badgeColor,
                   }}
-                  title={`Remove ${cond}`}
                 >
-                  ✕
-                </button>
-              </span>
-            ))}
+                  {cond}
+                  <button
+                    onClick={() => toggleCondition(cond)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: badgeColor,
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                      padding: '0 2px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                    }}
+                    title={`Remove ${cond}`}
+                  >
+                    ✕
+                  </button>
+                </span>
+              );
+            })}
             <select
               style={{
                 background: 'transparent',
@@ -356,28 +528,50 @@ export const TokenControls: React.FC<TokenControlsProps> = ({
               }}
               value=""
               onChange={(e) => {
-                if (e.target.value) {
-                  toggleCondition(e.target.value);
+                const val = e.target.value;
+                if (val === '__manage__') {
+                  setShowStatusModal(true);
+                } else if (val) {
+                  toggleCondition(val);
                 }
               }}
             >
               <option value="" disabled>
                 + Add Status...
               </option>
-              {ALL_CONDITIONS.filter((c) => !(token.conditions || []).includes(c)).map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
+              {allAvailableStatuses
+                .filter((label) => !(token.conditions || []).some((c) => c.split(':')[0] === label))
+                .map((label) => (
+                  <option key={label} value={label}>
+                    {label}{statusDefs[label]?.counter ? ` (Count: ${statusDefs[label].counter?.start})` : ''}
+                  </option>
+                ))}
+              <option value="__manage__">✨ Create / Manage Custom Statuses...</option>
             </select>
+            <button
+              type="button"
+              onClick={() => setShowStatusModal(true)}
+              title="Create or manage custom statuses"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--accent-primary)',
+                cursor: 'pointer',
+                padding: '2px',
+                display: 'inline-flex',
+                alignItems: 'center',
+              }}
+            >
+              <Sparkles size={14} />
+            </button>
           </div>
         </>
       )}
 
       <div style={{ width: '1px', height: '32px', background: 'var(--border-subtle)' }} />
 
-      {/* Rotation Control with Degree Input & Drag Compass (Task #114 & #115) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+      {/* Rotation Control stacked vertically (Task #114, #115 & OB-168) */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
         <RotationCompass
           rotation={token.rotation || 0}
           onChange={(deg) => {
@@ -388,7 +582,7 @@ export const TokenControls: React.FC<TokenControlsProps> = ({
             }
           }}
         />
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1px' }}>
           <input
             type="number"
             min={0}
@@ -403,9 +597,10 @@ export const TokenControls: React.FC<TokenControlsProps> = ({
               }
             }}
             style={{
-              width: '42px',
-              padding: '2px 4px',
-              fontSize: '0.78rem',
+              width: '36px',
+              height: '18px',
+              padding: '1px 2px',
+              fontSize: '0.72rem',
               borderRadius: 'var(--radius-sm)',
               background: 'var(--bg-surface-elevated)',
               border: '1px solid var(--border-subtle)',
@@ -414,7 +609,7 @@ export const TokenControls: React.FC<TokenControlsProps> = ({
             }}
             title="Rotation in degrees (0 - 360°)"
           />
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>°</span>
+          <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>°</span>
         </div>
       </div>
 
@@ -422,6 +617,15 @@ export const TokenControls: React.FC<TokenControlsProps> = ({
 
       {/* Full Editor Modal, Duplicate & Delete */}
       <div style={{ display: 'flex', gap: '0.3rem' }}>
+        {onAddAura && (
+          <button
+            className="btn-icon"
+            onClick={() => onAddAura(token)}
+            title="Attach Aura / Persistent Indicator (OB-129)"
+          >
+            <Sparkles size={16} />
+          </button>
+        )}
         {onDuplicateToken && (
           <button
             className="btn-icon"
@@ -455,6 +659,47 @@ export const TokenControls: React.FC<TokenControlsProps> = ({
         >
           {token.locked ? <Lock size={16} /> : <Unlock size={16} />}
         </button>
+        {!token.isProp && (
+          <button
+            className="btn-icon"
+            onClick={() => setShowAttacksMenu((v) => !v)}
+            title={
+              availableAttacks.length > 0
+                ? `Token Attacks (${availableAttacks.length})`
+                : "Token Attacks (Click to view or add)"
+            }
+            style={{
+              position: 'relative',
+              color: showAttacksMenu || availableAttacks.length > 0 ? '#818cf8' : 'var(--text-secondary)',
+              backgroundColor: showAttacksMenu ? 'rgba(99, 102, 241, 0.25)' : 'transparent',
+            }}
+          >
+            <Swords size={16} />
+            {availableAttacks.length > 0 && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '-3px',
+                  right: '-3px',
+                  backgroundColor: '#6366f1',
+                  color: 'white',
+                  fontSize: '0.58rem',
+                  fontWeight: 700,
+                  borderRadius: '999px',
+                  minWidth: '13px',
+                  height: '13px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0 2px',
+                  lineHeight: 1,
+                }}
+              >
+                {availableAttacks.length}
+              </span>
+            )}
+          </button>
+        )}
         <button className="btn-icon" onClick={onOpenFullEditor} title="Full Token Settings">
           <Settings size={16} />
         </button>
@@ -476,5 +721,22 @@ export const TokenControls: React.FC<TokenControlsProps> = ({
         )}
       </div>
     </div>
-  );
+  </div>
+  {showStatusModal && (
+    <CustomStatusModal
+      isOpen={showStatusModal}
+      onClose={() => setShowStatusModal(false)}
+      activeMap={activeMap}
+      onUpdateMap={onUpdateMap}
+      onApplyStatusToToken={(conditionStr) => {
+        const existing = token.conditions || [];
+        const base = conditionStr.split(':')[0];
+        if (!existing.some((c) => c.split(':')[0] === base)) {
+          onUpdateToken(token.id, { conditions: [...existing, conditionStr] });
+        }
+      }}
+    />
+  )}
+  </>
+);
 };

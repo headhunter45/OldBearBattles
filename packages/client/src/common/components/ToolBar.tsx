@@ -17,12 +17,16 @@ import {
   Ruler,
   Pin,
   Zap,
+  Link,
+  Stamp,
+  MessageSquare,
 } from 'lucide-react';
 import { ActiveTool } from '../engine/CanvasEngine.js';
 
 import { COLOR_VALUES } from '../config/colors.js';
+import { useFeatureFlag } from '../config/featureFlags.js';
 
-interface ToolBarProps {
+export interface ToolBarProps {
   activeTool: ActiveTool;
   onSelectTool: (tool: ActiveTool) => void;
   isGm: boolean;
@@ -36,6 +40,12 @@ interface ToolBarProps {
   onClearAllFog?: () => void;
   persistMarkersMode?: boolean;
   onTogglePersistMarkers?: (persist: boolean) => void;
+  onToggleChat?: () => void;
+  isChatOpen?: boolean;
+  unreadChatCount?: number;
+  fogBrushRadius?: number;
+  onChangeFogBrushRadius?: (radius: number) => void;
+  topOffset?: string | number;
 }
 
 const COLORS = COLOR_VALUES;
@@ -54,9 +64,16 @@ export const ToolBar: React.FC<ToolBarProps> = ({
   onClearAllFog,
   persistMarkersMode = false,
   onTogglePersistMarkers,
+  onToggleChat,
+  isChatOpen = false,
+  unreadChatCount = 0,
+  fogBrushRadius = 40,
+  onChangeFogBrushRadius,
+  topOffset,
 }) => {
   const [showSelectMenu, setShowSelectMenu] = useState(false);
   const selectMenuRef = useRef<HTMLDivElement>(null);
+  const fogOfWarEnabled = useFeatureFlag('fog_of_war');
 
   const [showFogMenu, setShowFogMenu] = useState(false);
   const fogMenuRef = useRef<HTMLDivElement>(null);
@@ -68,7 +85,7 @@ export const ToolBar: React.FC<ToolBarProps> = ({
   const gridMenuRef = useRef<HTMLDivElement>(null);
 
   const isSelectTool = ['select', 'box-select', 'pan'].includes(activeTool);
-  const isHighlightTool = ['laser', 'arrow', 'crosshair', 'circle', 'rectangle', 'cone'].includes(activeTool);
+  const isHighlightTool = ['laser', 'arrow', 'crosshair', 'circle', 'rectangle', 'cone', 'tether', 'spray'].includes(activeTool);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -91,12 +108,22 @@ export const ToolBar: React.FC<ToolBarProps> = ({
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [showSelectMenu, showFogMenu, showHighlightMenu, showGridMenu]);
+
+  // Enforce mode-specific tool visibility (OB-170):
+  // Laser is only for non-persistent Quick Ping mode; Spray is only for Persistent mode.
+  useEffect(() => {
+    if (persistMarkersMode && activeTool === 'laser') {
+      onSelectTool('arrow');
+    } else if (!persistMarkersMode && activeTool === 'spray') {
+      onSelectTool('circle');
+    }
+  }, [persistMarkersMode, activeTool, onSelectTool]);
   return (
     <div
       className="floating-hud floating-hud-toolbar glass-panel"
       style={{
         left: '1rem',
-        top: '5rem',
+        top: topOffset ?? '5rem',
       }}
     >
       {/* Selection Tools Sub-menu (Flyout) */}
@@ -223,6 +250,10 @@ export const ToolBar: React.FC<ToolBarProps> = ({
             <Square size={18} />
           ) : activeTool === 'cone' ? (
             <Triangle size={18} />
+          ) : activeTool === 'tether' ? (
+            <Link size={18} />
+          ) : activeTool === 'spray' ? (
+            <Stamp size={18} />
           ) : (
             <Sparkles size={18} />
           )}
@@ -244,25 +275,27 @@ export const ToolBar: React.FC<ToolBarProps> = ({
               minWidth: '160px',
             }}
           >
-            <button
-              className={`btn btn-secondary ${activeTool === 'laser' ? 'active' : ''}`}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.35rem 0.6rem',
-                fontSize: '0.8rem',
-                justifyContent: 'flex-start',
-              }}
-              onClick={() => {
-                onSelectTool('laser');
-                setShowHighlightMenu(false);
-              }}
-              title="Laser Pointer (1)"
-            >
-              <Sparkles size={16} />
-              <span>Laser Pointer (1)</span>
-            </button>
+            {!persistMarkersMode && (
+              <button
+                className={`btn btn-secondary ${activeTool === 'laser' ? 'active' : ''}`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.35rem 0.6rem',
+                  fontSize: '0.8rem',
+                  justifyContent: 'flex-start',
+                }}
+                onClick={() => {
+                  onSelectTool('laser');
+                  setShowHighlightMenu(false);
+                }}
+                title="Laser Pointer (1)"
+              >
+                <Sparkles size={16} />
+                <span>Laser Pointer (1)</span>
+              </button>
+            )}
 
             <button
               className={`btn btn-secondary ${activeTool === 'arrow' ? 'active' : ''}`}
@@ -364,6 +397,48 @@ export const ToolBar: React.FC<ToolBarProps> = ({
               <span>Cone / Arc (6)</span>
             </button>
 
+            <button
+              className={`btn btn-secondary ${activeTool === 'tether' ? 'active' : ''}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.35rem 0.6rem',
+                fontSize: '0.8rem',
+                justifyContent: 'flex-start',
+              }}
+              onClick={() => {
+                onSelectTool('tether');
+                setShowHighlightMenu(false);
+              }}
+              title="Token Tether Line (7)"
+            >
+              <Link size={16} />
+              <span>Token Tether (7)</span>
+            </button>
+
+            {persistMarkersMode && (
+              <button
+                className={`btn btn-secondary ${activeTool === 'spray' ? 'active' : ''}`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.35rem 0.6rem',
+                  fontSize: '0.8rem',
+                  justifyContent: 'flex-start',
+                }}
+                onClick={() => {
+                  onSelectTool('spray');
+                  setShowHighlightMenu(false);
+                }}
+                title="Custom Image Spray Decal / Hazard (8)"
+              >
+                <Stamp size={16} />
+                <span>Spray Decal (8)</span>
+              </button>
+            )}
+
             <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '0.2rem 0' }} />
 
             <button
@@ -376,7 +451,15 @@ export const ToolBar: React.FC<ToolBarProps> = ({
                 fontSize: '0.8rem',
                 justifyContent: 'flex-start',
               }}
-              onClick={() => onTogglePersistMarkers?.(!persistMarkersMode)}
+              onClick={() => {
+                const nextMode = !persistMarkersMode;
+                onTogglePersistMarkers?.(nextMode);
+                if (nextMode && activeTool === 'laser') {
+                  onSelectTool('arrow');
+                } else if (!nextMode && activeTool === 'spray') {
+                  onSelectTool('circle');
+                }
+              }}
               title={
                 persistMarkersMode
                   ? 'Persistent Mode: Drawings remain permanently on map. Hold Shift while drawing to invert to Quick Ping.'
@@ -408,8 +491,51 @@ export const ToolBar: React.FC<ToolBarProps> = ({
         <Ruler size={18} />
       </button>
 
+      {/* Chat Toggle Button (OB-196) */}
+      {onToggleChat && (
+        <button
+          className={`btn-icon ${isChatOpen ? 'active' : ''}`}
+          onClick={() => {
+            onToggleChat();
+            setShowSelectMenu(false);
+            setShowHighlightMenu(false);
+            setShowFogMenu(false);
+            setShowGridMenu(false);
+          }}
+          title={isChatOpen ? 'Close Chat (` or ~)' : 'Chat (` or ~)'}
+          style={{
+            position: 'relative',
+            color: isChatOpen ? 'var(--accent-primary)' : undefined,
+          }}
+        >
+          <MessageSquare size={18} />
+          {Boolean(unreadChatCount && unreadChatCount > 0) && (
+            <span
+              style={{
+                position: 'absolute',
+                top: '-4px',
+                right: '-4px',
+                backgroundColor: 'var(--accent-rose, #f43f5e)',
+                color: 'white',
+                fontSize: '10px',
+                fontWeight: 'bold',
+                borderRadius: '50%',
+                width: '16px',
+                height: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
+              }}
+            >
+              {unreadChatCount > 99 ? '99+' : unreadChatCount}
+            </span>
+          )}
+        </button>
+      )}
+
       {/* GM Fog of War Tools Sub-menu (Bug #58) */}
-      {isGm && (
+      {isGm && fogOfWarEnabled && (
         <>
           <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '0.2rem 0' }} />
           <div ref={fogMenuRef} style={{ position: 'relative' }}>
@@ -460,10 +586,10 @@ export const ToolBar: React.FC<ToolBarProps> = ({
                     onSelectTool('fog-reveal');
                     setShowFogMenu(false);
                   }}
-                  title="Drag rectangle to reveal fog (R)"
+                  title="Drag rectangle to reveal fog (Shift+F)"
                 >
                   <Eye size={16} />
-                  <span>Reveal Fog (R)</span>
+                  <span>Rect Reveal (Shift+F)</span>
                 </button>
 
                 <button
@@ -484,8 +610,68 @@ export const ToolBar: React.FC<ToolBarProps> = ({
                   title="Drag rectangle to hide fog (F)"
                 >
                   <EyeOff size={16} />
-                  <span>Hide Fog (F)</span>
+                  <span>Rect Hide (F)</span>
                 </button>
+
+                <button
+                  className={`btn btn-secondary ${activeTool === 'fog-brush-reveal' ? 'active' : ''}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.35rem 0.6rem',
+                    fontSize: '0.8rem',
+                    justifyContent: 'flex-start',
+                    color: '#10b981',
+                  }}
+                  onClick={() => {
+                    onSelectTool('fog-brush-reveal');
+                    setShowFogMenu(false);
+                  }}
+                  title="Circular brush to reveal fog"
+                >
+                  <Circle size={16} />
+                  <span>Brush Reveal</span>
+                </button>
+
+                <button
+                  className={`btn btn-secondary ${activeTool === 'fog-brush-hide' ? 'active' : ''}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.35rem 0.6rem',
+                    fontSize: '0.8rem',
+                    justifyContent: 'flex-start',
+                    color: '#f43f5e',
+                  }}
+                  onClick={() => {
+                    onSelectTool('fog-brush-hide');
+                    setShowFogMenu(false);
+                  }}
+                  title="Circular brush to hide fog"
+                >
+                  <Circle size={16} />
+                  <span>Brush Hide</span>
+                </button>
+
+                {onChangeFogBrushRadius && (
+                  <div style={{ padding: '0.3rem 0.4rem', background: 'rgba(0,0,0,0.2)', borderRadius: '4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                      <span>Brush Size</span>
+                      <span style={{ fontWeight: 600, color: 'white' }}>{fogBrushRadius}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="10"
+                      max="200"
+                      step="5"
+                      value={fogBrushRadius}
+                      onChange={(e) => onChangeFogBrushRadius(Number(e.target.value))}
+                      style={{ width: '100%', marginTop: '4px' }}
+                    />
+                  </div>
+                )}
 
                 <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '0.1rem 0' }} />
 
@@ -611,6 +797,64 @@ export const ToolBar: React.FC<ToolBarProps> = ({
           </div>
         )}
       </div>
+
+      {/* Brush Size Drag / Click Controller (OB-199) */}
+      {onChangeFogBrushRadius && (
+        <div
+          title={`Fog Brush Size: ${fogBrushRadius}px (Drag up/down to resize, or use [ / ] or - / = or , / .)`}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            cursor: 'ns-resize',
+            userSelect: 'none',
+            padding: '2px',
+            marginTop: '0.2rem',
+          }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            const startY = e.clientY;
+            const startRadius = fogBrushRadius;
+            const handleMouseMove = (moveEvent: MouseEvent) => {
+              const deltaY = startY - moveEvent.clientY;
+              const nextRadius = Math.max(10, Math.min(250, startRadius + Math.round(deltaY / 2)));
+              onChangeFogBrushRadius(nextRadius);
+            };
+            const handleMouseUp = () => {
+              window.removeEventListener('mousemove', handleMouseMove);
+              window.removeEventListener('mouseup', handleMouseUp);
+            };
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+          }}
+        >
+          <div
+            style={{
+              width: '24px',
+              height: '24px',
+              borderRadius: '50%',
+              border: '1.5px dashed var(--border-subtle, #94a3b8)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              position: 'relative',
+            }}
+          >
+            <div
+              style={{
+                width: `${Math.max(4, Math.min(18, Math.round((fogBrushRadius / 100) * 16)))}px`,
+                height: `${Math.max(4, Math.min(18, Math.round((fogBrushRadius / 100) * 16)))}px`,
+                borderRadius: '50%',
+                backgroundColor: 'var(--text-secondary, #cbd5e1)',
+              }}
+            />
+          </div>
+          <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-secondary, #94a3b8)', marginTop: '2px' }}>
+            {fogBrushRadius}
+          </span>
+        </div>
+      )}
 
       {/* User Color Selector */}
       <div

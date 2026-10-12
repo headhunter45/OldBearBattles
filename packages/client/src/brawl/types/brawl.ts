@@ -59,6 +59,7 @@ export interface WargameArmy {
   id: string;
   name: string;
   faction: string;
+  detachment?: string;
   pointsLimit: number;
   units: WargameUnit[];
   ruleCards?: Array<{ id: string; title: string; content: string }>;

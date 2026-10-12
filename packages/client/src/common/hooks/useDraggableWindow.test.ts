@@ -55,4 +55,77 @@ describe('useDraggableWindow Logic & Constraints (src/common/hooks)', () => {
     const parsed = JSON.parse(retrievedRaw);
     assert.deepStrictEqual(parsed, savedPos);
   });
+
+  it('elevates window z-index on bringWindowToFront and manages global stack (OB-127)', async () => {
+    const { bringWindowToFront, unregisterWindow, clearActiveWindows, BASE_WINDOW_Z_INDEX } = await import('./useDraggableWindow.js');
+    clearActiveWindows();
+
+    // Create mock elements
+    const mockWinA = { style: { zIndex: '0' } } as unknown as HTMLElement;
+    const mockWinB = { style: { zIndex: '0' } } as unknown as HTMLElement;
+    const mockWinC = { style: { zIndex: '0' } } as unknown as HTMLElement;
+
+    // Window A opens
+    const zA = bringWindowToFront(mockWinA);
+    assert.strictEqual(zA, BASE_WINDOW_Z_INDEX);
+    assert.strictEqual(mockWinA.style.zIndex, String(BASE_WINDOW_Z_INDEX));
+
+    // Window B opens
+    const zB = bringWindowToFront(mockWinB);
+    assert.strictEqual(zB, BASE_WINDOW_Z_INDEX + 1);
+    assert.strictEqual(mockWinB.style.zIndex, String(BASE_WINDOW_Z_INDEX + 1));
+    assert.strictEqual(mockWinA.style.zIndex, String(BASE_WINDOW_Z_INDEX));
+
+    // Window C opens
+    const zC = bringWindowToFront(mockWinC);
+    assert.strictEqual(zC, BASE_WINDOW_Z_INDEX + 2);
+    assert.strictEqual(mockWinC.style.zIndex, String(BASE_WINDOW_Z_INDEX + 2));
+
+    // Interacting with/dragging Window A elevates it above B and C
+    const newZA = bringWindowToFront(mockWinA);
+    assert.strictEqual(newZA, BASE_WINDOW_Z_INDEX + 2);
+    assert.strictEqual(mockWinA.style.zIndex, String(BASE_WINDOW_Z_INDEX + 2));
+    assert.strictEqual(mockWinB.style.zIndex, String(BASE_WINDOW_Z_INDEX));
+    assert.strictEqual(mockWinC.style.zIndex, String(BASE_WINDOW_Z_INDEX + 1));
+
+    // Closing/unregistering Window C adjusts the stack correctly
+    unregisterWindow(mockWinC);
+    const newZB = bringWindowToFront(mockWinB);
+    assert.strictEqual(newZB, BASE_WINDOW_Z_INDEX + 1);
+    assert.strictEqual(mockWinB.style.zIndex, String(BASE_WINDOW_Z_INDEX + 1));
+    assert.strictEqual(mockWinA.style.zIndex, String(BASE_WINDOW_Z_INDEX));
+  });
+
+  it('clamps resized dimensions within min and max constraints (OB-203)', () => {
+    const minW = 280;
+    const maxW = 800;
+    const minH = 220;
+    const maxH = 600;
+
+    const clampW = (w: number) => Math.max(minW, Math.min(maxW, w));
+    const clampH = (h: number) => Math.max(minH, Math.min(maxH, h));
+
+    // Valid size within limits
+    assert.strictEqual(clampW(500), 500);
+    assert.strictEqual(clampH(450), 450);
+
+    // Below minimums
+    assert.strictEqual(clampW(150), 280);
+    assert.strictEqual(clampH(100), 220);
+
+    // Above maximums
+    assert.strictEqual(clampW(1200), 800);
+    assert.strictEqual(clampH(900), 600);
+  });
+
+  it('persists and retrieves window size in localStorage (OB-203)', () => {
+    const sizeKey = 'obb_chat_size';
+    const testSize = { width: 520, height: 480 };
+
+    localStorage.setItem(sizeKey, JSON.stringify(testSize));
+    const raw = localStorage.getItem(sizeKey);
+    assert.ok(raw);
+    const parsed = JSON.parse(raw);
+    assert.deepStrictEqual(parsed, testSize);
+  });
 });

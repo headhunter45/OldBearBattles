@@ -1,46 +1,49 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { GameMap, GameSession, Token } from '@oldbear/shared';
 import {
-  Download,
-  Upload,
-  Database,
-  CheckCircle,
-  AlertTriangle,
-  X,
-  FileJson,
-  RefreshCw,
-  Trash2,
-  Edit2,
   Check,
-  Play,
-  Pause,
-  Map,
-  User,
-  Music,
-  Plus,
-  Layers,
-  Skull,
-  Shield,
-  Package,
   ChevronDown,
+  Database,
+  Dices,
+  Download,
+  Edit2,
+  Grid,
+  Layers,
+  Map,
+  Music,
+  Package,
+  Pause,
+  Play,
+  Plus,
+  RefreshCw,
+  Shield,
+  Skull,
+  Trash2,
+  Upload,
+  User,
+  X
 } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  DEFAULT_MODULAR_TILES,
+  ModularMapTile,
+  createModularTileToken,
+  drawRandomTile,
+} from '../engine/ModularTileManager.js';
 import { useDraggableWindow } from '../hooks/useDraggableWindow.js';
-import { GameSession, GameMap, Token, DnDCharacter } from '@oldbear/shared';
+import { downloadBackupFile, exportAllData, importAllData } from '../storage/BackupManager.js';
+import { downloadBinderFile, exportToBinderBlob } from '../storage/BinderPipeline.js';
 import {
-  exportAllData,
-  downloadBackupFile,
-  importAllData,
-} from '../storage/BackupManager.js';
-import {
+  ASSET_UPDATED_EVENT,
   StoredAsset,
+  computeContentHash,
+  deleteAsset,
+  deleteMultipleAssets,
+  findDuplicateAsset,
   getAllAssets,
   saveAsset,
   updateAsset,
-  deleteAsset,
-  deleteMultipleAssets,
-  computeContentHash,
-  findDuplicateAsset,
-  ASSET_UPDATED_EVENT,
 } from '../storage/db.js';
+import { calculateDefaultTiles, getImageDimensions } from '../utils/imageUtils.js';
 export interface SavedCharacterRecord {
   id: string;
   name: string;
@@ -59,13 +62,7 @@ export interface AssetManagerExtensions {
   monsterManagement?: {
     isMonsterFile?: (text: string, filename: string) => boolean;
     parseMonster: (text: string) => { asset: StoredAsset };
-    createMonsterToken: (
-      asset: StoredAsset,
-      mapId: string,
-      x: number,
-      y: number,
-      existingTokens: Token[],
-    ) => Token;
+    createMonsterToken: (asset: StoredAsset, mapId: string, x: number, y: number, existingTokens: Token[]) => Token;
   };
 }
 
@@ -89,18 +86,12 @@ interface DataBackupModalProps {
   onAddMap?: (map: GameMap) => void;
   onSpawnToken?: (asset: StoredAsset) => void;
   onAddToken?: (token: Token) => void;
+  onCenterOnPosition?: (x: number, y: number) => void;
   onClose: () => void;
   extensions?: AssetManagerExtensions;
 }
 
-export type AssetTab =
-  | 'tokens'
-  | 'props'
-  | 'monsters'
-  | 'characters'
-  | 'maps'
-  | 'scenes'
-  | 'audio';
+export type AssetTab = 'tokens' | 'props' | 'tiles' | 'monsters' | 'characters' | 'maps' | 'scenes' | 'audio';
 
 export const DataBackupModal: React.FC<DataBackupModalProps> = ({
   session,
@@ -120,14 +111,13 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
   onAddMap,
   onSpawnToken,
   onAddToken,
+  onCenterOnPosition,
   onClose,
   extensions,
 }) => {
   const [activeTab, setActiveTab] = useState<AssetTab>(initialTab || 'tokens');
   const [assets, setAssets] = useState<StoredAsset[]>([]);
-  const [savedCharacters, setSavedCharacters] = useState<
-    SavedCharacterRecord[]
-  >([]);
+  const [savedCharacters, setSavedCharacters] = useState<SavedCharacterRecord[]>([]);
   const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
@@ -137,54 +127,36 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
   // Backup & Restore State
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [resultMessage, setResultMessage] = useState<{
-    type: 'success' | 'error';
-    text: string;
-  } | null>(null);
+  const [resultMessage, setResultMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   // Draggable window state (Task #112)
   const [isMinimized, setIsMinimized] = useState(false);
-  const {
-    windowRef,
-    position,
-    isDragging: isWindowDragging,
-    handleMouseDown,
-  } = useDraggableWindow({
-    storageKey: 'obr_asset_manager_pos',
-    initialX:
-      typeof window !== 'undefined'
-        ? Math.max(20, Math.min(window.innerWidth - 750, 80))
-        : 80,
+  const { windowRef, position, isDragging: isWindowDragging, handleMouseDown, zIndex } = useDraggableWindow({
+    storageKey: 'obb_asset_manager_pos',
+    initialX: typeof window !== 'undefined' ? Math.max(20, Math.min(window.innerWidth - 750, 80)) : 80,
     initialY: 80,
+    defaultZIndex: 55,
   });
 
-  const handleAssetDragStart = (
-    e: React.DragEvent,
-    asset: StoredAsset,
-    type: 'token' | 'prop' | 'monster' | 'character',
-  ) => {
-    const isProp = type === 'prop' || Boolean(asset.isProp);
+  const handleAssetDragStart = (e: React.DragEvent, asset: StoredAsset, type: 'token' | 'prop' | 'monster' | 'character' | 'tile') => {
+    const isTile = type === 'tile' || Boolean(asset.tags?.includes('tile'));
+    const isProp = type === 'prop' || isTile || Boolean(asset.isProp);
     const payload = {
       ...asset,
-      type,
+      type: isTile ? 'tile' : type,
       isProp,
-      propWidth: asset.propWidth ?? (isProp ? (asset.size ?? 1) : undefined),
-      propHeight: asset.propHeight ?? (isProp ? (asset.size ?? 1) : undefined),
+      layer: isTile ? 'map' : (isProp ? 'prop' : 'token'),
+      propWidth: asset.propWidth ?? (isTile ? 4 : (isProp ? asset.size ?? 1 : undefined)),
+      propHeight: asset.propHeight ?? (isTile ? 4 : (isProp ? asset.size ?? 1 : undefined)),
     };
-    e.dataTransfer.setData(
-      'application/oldbear-asset',
-      JSON.stringify(payload),
-    );
+    e.dataTransfer.setData('application/oldbear-asset', JSON.stringify(payload));
     e.dataTransfer.setData('application/json', JSON.stringify(payload));
     e.dataTransfer.effectAllowed = 'copy';
   };
 
-  const handleCharacterDragStart = (
-    e: React.DragEvent,
-    charRecord: SavedCharacterRecord,
-  ) => {
+  const handleCharacterDragStart = (e: React.DragEvent, charRecord: SavedCharacterRecord) => {
     const char = charRecord.charData;
     const assetLike = {
       id: charRecord.id,
@@ -198,10 +170,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
       size: 1,
       createdAt: Date.now(),
     };
-    e.dataTransfer.setData(
-      'application/oldbear-asset',
-      JSON.stringify(assetLike),
-    );
+    e.dataTransfer.setData('application/oldbear-asset', JSON.stringify(assetLike));
     e.dataTransfer.setData('application/json', JSON.stringify(assetLike));
     e.dataTransfer.effectAllowed = 'copy';
   };
@@ -247,21 +216,11 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
         ? [...tokens]
         : Object.values(tokens)
       : [];
-    const mapId =
-      activeMapId ||
-      session?.activeMapId ||
-      session?.maps[0]?.id ||
-      'map-default';
+    const mapId = activeMapId || session?.activeMapId || (session?.maps[0]?.id) || 'map-default';
     const spawnX = 400 + (existingList.length % 5) * 60;
     const spawnY = 400 + (existingList.length % 5) * 60;
     const newToken: Token = extensions?.monsterManagement?.createMonsterToken
-      ? extensions.monsterManagement.createMonsterToken(
-          asset,
-          mapId,
-          spawnX,
-          spawnY,
-          existingList,
-        )
+      ? extensions.monsterManagement.createMonsterToken(asset, mapId, spawnX, spawnY, existingList)
       : {
           id: `token-${crypto.randomUUID()}`,
           name: asset.name,
@@ -298,11 +257,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
         ? [...tokens]
         : Object.values(tokens)
       : [];
-    const mapId =
-      activeMapId ||
-      session?.activeMapId ||
-      session?.maps[0]?.id ||
-      'map-default';
+    const mapId = activeMapId || session?.activeMapId || (session?.maps[0]?.id) || 'map-default';
     const char = charRecord.charData;
     const spawnX = 350 + (existingList.length % 5) * 60;
     const spawnY = 350 + (existingList.length % 5) * 60;
@@ -343,69 +298,86 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
         ? [...tokens]
         : Object.values(tokens)
       : [];
-    const mapId =
-      activeMapId ||
-      session?.activeMapId ||
-      session?.maps[0]?.id ||
-      'map-default';
+    const mapId = activeMapId || session?.activeMapId || (session?.maps[0]?.id) || 'map-default';
     const spawnX = 350 + (existingList.length % 5) * 60;
     const spawnY = 350 + (existingList.length % 5) * 60;
-    const isProp = asset.type === 'prop' || Boolean(asset.isProp);
+    const isTile = activeTab === 'tiles' || Boolean(asset.tags?.includes('tile')) || (asset.type as string) === 'tile';
+    const isProp = asset.type === 'prop' || Boolean(asset.isProp) || isTile;
     const newToken: Token = {
       id: `token-${crypto.randomUUID()}`,
       mapId,
-      name: asset.name || (isProp ? 'Prop' : 'Token'),
+      name: asset.name || (isTile ? 'Modular Tile' : isProp ? 'Prop' : 'Token'),
       imageUrl: asset.dataUrl,
       x: Math.round(spawnX),
       y: Math.round(spawnY),
-      size: asset.size || 1,
+      size: asset.size || (isTile ? 4 : 1),
       rotation: asset.rotation || 0,
-      ringColor: isProp
-        ? asset.ringColor || '#94a3b8'
-        : asset.ringColor || '#3b82f6',
-      fillColor: asset.fillColor || (isProp ? '#1e293b' : '#1e3a8a'),
-      clipCircle: !isProp,
-      clipShape: isProp ? 'square' : asset.ringColor ? 'circle' : 'circle',
-      currentHp: isProp ? asset.maxHp || 0 : asset.maxHp || 20,
-      maxHp: isProp ? asset.maxHp || 0 : asset.maxHp || 20,
+      ringColor: (isTile || isProp) ? (asset.ringColor || 'transparent') : (asset.ringColor || '#3b82f6'),
+      fillColor: asset.fillColor || (isTile ? 'transparent' : isProp ? '#1e293b' : '#1e3a8a'),
+      clipCircle: !isProp && !isTile,
+      clipShape: (isProp || isTile) ? 'square' : (asset.ringColor ? 'circle' : 'circle'),
+      currentHp: (isProp || isTile) ? (asset.maxHp || 100) : (asset.maxHp || 20),
+      maxHp: (isProp || isTile) ? (asset.maxHp || 100) : (asset.maxHp || 20),
       tempHp: 0,
-      speed: isProp ? asset.speed || 0 : asset.speed || 30,
+      speed: (isProp || isTile) ? (asset.speed || 0) : (asset.speed || 30),
       conditions: [],
       isProp,
-      layer: isProp ? 'prop' : 'token',
-      propWidth: asset.propWidth,
-      propHeight: asset.propHeight,
+      layer: isTile ? 'map' : (isProp ? 'prop' : 'token'),
+      propWidth: asset.propWidth || (isTile ? 4 : undefined),
+      propHeight: asset.propHeight || (isTile ? 4 : undefined),
       locked: asset.locked,
     };
     onAddToken(newToken);
     setResultMessage({
       type: 'success',
-      text: `Spawned ${isProp ? 'prop' : 'token'} "${newToken.name}" onto the battlemap!`,
+      text: `Spawned ${isTile ? 'modular tile' : isProp ? 'prop' : 'token'} "${newToken.name}" onto the battlemap!`,
     });
   };
 
-  const monsterAssets = assets.filter((a) =>
-    Boolean(
-      a.monsterData ||
-      (a.type as string) === 'monster' ||
-      (a.character && a.character.actions),
-    ),
+  const handleDeployPresetTile = (preset: ModularMapTile) => {
+    if (!onAddToken) return;
+    const mapId = activeMapId || session?.activeMapId || (session?.maps[0]?.id) || 'map-default';
+    const existingList = tokens
+      ? Array.isArray(tokens)
+        ? [...tokens]
+        : Object.values(tokens)
+      : [];
+    const mapTokens = existingList.filter((t) => t.mapId === mapId && t.layer === 'map');
+    let spawnX = 200;
+    let spawnY = 200;
+    if (mapTokens.length > 0) {
+      const rightmost = [...mapTokens].sort((a, b) => (b.x + (b.propWidth || 4) * 50) - (a.x + (a.propWidth || 4) * 50))[0];
+      const gridSize = session?.maps.find((m) => m.id === mapId)?.gridSize || 50;
+      spawnX = rightmost.x + (rightmost.propWidth || 4) * gridSize;
+      spawnY = rightmost.y;
+    }
+    const token = createModularTileToken(preset, mapId, spawnX, spawnY);
+    onAddToken(token);
+    const gridSize = session?.maps.find((m) => m.id === mapId)?.gridSize || 50;
+    const tileW = (token.propWidth || token.size || 4) * gridSize;
+    const tileH = (token.propHeight || token.size || 4) * gridSize;
+    onCenterOnPosition?.(token.x + tileW / 2, token.y + tileH / 2);
+    setResultMessage({
+      type: 'success',
+      text: `Spawned modular tile "${preset.name}" onto the battlemap!`,
+    });
+  };
+
+  const handleDrawRandomTile = () => {
+    if (!onAddToken) return;
+    const drawn = drawRandomTile(DEFAULT_MODULAR_TILES);
+    if (!drawn) return;
+    handleDeployPresetTile(drawn);
+  };
+
+  const tileAssets = assets.filter(
+    (a) => (a.type as string) === 'tile' || (a.tags && a.tags.includes('tile'))
   );
+  const monsterAssets = assets.filter((a) => Boolean(a.monsterData || (a.type as string) === 'monster' || (a.character && a.character.actions)));
   const mapAssets = assets.filter((a) => a.type === 'map');
   const audioAssets = assets.filter((a) => a.type === 'audio');
-  const propAssets = assets.filter(
-    (a) =>
-      (a.type === 'prop' || a.isProp) &&
-      !a.monsterData &&
-      (!a.character || !a.character.actions),
-  );
-  const tokenAssets = assets.filter(
-    (a) =>
-      a.type === 'token' &&
-      !a.isProp &&
-      !a.monsterData &&
-      (!a.character || !a.character.actions),
-  );
+  const propAssets = assets.filter((a) => (a.type === 'prop' || a.isProp) && !a.tags?.includes('tile') && !a.monsterData && (!a.character || !a.character.actions));
+  const tokenAssets = assets.filter((a) => a.type === 'token' && !a.isProp && !a.tags?.includes('tile') && !a.monsterData && (!a.character || !a.character.actions));
 
   const filteredAssets =
     activeTab === 'maps'
@@ -416,12 +388,14 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
           ? audioAssets
           : activeTab === 'props'
             ? propAssets
-            : tokenAssets;
+            : activeTab === 'tiles'
+              ? tileAssets
+              : tokenAssets;
 
   // Multiselect toggles
   const toggleSelect = (id: string) => {
     setSelectedAssetIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
 
@@ -435,12 +409,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
 
   const handleDeleteSelected = async () => {
     if (selectedAssetIds.length === 0) return;
-    if (
-      !confirm(
-        `Are you sure you want to delete ${selectedAssetIds.length} asset(s)?`,
-      )
-    )
-      return;
+    if (!confirm(`Are you sure you want to delete ${selectedAssetIds.length} asset(s)?`)) return;
     await deleteMultipleAssets(selectedAssetIds);
     setSelectedAssetIds([]);
     await loadAssets();
@@ -466,10 +435,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
     setDuplicateWarning(null);
 
     for (const file of files) {
-      if (
-        file.name.toLowerCase().endsWith('.monster') ||
-        (file.name.endsWith('.json') && !file.name.includes('backup'))
-      ) {
+      if (file.name.toLowerCase().endsWith('.monster') || (file.name.endsWith('.json') && !file.name.includes('backup'))) {
         try {
           const text = await file.text();
           let handledCustom = false;
@@ -491,13 +457,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
           if (!handledCustom && extensions?.characterManagement) {
             try {
               const parsed = JSON.parse(text);
-              if (
-                parsed &&
-                (parsed.classes ||
-                  parsed.character ||
-                  parsed.stats ||
-                  activeTab === 'characters')
-              ) {
+              if (parsed && (parsed.classes || parsed.character || parsed.stats || activeTab === 'characters')) {
                 const char = parsed.character || parsed;
                 if (char && char.name) {
                   extensions.characterManagement.saveCharacter(char, isGm);
@@ -509,7 +469,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                   handledCustom = true;
                 }
               }
-            } catch {}
+            } catch { }
           }
           if (handledCustom) continue;
         } catch (err) {
@@ -524,22 +484,25 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
         const existing = await findDuplicateAsset(file.size, hash);
 
         if (existing) {
-          setDuplicateWarning(
-            `Asset already exists: "${existing.name}". Using existing asset without creating a duplicate.`,
-          );
+          setDuplicateWarning(`Asset already exists: "${existing.name}". Using existing asset without creating a duplicate.`);
           return;
         }
 
         let assetType: 'map' | 'token' | 'prop' | 'audio' = 'token';
-        if (activeTab === 'maps' || file.name.includes('map'))
-          assetType = 'map';
-        else if (activeTab === 'audio' || file.type.startsWith('audio/'))
-          assetType = 'audio';
-        else if (
-          (activeTab as string) === 'props' ||
-          file.name.toLowerCase().includes('prop')
-        )
-          assetType = 'prop';
+        const isTile = activeTab === 'tiles' || file.name.toLowerCase().includes('tile');
+        if (activeTab === 'maps' || file.name.includes('map')) assetType = 'map';
+        else if (activeTab === 'audio' || file.type.startsWith('audio/')) assetType = 'audio';
+        else if ((activeTab as string) === 'props' || file.name.toLowerCase().includes('prop') || isTile) assetType = 'prop';
+
+        let width: number | undefined;
+        let height: number | undefined;
+        if (assetType === 'map' || (!file.type.startsWith('audio/') && (file.type.startsWith('image/') || dataUrl.startsWith('data:image')))) {
+          try {
+            const dims = await getImageDimensions(dataUrl);
+            width = dims.width;
+            height = dims.height;
+          } catch (_) {}
+        }
 
         await saveAsset({
           id: crypto.randomUUID(),
@@ -548,14 +511,16 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
           dataUrl,
           fileSize: file.size,
           fileHash: hash,
-          isProp: assetType === 'prop',
-          layer: assetType === 'prop' ? 'prop' : 'token',
-          ringColor: assetType === 'prop' ? '#94a3b8' : undefined,
-          clipCircle: assetType !== 'prop',
-          monsterData:
-            activeTab === 'monsters'
-              ? { name: file.name.replace(/\.[^/.]+$/, '') }
-              : undefined,
+          width,
+          height,
+          isProp: assetType === 'prop' || isTile,
+          layer: isTile ? 'map' : (assetType === 'prop' ? 'prop' : 'token'),
+          tags: isTile ? ['tile'] : undefined,
+          propWidth: isTile ? 4 : undefined,
+          propHeight: isTile ? 4 : undefined,
+          ringColor: (isTile || assetType === 'prop') ? 'transparent' : undefined,
+          clipCircle: assetType !== 'prop' && !isTile,
+          monsterData: activeTab === 'monsters' ? { name: file.name.replace(/\.[^/.]+$/, '') } : undefined,
           createdAt: Date.now(),
         });
         await loadAssets();
@@ -573,10 +538,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
     if (files.length === 0) return;
 
     for (const file of files) {
-      if (
-        file.name.toLowerCase().endsWith('.monster') ||
-        (file.name.endsWith('.json') && !file.name.includes('backup'))
-      ) {
+      if (file.name.toLowerCase().endsWith('.monster') || (file.name.endsWith('.json') && !file.name.includes('backup'))) {
         try {
           const text = await file.text();
           if (extensions?.monsterManagement) {
@@ -595,10 +557,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
             }
           }
         } catch (err: any) {
-          setResultMessage({
-            type: 'error',
-            text: `Failed to import monster: ${err.message}`,
-          });
+          setResultMessage({ type: 'error', text: `Failed to import monster: ${err.message}` });
           continue;
         }
       }
@@ -608,16 +567,10 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
           const text = await file.text();
           await importAllData(text);
           await loadAssets();
-          setResultMessage({
-            type: 'success',
-            text: 'Restored backup successfully!',
-          });
+          setResultMessage({ type: 'success', text: 'Restored backup successfully!' });
           continue;
         } catch (err: any) {
-          setResultMessage({
-            type: 'error',
-            text: `Failed to restore backup: ${err.message}`,
-          });
+          setResultMessage({ type: 'error', text: `Failed to restore backup: ${err.message}` });
           continue;
         }
       }
@@ -634,15 +587,20 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
         }
 
         let assetType: 'map' | 'token' | 'prop' | 'audio' = 'token';
-        if (activeTab === 'maps' || file.name.includes('map'))
-          assetType = 'map';
-        else if (activeTab === 'audio' || file.type.startsWith('audio/'))
-          assetType = 'audio';
-        else if (
-          (activeTab as string) === 'props' ||
-          file.name.toLowerCase().includes('prop')
-        )
-          assetType = 'prop';
+        const isTile = activeTab === 'tiles' || file.name.toLowerCase().includes('tile');
+        if (activeTab === 'maps' || file.name.includes('map')) assetType = 'map';
+        else if (activeTab === 'audio' || file.type.startsWith('audio/')) assetType = 'audio';
+        else if ((activeTab as string) === 'props' || file.name.toLowerCase().includes('prop') || isTile) assetType = 'prop';
+
+        let width: number | undefined;
+        let height: number | undefined;
+        if (assetType === 'map' || (!file.type.startsWith('audio/') && (file.type.startsWith('image/') || dataUrl.startsWith('data:image')))) {
+          try {
+            const dims = await getImageDimensions(dataUrl);
+            width = dims.width;
+            height = dims.height;
+          } catch (_) {}
+        }
 
         await saveAsset({
           id: crypto.randomUUID(),
@@ -651,10 +609,15 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
           dataUrl,
           fileSize: file.size,
           fileHash: hash,
-          isProp: assetType === 'prop',
-          layer: assetType === 'prop' ? 'prop' : 'token',
-          ringColor: assetType === 'prop' ? '#94a3b8' : undefined,
-          clipCircle: assetType !== 'prop',
+          width,
+          height,
+          isProp: assetType === 'prop' || isTile,
+          layer: isTile ? 'map' : (assetType === 'prop' ? 'prop' : 'token'),
+          tags: isTile ? ['tile'] : undefined,
+          propWidth: isTile ? 4 : undefined,
+          propHeight: isTile ? 4 : undefined,
+          ringColor: (isTile || assetType === 'prop') ? 'transparent' : undefined,
+          clipCircle: assetType !== 'prop' && !isTile,
           createdAt: Date.now(),
         });
         await loadAssets();
@@ -679,27 +642,52 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
     }
   };
 
-  const handleMakeScene = (asset: StoredAsset) => {
+  const handleMakeScene = async (asset: StoredAsset) => {
     if (!onAddMap) return;
+
+    let width = asset.width;
+    let height = asset.height;
+    if ((!width || !height) && asset.dataUrl) {
+      try {
+        const dims = await getImageDimensions(asset.dataUrl);
+        width = dims.width;
+        height = dims.height;
+        if (width && height && (width !== asset.width || height !== asset.height)) {
+          await saveAsset({
+            ...asset,
+            width,
+            height,
+          });
+        }
+      } catch (_) {}
+    }
+    width = width || 2000;
+    height = height || 1500;
+    const { tilesX, tilesY, gridSize } = calculateDefaultTiles(width, height);
+
     const newScene: GameMap = {
       id: `map-${crypto.randomUUID()}`,
       name: `${asset.name} Scene`,
       imageUrl: asset.dataUrl,
-      gridSize: 50,
+      gridSize,
       gridType: 'square',
       gridColor: '#ffffff',
       gridOpacity: 0.4,
-      width: asset.width || 2000,
-      height: asset.height || 1500,
+      width,
+      height,
       scaleFtPerCell: 5,
       showGrid: true,
+      tilesX,
+      tilesY,
+      gridOffsetX: 0,
+      gridOffsetY: 0,
       baseMapId: asset.id,
       baseMapName: asset.name,
     };
     onAddMap(newScene);
     setResultMessage({
       type: 'success',
-      text: `Created new scene "${newScene.name}" from map asset!`,
+      text: `Created new scene "${newScene.name}" (${width}x${height}) from map asset!`,
     });
   };
 
@@ -724,11 +712,33 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
     }
   };
 
-  const handleProcessFile = async (file: File) => {
-    if (!file.name.endsWith('.json')) {
+  const handleExportBinder = async () => {
+    setExporting(true);
+    setResultMessage(null);
+    try {
+      const blob = await exportToBinderBlob({ session });
+      const saved = await downloadBinderFile(blob);
+      if (saved) {
+        setResultMessage({
+          type: 'success',
+          text: 'Universal .binder interchange file successfully exported and saved!',
+        });
+      }
+    } catch (err: any) {
       setResultMessage({
         type: 'error',
-        text: 'Please select a valid .json Old Bear Battles backup file.',
+        text: `.binder export failed: ${err.message || 'Unknown error'}`,
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleProcessFile = async (file: File) => {
+    if (!file.name.endsWith('.json') && !file.name.endsWith('.binder')) {
+      setResultMessage({
+        type: 'error',
+        text: 'Please select a valid .binder or .json Old Bear Battles backup file.',
       });
       return;
     }
@@ -739,10 +749,11 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
     try {
       const text = await file.text();
       const result = await importAllData(text);
+      const isBinder = file.name.endsWith('.binder') || text.includes('schemaVersion');
 
       setResultMessage({
         type: 'success',
-        text: `Import complete! Restored ${result.assetCount} asset(s) and character data.`,
+        text: `Import complete! Restored ${result.assetCount} asset(s) and character data from ${isBinder ? '.binder collection' : 'backup'}.`,
       });
       await loadAssets();
 
@@ -774,10 +785,8 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
         flexDirection: 'column',
         borderRadius: 'var(--radius-lg)',
         overflow: 'hidden',
-        boxShadow: isWindowDragging
-          ? '0 24px 48px rgba(0,0,0,0.75)'
-          : '0 16px 36px rgba(0,0,0,0.55)',
-        zIndex: 55,
+        boxShadow: isWindowDragging ? '0 24px 48px rgba(0,0,0,0.75)' : '0 16px 36px rgba(0,0,0,0.55)',
+        zIndex: zIndex ?? 55,
         transition: isWindowDragging
           ? 'none'
           : 'max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -797,25 +806,17 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
           backgroundColor: 'var(--bg-surface)',
           cursor: isWindowDragging ? 'grabbing' : 'grab',
           userSelect: 'none',
+          flexShrink: 0,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <Database size={20} color="var(--accent-primary)" />
           <div>
-            <h2
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 700,
-                fontSize: '1.15rem',
-                margin: 0,
-              }}
-            >
+            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.15rem', margin: 0 }}>
               Asset Manager
             </h2>
             {!isMinimized && (
-              <div
-                style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}
-              >
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
                 Drag items onto battlemap or deploy with 1-click
               </div>
             )}
@@ -830,9 +831,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
               e.stopPropagation();
               setIsMinimized((v) => !v);
             }}
-            title={
-              isMinimized ? 'Expand Asset Manager' : 'Minimize Asset Manager'
-            }
+            title={isMinimized ? 'Expand Asset Manager' : 'Minimize Asset Manager'}
             style={{ width: '28px', height: '28px' }}
           >
             <ChevronDown
@@ -860,6 +859,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
           flex: 1,
           overflow: 'hidden',
           minHeight: 0,
+          maxHeight: isMinimized ? '0px' : 'none',
         }}
       >
         {/* Tabs */}
@@ -870,6 +870,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
             backgroundColor: 'var(--bg-surface-elevated)',
             padding: '0 1rem',
             overflowX: 'auto',
+            flexShrink: 0,
           }}
         >
           <button
@@ -882,14 +883,8 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
               padding: '0.75rem 1.1rem',
               border: 'none',
               background: 'none',
-              color:
-                activeTab === 'tokens'
-                  ? 'var(--accent-primary)'
-                  : 'var(--text-secondary)',
-              borderBottom:
-                activeTab === 'tokens'
-                  ? '2px solid var(--accent-primary)'
-                  : '2px solid transparent',
+              color: activeTab === 'tokens' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+              borderBottom: activeTab === 'tokens' ? '2px solid var(--accent-primary)' : '2px solid transparent',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
@@ -910,12 +905,8 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
               padding: '0.75rem 1.1rem',
               border: 'none',
               background: 'none',
-              color:
-                activeTab === 'props' ? '#eab308' : 'var(--text-secondary)',
-              borderBottom:
-                activeTab === 'props'
-                  ? '2px solid #eab308'
-                  : '2px solid transparent',
+              color: activeTab === 'props' ? '#eab308' : 'var(--text-secondary)',
+              borderBottom: activeTab === 'props' ? '2px solid #eab308' : '2px solid transparent',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
@@ -924,6 +915,28 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
             }}
           >
             <Package size={16} /> Props ({propAssets.length})
+          </button>
+
+          <button
+            className={`tab-btn ${activeTab === 'tiles' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('tiles');
+              setSelectedAssetIds([]);
+            }}
+            style={{
+              padding: '0.75rem 1.1rem',
+              border: 'none',
+              background: 'none',
+              color: activeTab === 'tiles' ? '#38bdf8' : 'var(--text-secondary)',
+              borderBottom: activeTab === 'tiles' ? '2px solid #38bdf8' : '2px solid transparent',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <Grid size={16} /> Tiles ({tileAssets.length})
           </button>
 
           <button
@@ -936,14 +949,8 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
               padding: '0.75rem 1.1rem',
               border: 'none',
               background: 'none',
-              color:
-                activeTab === 'monsters'
-                  ? 'var(--accent-rose)'
-                  : 'var(--text-secondary)',
-              borderBottom:
-                activeTab === 'monsters'
-                  ? '2px solid var(--accent-rose)'
-                  : '2px solid transparent',
+              color: activeTab === 'monsters' ? 'var(--accent-rose)' : 'var(--text-secondary)',
+              borderBottom: activeTab === 'monsters' ? '2px solid var(--accent-rose)' : '2px solid transparent',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
@@ -964,14 +971,8 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
               padding: '0.75rem 1.1rem',
               border: 'none',
               background: 'none',
-              color:
-                activeTab === 'characters'
-                  ? '#818cf8'
-                  : 'var(--text-secondary)',
-              borderBottom:
-                activeTab === 'characters'
-                  ? '2px solid #818cf8'
-                  : '2px solid transparent',
+              color: activeTab === 'characters' ? '#818cf8' : 'var(--text-secondary)',
+              borderBottom: activeTab === 'characters' ? '2px solid #818cf8' : '2px solid transparent',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
@@ -992,14 +993,8 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
               padding: '0.75rem 1.1rem',
               border: 'none',
               background: 'none',
-              color:
-                activeTab === 'maps'
-                  ? 'var(--accent-primary)'
-                  : 'var(--text-secondary)',
-              borderBottom:
-                activeTab === 'maps'
-                  ? '2px solid var(--accent-primary)'
-                  : '2px solid transparent',
+              color: activeTab === 'maps' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+              borderBottom: activeTab === 'maps' ? '2px solid var(--accent-primary)' : '2px solid transparent',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
@@ -1010,34 +1005,28 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
             <Map size={16} /> Maps ({mapAssets.length})
           </button>
 
-          {isGm && (
-            <button
-              className={`tab-btn ${activeTab === 'scenes' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveTab('scenes');
-                setSelectedAssetIds([]);
-              }}
-              style={{
-                padding: '0.75rem 1.1rem',
-                border: 'none',
-                background: 'none',
-                color:
-                  activeTab === 'scenes' ? '#38bdf8' : 'var(--text-secondary)',
-                borderBottom:
-                  activeTab === 'scenes'
-                    ? '2px solid #38bdf8'
-                    : '2px solid transparent',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-            >
-              <Layers size={16} /> Scenes (
-              {(maps || session?.maps || []).length})
-            </button>
-          )}
+          <button
+            className={`tab-btn ${activeTab === 'scenes' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('scenes');
+              setSelectedAssetIds([]);
+            }}
+            style={{
+              padding: '0.75rem 1.1rem',
+              border: 'none',
+              background: 'none',
+              color: activeTab === 'scenes' ? '#38bdf8' : 'var(--text-secondary)',
+              borderBottom: activeTab === 'scenes' ? '2px solid #38bdf8' : '2px solid transparent',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <Layers size={16} /> Scenes ({(maps || session?.maps || []).length})
+          </button>
+
 
           <button
             className={`tab-btn ${activeTab === 'audio' ? 'active' : ''}`}
@@ -1049,14 +1038,8 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
               padding: '0.75rem 1.1rem',
               border: 'none',
               background: 'none',
-              color:
-                activeTab === 'audio'
-                  ? 'var(--accent-primary)'
-                  : 'var(--text-secondary)',
-              borderBottom:
-                activeTab === 'audio'
-                  ? '2px solid var(--accent-primary)'
-                  : '2px solid transparent',
+              color: activeTab === 'audio' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+              borderBottom: activeTab === 'audio' ? '2px solid var(--accent-primary)' : '2px solid transparent',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
@@ -1080,16 +1063,12 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              flexShrink: 0,
             }}
           >
             <span>{duplicateWarning}</span>
             <button
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#f59e0b',
-                cursor: 'pointer',
-              }}
+              style={{ background: 'none', border: 'none', color: '#f59e0b', cursor: 'pointer' }}
               onClick={() => setDuplicateWarning(null)}
             >
               ✕
@@ -1098,7 +1077,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
         )}
 
         {/* Content Body: Asset Previews with Multiselect */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem' }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '1.25rem' }}>
           {/* Asset Action Controls */}
           {activeTab !== 'scenes' && (
             <div
@@ -1111,31 +1090,9 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                 gap: '0.5rem',
               }}
             >
-              <div
-                style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}
-              >
-                <label
-                  className="btn btn-primary"
-                  style={{
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    padding: '0.4rem 0.8rem',
-                    fontSize: '0.8rem',
-                  }}
-                >
-                  <Plus size={14} /> Upload{' '}
-                  {activeTab === 'monsters'
-                    ? 'Monster (.monster, .json)'
-                    : activeTab === 'characters'
-                      ? 'Character (.json)'
-                      : activeTab === 'maps'
-                        ? 'Map'
-                        : activeTab === 'audio'
-                          ? 'Sound'
-                          : activeTab === 'props'
-                            ? 'Prop'
-                            : 'Token'}
-                  ...
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <label className="btn btn-primary" style={{ cursor: 'pointer', display: 'inline-flex', padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
+                  <Plus size={14} /> Upload {activeTab === 'monsters' ? 'Monster (.monster, .json)' : activeTab === 'characters' ? 'Character (.json)' : activeTab === 'maps' ? 'Map' : activeTab === 'audio' ? 'Sound' : activeTab === 'tiles' ? 'Tile' : activeTab === 'props' ? 'Prop' : 'Token'}...
                   <input
                     ref={assetUploadRef}
                     type="file"
@@ -1154,20 +1111,32 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                   />
                 </label>
 
+                {activeTab === 'tiles' && onAddToken && (
+                  <button
+                    className="btn btn-secondary"
+                    style={{
+                      padding: '0.4rem 0.8rem',
+                      fontSize: '0.8rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                      color: '#38bdf8',
+                      border: '1px solid rgba(56, 189, 248, 0.4)',
+                    }}
+                    onClick={handleDrawRandomTile}
+                    title="Draw a random modular dungeon tile from the deck and place it on the battlemap"
+                  >
+                    <Dices size={14} /> Draw Random Tile (Deck)
+                  </button>
+                )}
+
                 {activeTab !== 'characters' && filteredAssets.length > 0 && (
                   <>
-                    <button
-                      className="btn btn-secondary"
-                      style={{ padding: '0.4rem 0.7rem', fontSize: '0.75rem' }}
-                      onClick={selectAll}
-                    >
+                    <button className="btn btn-secondary" style={{ padding: '0.4rem 0.7rem', fontSize: '0.75rem' }} onClick={selectAll}>
                       Select All
                     </button>
-                    <button
-                      className="btn btn-secondary"
-                      style={{ padding: '0.4rem 0.7rem', fontSize: '0.75rem' }}
-                      onClick={deselectAll}
-                    >
+                    <button className="btn btn-secondary" style={{ padding: '0.4rem 0.7rem', fontSize: '0.75rem' }} onClick={deselectAll}>
                       Deselect All
                     </button>
                   </>
@@ -1175,13 +1144,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
               </div>
 
               {selectedAssetIds.length > 0 && activeTab !== 'characters' && (
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: '0.5rem',
-                    alignItems: 'center',
-                  }}
-                >
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                   {activeTab === 'maps' && onAddMap && (
                     <button
                       className="btn btn-primary"
@@ -1192,17 +1155,16 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                         alignItems: 'center',
                         gap: '5px',
                       }}
-                      onClick={() => {
-                        selectedAssetIds.forEach((id) => {
+                      onClick={async () => {
+                        for (const id of selectedAssetIds) {
                           const asset = assets.find((a) => a.id === id);
-                          if (asset) handleMakeScene(asset);
-                        });
+                          if (asset) await handleMakeScene(asset);
+                        }
                         setSelectedAssetIds([]);
                       }}
                       title="Make scenes from selected maps"
                     >
-                      <Layers size={14} /> Make Scene from Selected (
-                      {selectedAssetIds.length})
+                      <Layers size={14} /> Make Scene from Selected ({selectedAssetIds.length})
                     </button>
                   )}
                   <button
@@ -1219,8 +1181,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                     }}
                     onClick={handleDeleteSelected}
                   >
-                    <Trash2 size={14} /> Delete Selected (
-                    {selectedAssetIds.length})
+                    <Trash2 size={14} /> Delete Selected ({selectedAssetIds.length})
                   </button>
                 </div>
               )}
@@ -1234,27 +1195,19 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
               maps={maps || session?.maps || []}
               activeMapId={activeMapId || session?.activeMapId || ''}
               currentGmPreviewMapId={currentGmPreviewMapId || activeMapId || ''}
-              onSelectGmPreviewMap={onSelectGmPreviewMap || (() => {})}
-              onSetActiveMapForPlayers={onSetActiveMapForPlayers || (() => {})}
+              onSelectGmPreviewMap={onSelectGmPreviewMap || (() => { })}
+              onSetActiveMapForPlayers={onSetActiveMapForPlayers || (() => { })}
               onSendPlayersWithTokens={onSendPlayersWithTokens}
               onOpenBatchTokenTransfer={onOpenBatchTokenTransfer}
-              onAddMap={onAddMap || (() => {})}
-              onUpdateMap={onUpdateMap || (() => {})}
-              onDeleteMap={onDeleteMap || (() => {})}
+              onAddMap={onAddMap || (() => { })}
+              onUpdateMap={onUpdateMap || (() => { })}
+              onDeleteMap={onDeleteMap || (() => { })}
               onClose={onClose}
             />
           ) : activeTab === 'characters' ? (
             savedCharacters.length === 0 ? (
-              <div
-                style={{
-                  padding: '2.5rem',
-                  textAlign: 'center',
-                  color: 'var(--text-muted)',
-                  fontSize: '0.85rem',
-                }}
-              >
-                No imported characters yet. Click Upload Character (.json) above
-                or import a character from D&D Beyond in the Character Sheet!
+              <div style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                No imported characters yet. Click Upload Character (.json) above or import a character from D&D Beyond in the Character Sheet!
               </div>
             ) : (
               <div
@@ -1274,9 +1227,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                     <div
                       key={charRecord.id}
                       draggable={true}
-                      onDragStart={(e) =>
-                        handleCharacterDragStart(e, charRecord)
-                      }
+                      onDragStart={(e) => handleCharacterDragStart(e, charRecord)}
                       style={{
                         borderRadius: 'var(--radius-md)',
                         backgroundColor: 'var(--bg-surface-elevated)',
@@ -1315,9 +1266,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                       <div
                         style={{
                           height: '95px',
-                          backgroundImage: charRecord.avatarUrl
-                            ? `url("${charRecord.avatarUrl}")`
-                            : 'none',
+                          backgroundImage: charRecord.avatarUrl ? `url("${charRecord.avatarUrl}")` : 'none',
                           backgroundSize: 'cover',
                           backgroundRepeat: 'no-repeat',
                           backgroundPosition: 'center top',
@@ -1327,88 +1276,31 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                           justifyContent: 'center',
                         }}
                       >
-                        {!charRecord.avatarUrl && (
-                          <Shield size={36} color="#818cf8" />
-                        )}
+                        {!charRecord.avatarUrl && <Shield size={36} color="#818cf8" />}
                       </div>
 
                       {/* Character Details */}
-                      <div
-                        style={{
-                          padding: '0.5rem',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '4px',
-                          flex: 1,
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontWeight: 700,
-                            fontSize: '0.85rem',
-                            color: '#e0e7ff',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          }}
-                          title={charRecord.name}
-                        >
+                      <div style={{ padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#e0e7ff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={charRecord.name}>
                           {charRecord.name}
                         </div>
 
                         {/* Quick Stats Badges */}
-                        <div
-                          style={{
-                            display: 'flex',
-                            gap: '4px',
-                            flexWrap: 'wrap',
-                            fontSize: '0.7rem',
-                          }}
-                        >
-                          <span
-                            style={{
-                              backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                              color: '#f87171',
-                              padding: '1px 4px',
-                              borderRadius: '3px',
-                              fontWeight: 600,
-                            }}
-                          >
+                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', fontSize: '0.7rem' }}>
+                          <span style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', color: '#f87171', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>
                             HP {hp}
                           </span>
-                          <span
-                            style={{
-                              backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                              color: '#60a5fa',
-                              padding: '1px 4px',
-                              borderRadius: '3px',
-                              fontWeight: 600,
-                            }}
-                          >
+                          <span style={{ backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>
                             AC {ac}
                           </span>
-                          <span
-                            style={{
-                              backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                              color: '#34d399',
-                              padding: '1px 4px',
-                              borderRadius: '3px',
-                              fontWeight: 600,
-                            }}
-                          >
+                          <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>
                             {speed}ft
                           </span>
                         </div>
                       </div>
 
                       {/* Actions: Deploy Token & Delete */}
-                      <div
-                        style={{
-                          padding: '0 6px 6px 6px',
-                          display: 'flex',
-                          gap: '4px',
-                        }}
-                      >
+                      <div style={{ padding: '0 6px 6px 6px', display: 'flex', gap: '4px' }}>
                         {onAddToken && (
                           <button
                             className="btn btn-primary"
@@ -1426,25 +1318,12 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                         )}
                         <button
                           className="btn-icon"
-                          style={{
-                            width: '28px',
-                            height: '28px',
-                            color: '#f43f5e',
-                          }}
+                          style={{ width: '28px', height: '28px', color: '#f43f5e' }}
                           onClick={() => {
-                            if (
-                              confirm(`Delete character ${charRecord.name}?`)
-                            ) {
+                            if (confirm(`Delete character ${charRecord.name}?`)) {
                               if (extensions?.characterManagement) {
-                                extensions.characterManagement.deleteCharacter(
-                                  charRecord.id,
-                                  isGm,
-                                );
-                                setSavedCharacters(
-                                  extensions.characterManagement.getCharacters(
-                                    isGm,
-                                  ),
-                                );
+                                extensions.characterManagement.deleteCharacter(charRecord.id, isGm);
+                                setSavedCharacters(extensions.characterManagement.getCharacters(isGm));
                               }
                             }
                           }}
@@ -1460,16 +1339,8 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
             )
           ) : activeTab === 'monsters' ? (
             monsterAssets.length === 0 ? (
-              <div
-                style={{
-                  padding: '2.5rem',
-                  textAlign: 'center',
-                  color: 'var(--text-muted)',
-                  fontSize: '0.85rem',
-                }}
-              >
-                No imported monsters yet. Click Upload Monster (.monster, .json)
-                above or drag monster files onto the board!
+              <div style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                No imported monsters yet. Click Upload Monster (.monster, .json) above or drag monster files onto the board!
               </div>
             ) : (
               <div
@@ -1481,65 +1352,35 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
               >
                 {monsterAssets.map((asset) => {
                   const isSelected = selectedAssetIds.includes(asset.id);
-                  const cr =
-                    asset.monsterData?.cr ||
-                    asset.character?.cr ||
-                    (asset.monsterData?.challenge_rating
-                      ? `${asset.monsterData.challenge_rating}`
-                      : null);
-                  const hp =
-                    asset.maxHp ||
-                    asset.character?.maxHp ||
-                    asset.monsterData?.hit_points ||
-                    20;
-                  const ac =
-                    asset.armorClass ||
-                    asset.character?.armorClass ||
-                    asset.monsterData?.armor_class ||
-                    10;
+                  const cr = asset.monsterData?.cr || asset.character?.cr || (asset.monsterData?.challenge_rating ? `${asset.monsterData.challenge_rating}` : null);
+                  const hp = asset.maxHp || asset.character?.maxHp || asset.monsterData?.hit_points || 20;
+                  const ac = asset.armorClass || asset.character?.armorClass || asset.monsterData?.armor_class || 10;
                   const speed = asset.speed || asset.character?.speed || 30;
 
                   return (
                     <div
                       key={asset.id}
                       draggable={true}
-                      onDragStart={(e) =>
-                        handleAssetDragStart(e, asset, 'monster')
-                      }
+                      onDragStart={(e) => handleAssetDragStart(e, asset, 'monster')}
                       style={{
                         borderRadius: 'var(--radius-md)',
                         backgroundColor: 'var(--bg-surface-elevated)',
-                        border: isSelected
-                          ? '2px solid var(--accent-rose)'
-                          : '1px solid rgba(244, 63, 94, 0.3)',
+                        border: isSelected ? '2px solid var(--accent-rose)' : '1px solid rgba(244, 63, 94, 0.3)',
                         overflow: 'hidden',
                         display: 'flex',
                         flexDirection: 'column',
                         position: 'relative',
-                        boxShadow: isSelected
-                          ? '0 0 10px rgba(244, 63, 94, 0.4)'
-                          : 'none',
+                        boxShadow: isSelected ? '0 0 10px rgba(244, 63, 94, 0.4)' : 'none',
                         cursor: 'grab',
                       }}
                     >
                       {/* Checkbox badge */}
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: 6,
-                          left: 6,
-                          zIndex: 2,
-                        }}
-                      >
+                      <div style={{ position: 'absolute', top: 6, left: 6, zIndex: 2 }}>
                         <input
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => toggleSelect(asset.id)}
-                          style={{
-                            cursor: 'pointer',
-                            width: '16px',
-                            height: '16px',
-                          }}
+                          style={{ cursor: 'pointer', width: '16px', height: '16px' }}
                         />
                       </div>
 
@@ -1565,9 +1406,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                       <div
                         style={{
                           height: '95px',
-                          backgroundImage: asset.dataUrl
-                            ? `url("${asset.dataUrl}")`
-                            : 'none',
+                          backgroundImage: asset.dataUrl ? `url("${asset.dataUrl}")` : 'none',
                           backgroundSize: 'contain',
                           backgroundRepeat: 'no-repeat',
                           backgroundPosition: 'center',
@@ -1581,82 +1420,27 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                       </div>
 
                       {/* Monster Details */}
-                      <div
-                        style={{
-                          padding: '0.5rem',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '4px',
-                          flex: 1,
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontWeight: 700,
-                            fontSize: '0.85rem',
-                            color: '#fecdd3',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          }}
-                          title={asset.name}
-                        >
+                      <div style={{ padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#fecdd3', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={asset.name}>
                           {asset.name}
                         </div>
 
                         {/* Quick Stats Badges */}
-                        <div
-                          style={{
-                            display: 'flex',
-                            gap: '4px',
-                            flexWrap: 'wrap',
-                            fontSize: '0.7rem',
-                          }}
-                        >
-                          <span
-                            style={{
-                              backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                              color: '#f87171',
-                              padding: '1px 4px',
-                              borderRadius: '3px',
-                              fontWeight: 600,
-                            }}
-                          >
+                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', fontSize: '0.7rem' }}>
+                          <span style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', color: '#f87171', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>
                             HP {hp}
                           </span>
-                          <span
-                            style={{
-                              backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                              color: '#60a5fa',
-                              padding: '1px 4px',
-                              borderRadius: '3px',
-                              fontWeight: 600,
-                            }}
-                          >
+                          <span style={{ backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>
                             AC {ac}
                           </span>
-                          <span
-                            style={{
-                              backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                              color: '#34d399',
-                              padding: '1px 4px',
-                              borderRadius: '3px',
-                              fontWeight: 600,
-                            }}
-                          >
+                          <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>
                             {speed}ft
                           </span>
                         </div>
                       </div>
 
                       {/* Actions: Deploy Token & Delete */}
-                      <div
-                        style={{
-                          padding: '0 6px 6px 6px',
-                          display: 'flex',
-                          gap: '4px',
-                        }}
-                      >
+                      <div style={{ padding: '0 6px 6px 6px', display: 'flex', gap: '4px' }}>
                         {onAddToken && (
                           <button
                             className="btn btn-primary"
@@ -1676,11 +1460,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                         )}
                         <button
                           className="btn-icon"
-                          style={{
-                            width: '28px',
-                            height: '28px',
-                            color: '#f43f5e',
-                          }}
+                          style={{ width: '28px', height: '28px', color: '#f43f5e' }}
                           onClick={async () => {
                             if (confirm(`Delete monster ${asset.name}?`)) {
                               await deleteAsset(asset.id);
@@ -1697,29 +1477,96 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                 })}
               </div>
             )
-          ) : filteredAssets.length === 0 ? (
-            <div
-              style={{
-                padding: '2rem',
-                textAlign: 'center',
-                color: 'var(--text-muted)',
-                fontSize: '0.85rem',
-              }}
-            >
-              No {activeTab} uploaded yet. Click Upload above or drag files onto
-              the board!
-            </div>
           ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns:
-                  activeTab === 'audio'
-                    ? '1fr'
-                    : 'repeat(auto-fill, minmax(135px, 1fr))',
-                gap: '0.75rem',
-              }}
-            >
+            <>
+              {activeTab === 'tiles' && (
+                <div style={{ marginBottom: '1.5rem', background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: 'var(--radius-md)', padding: '0.9rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Grid size={15} /> Standard Modular Dungeon Tiles (Deck)
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      Drag or deploy onto map layer — edges snap magnetically
+                    </span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '0.6rem' }}>
+                    {DEFAULT_MODULAR_TILES.map((preset) => (
+                      <div
+                        key={preset.id}
+                        draggable
+                        onDragStart={(e) => {
+                          const fakeAsset = {
+                            id: preset.id,
+                            name: preset.name,
+                            dataUrl: preset.imageUrl,
+                            type: 'tile',
+                            propWidth: preset.gridTilesX || 4,
+                            propHeight: preset.gridTilesY || 4,
+                            isProp: true,
+                            layer: 'map',
+                            tags: ['tile'],
+                          };
+                          handleAssetDragStart(e, fakeAsset as any, 'tile');
+                        }}
+                        style={{
+                          background: preset.backgroundColor || '#1e293b',
+                          border: '1px solid rgba(56, 189, 248, 0.3)',
+                          borderRadius: 'var(--radius-sm)',
+                          padding: '0.6rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                          cursor: 'grab',
+                        }}
+                      >
+                        {preset.imageUrl && (
+                          <div style={{ width: '100%', height: '64px', borderRadius: '4px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.25)', marginBottom: '2px' }}>
+                            <img src={preset.imageUrl} alt={preset.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                          </div>
+                        )}
+                        <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#f8fafc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {preset.name}
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                          {preset.gridTilesX}×{preset.gridTilesY} tiles ({preset.category})
+                        </div>
+                        {preset.sockets && (
+                          <div style={{ fontSize: '0.65rem', color: '#38bdf8', display: 'flex', gap: '4px' }}>
+                            {preset.sockets.north && <span>N</span>}
+                            {preset.sockets.south && <span>S</span>}
+                            {preset.sockets.east && <span>E</span>}
+                            {preset.sockets.west && <span>W</span>}
+                          </div>
+                        )}
+                        {onAddToken && (
+                          <button
+                            className="btn btn-secondary"
+                            style={{ fontSize: '0.72rem', padding: '0.25rem 0.4rem', marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                            onClick={() => handleDeployPresetTile(preset)}
+                          >
+                            <Plus size={11} /> Place Tile
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {filteredAssets.length === 0 ? (
+                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                  {activeTab === 'tiles'
+                    ? 'No custom tile images uploaded yet. Place presets above or click Upload Tile to import custom map tiles.'
+                    : `No ${activeTab} uploaded yet. Click Upload above or drag files onto the board!`}
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: activeTab === 'audio' ? '1fr' : 'repeat(auto-fill, minmax(135px, 1fr))',
+                    gap: '0.75rem',
+                  }}
+                >
               {filteredAssets.map((asset) => {
                 const isSelected = selectedAssetIds.includes(asset.id);
                 const isEditing = editingId === asset.id;
@@ -1734,21 +1581,11 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                         justifyContent: 'space-between',
                         padding: '0.6rem 0.8rem',
                         borderRadius: 'var(--radius-md)',
-                        backgroundColor: isSelected
-                          ? 'rgba(99, 102, 241, 0.15)'
-                          : 'var(--bg-surface-elevated)',
-                        border: isSelected
-                          ? '1px solid var(--accent-primary)'
-                          : '1px solid var(--border-subtle)',
+                        backgroundColor: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'var(--bg-surface-elevated)',
+                        border: isSelected ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
                       }}
                     >
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.75rem',
-                        }}
-                      >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <input
                           type="checkbox"
                           checked={isSelected}
@@ -1760,11 +1597,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                           onClick={() => togglePlayAudio(asset)}
                           style={{ width: '32px', height: '32px' }}
                         >
-                          {playingAudioId === asset.id ? (
-                            <Pause size={16} />
-                          ) : (
-                            <Play size={16} />
-                          )}
+                          {playingAudioId === asset.id ? <Pause size={16} /> : <Play size={16} />}
                         </button>
                         {isEditing ? (
                           <div style={{ display: 'flex', gap: '4px' }}>
@@ -1772,40 +1605,19 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                               type="text"
                               value={editingName}
                               onChange={(e) => setEditingName(e.target.value)}
-                              style={{
-                                padding: '2px 6px',
-                                fontSize: '0.8rem',
-                                background: '#000',
-                                color: '#fff',
-                                border: '1px solid var(--accent-primary)',
-                              }}
+                              style={{ padding: '2px 6px', fontSize: '0.8rem', background: '#000', color: '#fff', border: '1px solid var(--accent-primary)' }}
                             />
-                            <button
-                              className="btn-icon"
-                              onClick={() => handleSaveRename(asset.id)}
-                            >
+                            <button className="btn-icon" onClick={() => handleSaveRename(asset.id)}>
                               <Check size={14} />
                             </button>
                           </div>
                         ) : (
-                          <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>
-                            {asset.name}
-                          </div>
+                          <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{asset.name}</div>
                         )}
                       </div>
 
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                        }}
-                      >
-                        <button
-                          className="btn-icon"
-                          onClick={() => handleStartRename(asset)}
-                          title="Rename"
-                        >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <button className="btn-icon" onClick={() => handleStartRename(asset)} title="Rename">
                           <Edit2 size={13} />
                         </button>
                         <button
@@ -1830,51 +1642,35 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                 return (
                   <div
                     key={asset.id}
-                    draggable={activeTab === 'tokens' || activeTab === 'props'}
+                    draggable={activeTab === 'tokens' || activeTab === 'props' || activeTab === 'tiles'}
                     onDragStart={(e) => {
                       if (activeTab === 'tokens') {
                         handleAssetDragStart(e, asset, 'token');
                       } else if (activeTab === 'props') {
                         handleAssetDragStart(e, asset, 'prop');
+                      } else if (activeTab === 'tiles') {
+                        handleAssetDragStart(e, asset, 'tile');
                       }
                     }}
                     style={{
                       borderRadius: 'var(--radius-md)',
                       backgroundColor: 'var(--bg-surface-elevated)',
-                      border: isSelected
-                        ? '2px solid var(--accent-primary)'
-                        : '1px solid var(--border-subtle)',
+                      border: isSelected ? '2px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
                       overflow: 'hidden',
                       display: 'flex',
                       flexDirection: 'column',
                       position: 'relative',
-                      boxShadow: isSelected
-                        ? '0 0 10px rgba(99, 102, 241, 0.4)'
-                        : 'none',
-                      cursor:
-                        activeTab === 'tokens' || activeTab === 'props'
-                          ? 'grab'
-                          : 'default',
+                      boxShadow: isSelected ? '0 0 10px rgba(99, 102, 241, 0.4)' : 'none',
+                      cursor: (activeTab === 'tokens' || activeTab === 'props') ? 'grab' : 'default',
                     }}
                   >
                     {/* Checkbox badge */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: 6,
-                        left: 6,
-                        zIndex: 2,
-                      }}
-                    >
+                    <div style={{ position: 'absolute', top: 6, left: 6, zIndex: 2 }}>
                       <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleSelect(asset.id)}
-                        style={{
-                          cursor: 'pointer',
-                          width: '16px',
-                          height: '16px',
-                        }}
+                        style={{ cursor: 'pointer', width: '16px', height: '16px' }}
                       />
                     </div>
 
@@ -1883,8 +1679,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                       style={{
                         height: '90px',
                         backgroundImage: `url("${asset.dataUrl}")`,
-                        backgroundSize:
-                          activeTab === 'maps' ? 'cover' : 'contain',
+                        backgroundSize: activeTab === 'maps' ? 'cover' : 'contain',
                         backgroundRepeat: 'no-repeat',
                         backgroundPosition: 'center',
                         backgroundColor: '#0f172a',
@@ -1892,73 +1687,38 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                     />
 
                     {/* Footer Info & Rename */}
-                    <div
-                      style={{
-                        padding: '0.4rem 0.5rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                      }}
-                    >
+                    <div style={{ padding: '0.4rem 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       {isEditing ? (
-                        <div
-                          style={{ display: 'flex', gap: '2px', width: '100%' }}
-                        >
+                        <div style={{ display: 'flex', gap: '2px', width: '100%' }}>
                           <input
                             type="text"
                             value={editingName}
                             onChange={(e) => setEditingName(e.target.value)}
-                            style={{
-                              flex: 1,
-                              padding: '2px 4px',
-                              fontSize: '0.75rem',
-                              background: '#000',
-                              color: '#fff',
-                              border: '1px solid var(--accent-primary)',
-                              borderRadius: '2px',
-                            }}
+                            style={{ flex: 1, padding: '2px 4px', fontSize: '0.75rem', background: '#000', color: '#fff', border: '1px solid var(--accent-primary)', borderRadius: '2px' }}
                           />
-                          <button
-                            className="btn-icon"
-                            style={{ width: '22px', height: '22px' }}
-                            onClick={() => handleSaveRename(asset.id)}
-                          >
+                          <button className="btn-icon" style={{ width: '22px', height: '22px' }} onClick={() => handleSaveRename(asset.id)}>
                             <Check size={12} />
                           </button>
                         </div>
                       ) : (
                         <>
-                          <span
-                            style={{
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              maxWidth: '85px',
-                            }}
-                            title={asset.name}
-                          >
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '85px' }} title={asset.name}>
                             {asset.name}
                           </span>
-                          <button
-                            className="btn-icon"
-                            style={{ width: '22px', height: '22px' }}
-                            onClick={() => handleStartRename(asset)}
-                            title="Rename"
-                          >
+                          <button className="btn-icon" style={{ width: '22px', height: '22px' }} onClick={() => handleStartRename(asset)} title="Rename">
                             <Edit2 size={11} />
                           </button>
                         </>
                       )}
                     </div>
 
-                    {/* Dimension Controls for Props (Task #113) */}
-                    {activeTab === 'props' && (
+                    {/* Dimension Controls for Props & Modular Tiles (OB-189) */}
+                    {(activeTab === 'props' || activeTab === 'tiles') && (
                       <div
                         style={{
                           padding: '0.2rem 0.5rem 0.35rem 0.5rem',
                           display: 'flex',
+                          flexDirection: 'column',
                           alignItems: 'center',
                           justifyContent: 'center',
                           gap: '4px',
@@ -1969,111 +1729,124 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                         }}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <span style={{ fontWeight: 600, color: '#eab308' }}>
-                          Size:
-                        </span>
-                        <input
-                          type="number"
-                          step="any"
-                          min="0.1"
-                          defaultValue={asset.propWidth ?? asset.size ?? 1}
-                          onBlur={async (e) => {
-                            const val = parseFloat(e.target.value);
-                            if (
-                              !isNaN(val) &&
-                              val > 0 &&
-                              val !== asset.propWidth
-                            ) {
-                              await updateAsset(asset.id, { propWidth: val });
-                              await loadAssets();
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              (e.target as HTMLInputElement).blur();
-                            }
-                          }}
-                          style={{
-                            width: '44px',
-                            padding: '1px 3px',
-                            fontSize: '0.72rem',
-                            borderRadius: '3px',
-                            background: '#090d16',
-                            border: '1px solid rgba(234, 179, 8, 0.4)',
-                            color: '#fff',
-                            textAlign: 'center',
-                          }}
-                          title="Prop Width in tiles (e.g. 1.5)"
-                        />
-                        <span>×</span>
-                        <input
-                          type="number"
-                          step="any"
-                          min="0.1"
-                          defaultValue={asset.propHeight ?? asset.size ?? 1}
-                          onBlur={async (e) => {
-                            const val = parseFloat(e.target.value);
-                            if (
-                              !isNaN(val) &&
-                              val > 0 &&
-                              val !== asset.propHeight
-                            ) {
-                              await updateAsset(asset.id, { propHeight: val });
-                              await loadAssets();
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              (e.target as HTMLInputElement).blur();
-                            }
-                          }}
-                          style={{
-                            width: '44px',
-                            padding: '1px 3px',
-                            fontSize: '0.72rem',
-                            borderRadius: '3px',
-                            background: '#090d16',
-                            border: '1px solid rgba(234, 179, 8, 0.4)',
-                            color: '#fff',
-                            textAlign: 'center',
-                          }}
-                          title="Prop Height in tiles (e.g. 3.24)"
-                        />
-                        <span
-                          style={{
-                            fontSize: '0.68rem',
-                            color: 'var(--text-muted)',
-                          }}
-                        >
-                          tiles
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontWeight: 600, color: activeTab === 'tiles' ? '#38bdf8' : '#eab308' }}>Size:</span>
+                          <input
+                            type="number"
+                            step="any"
+                            min="0.1"
+                            defaultValue={asset.propWidth ?? asset.size ?? (activeTab === 'tiles' ? 4 : 1)}
+                            onBlur={async (e) => {
+                              const val = parseFloat(e.target.value);
+                              if (!isNaN(val) && val > 0 && val !== asset.propWidth) {
+                                await updateAsset(asset.id, { propWidth: val });
+                                await loadAssets();
+                              }
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                (e.target as HTMLInputElement).blur();
+                              }
+                            }}
+                            style={{
+                              width: '44px',
+                              padding: '1px 3px',
+                              fontSize: '0.72rem',
+                              borderRadius: '3px',
+                              background: '#090d16',
+                              border: `1px solid ${activeTab === 'tiles' ? 'rgba(56, 189, 248, 0.4)' : 'rgba(234, 179, 8, 0.4)'}`,
+                              color: '#fff',
+                              textAlign: 'center',
+                            }}
+                            title={activeTab === 'tiles' ? 'Tile Width in grid cells (e.g. 4)' : 'Prop Width in tiles (e.g. 1.5)'}
+                          />
+                          <span>×</span>
+                          <input
+                            type="number"
+                            step="any"
+                            min="0.1"
+                            defaultValue={asset.propHeight ?? asset.size ?? (activeTab === 'tiles' ? 4 : 1)}
+                            onBlur={async (e) => {
+                              const val = parseFloat(e.target.value);
+                              if (!isNaN(val) && val > 0 && val !== asset.propHeight) {
+                                await updateAsset(asset.id, { propHeight: val });
+                                await loadAssets();
+                              }
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                (e.target as HTMLInputElement).blur();
+                              }
+                            }}
+                            style={{
+                              width: '44px',
+                              padding: '1px 3px',
+                              fontSize: '0.72rem',
+                              borderRadius: '3px',
+                              background: '#090d16',
+                              border: `1px solid ${activeTab === 'tiles' ? 'rgba(56, 189, 248, 0.4)' : 'rgba(234, 179, 8, 0.4)'}`,
+                              color: '#fff',
+                              textAlign: 'center',
+                            }}
+                            title={activeTab === 'tiles' ? 'Tile Height in grid cells (e.g. 4)' : 'Prop Height in tiles (e.g. 3.24)'}
+                          />
+                          <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>tiles</span>
+                        </div>
+                        {/* Quick preset chips for tiles */}
+                        {activeTab === 'tiles' && (
+                          <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                            {([
+                              { label: '1×1', w: 1, h: 1 },
+                              { label: '2×2', w: 2, h: 2 },
+                              { label: '4×2', w: 4, h: 2 },
+                              { label: '4×4', w: 4, h: 4 },
+                              { label: '8×8', w: 8, h: 8 },
+                            ] as const).map((dim) => (
+                              <button
+                                key={dim.label}
+                                type="button"
+                                style={{
+                                  fontSize: '0.62rem',
+                                  padding: '1px 3px',
+                                  borderRadius: '2px',
+                                  background: 'rgba(56, 189, 248, 0.1)',
+                                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                                  color: '#38bdf8',
+                                  cursor: 'pointer',
+                                }}
+                                onClick={async () => {
+                                  await updateAsset(asset.id, { propWidth: dim.w, propHeight: dim.h, size: Math.max(dim.w, dim.h) });
+                                  await loadAssets();
+                                }}
+                                title={`Set tile to ${dim.label}`}
+                              >
+                                {dim.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
 
-                    {(activeTab === 'tokens' || activeTab === 'props') &&
-                      onAddToken && (
-                        <button
-                          className="btn btn-secondary"
-                          style={{
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            padding: '0.35rem 0.5rem',
-                            margin: '0 6px 6px 6px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px',
-                          }}
-                          onClick={() => handleDeployToken(asset)}
-                          title={
-                            activeTab === 'props'
-                              ? 'Spawn prop onto the battlemap'
-                              : 'Spawn token onto the battlemap'
-                          }
-                        >
-                          <Plus size={12} /> Deploy to Map
-                        </button>
-                      )}
+                    {(activeTab === 'tokens' || activeTab === 'props' || activeTab === 'tiles') && onAddToken && (
+                      <button
+                        className="btn btn-secondary"
+                        style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          padding: '0.35rem 0.5rem',
+                          margin: '0 6px 6px 6px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '4px',
+                        }}
+                        onClick={() => handleDeployToken(asset)}
+                        title={activeTab === 'tiles' ? 'Spawn modular tile onto the map layer' : activeTab === 'props' ? 'Spawn prop onto the battlemap' : 'Spawn token onto the battlemap'}
+                      >
+                        <Plus size={12} /> Deploy to Map
+                      </button>
+                    )}
 
                     {activeTab === 'maps' && onAddMap && (
                       <button
@@ -2099,7 +1872,9 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
               })}
             </div>
           )}
-        </div>
+        </>
+      )}
+    </div>
 
         {/* Bottom Section: Export & Import under Asset Manager (Bug #31) */}
         <div
@@ -2110,6 +1885,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
             display: 'flex',
             flexDirection: 'column',
             gap: '0.85rem',
+            flexShrink: 0,
           }}
         >
           {resultMessage && (
@@ -2118,10 +1894,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                 padding: '0.6rem 0.9rem',
                 borderRadius: 'var(--radius-sm)',
                 fontSize: '0.8rem',
-                backgroundColor:
-                  resultMessage.type === 'success'
-                    ? 'rgba(16, 185, 129, 0.15)'
-                    : 'rgba(244, 63, 94, 0.15)',
+                backgroundColor: resultMessage.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)',
                 color: resultMessage.type === 'success' ? '#10b981' : '#f43f5e',
                 border: `1px solid ${resultMessage.type === 'success' ? '#10b981' : '#f43f5e'}`,
               }}
@@ -2130,13 +1903,7 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
             </div>
           )}
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '1rem',
-            }}
-          >
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
             <button
               className="btn btn-primary"
               style={{
@@ -2145,43 +1912,42 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '0.5rem',
-                fontSize: '0.85rem',
+                fontSize: '0.82rem',
+                backgroundColor: '#0284c7',
               }}
               disabled={exporting}
-              onClick={handleExport}
+              onClick={handleExportBinder}
+              title="Export campaign, assets, and rosters to universal .binder interchange file"
             >
-              {exporting ? (
-                <RefreshCw size={15} className="animate-spin" />
-              ) : (
-                <Download size={15} />
-              )}
-              {exporting ? 'Exporting...' : 'Export All Data to File'}
+              {exporting ? <RefreshCw size={15} className="animate-spin" /> : <Download size={15} />}
+              {exporting ? 'Exporting...' : 'Export .binder File'}
             </button>
 
             <button
               className="btn btn-secondary"
-              style={{
-                padding: '0.65rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                fontSize: '0.85rem',
-              }}
+              style={{ padding: '0.65rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.82rem' }}
+              disabled={exporting}
+              onClick={handleExport}
+              title="Export complete session and local assets to standard JSON backup"
+            >
+              {exporting ? <RefreshCw size={15} className="animate-spin" /> : <Download size={15} />}
+              {exporting ? 'Exporting...' : 'Export JSON Backup'}
+            </button>
+
+            <button
+              className="btn btn-secondary"
+              style={{ padding: '0.65rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.82rem' }}
               disabled={importing}
               onClick={() => fileInputRef.current?.click()}
+              title="Import from .binder or .json backup file"
             >
-              {importing ? (
-                <RefreshCw size={15} className="animate-spin" />
-              ) : (
-                <Upload size={15} />
-              )}
-              {importing ? 'Importing...' : 'Import Data from File'}
+              {importing ? <RefreshCw size={15} className="animate-spin" /> : <Upload size={15} />}
+              {importing ? 'Importing...' : 'Import .binder / JSON'}
             </button>
             <input
               ref={fileInputRef}
               type="file"
-              accept=".json"
+              accept=".json,.binder"
               style={{ display: 'none' }}
               onChange={(e) => {
                 if (e.target.files && e.target.files.length > 0) {

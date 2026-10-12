@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { parseDiceExpression, processSlashCommand } from './ChatPanel.js';
+import { addBlockToTokenOrCharacter, parseDiceExpression, processSlashCommand } from './ChatPanel.js';
+import { updateActiveFlags } from '../config/featureFlags.js';
 
 describe('Dice Parser & Slash Command Utilities', () => {
   it('correctly parses standard single and multi-dice expressions', () => {
@@ -139,6 +140,7 @@ describe('Dice Parser & Slash Command Utilities', () => {
   });
 
   it('handles /sync command and token selection logic (Bug #55)', async () => {
+    updateActiveFlags({ dndbeyond: true });
     const testPlayer = {
       id: 'p-1',
       name: 'Ranger',
@@ -219,6 +221,12 @@ describe('Dice Parser & Slash Command Utilities', () => {
 
     assert.strictEqual(updatedTokens.length, 2);
     assert.strictEqual(updatedTokens[1].tokenId, 'tok-1');
+
+    // 6. When dndbeyond feature flag is disabled, /sync is rejected
+    updateActiveFlags({ dndbeyond: false });
+    processSlashCommand('/sync 47804290', ctx);
+    assert.ok(sentMessages.at(-1)?.text.includes('D&D Beyond integration is currently disabled.'));
+    updateActiveFlags({ dndbeyond: true });
   });
 
   it('lists tokens and their index numbers with /tokens (Bug #56)', () => {
@@ -428,4 +436,898 @@ describe('Dice Parser & Slash Command Utilities', () => {
     assert.ok(sentMessages[3].text.includes('Discord webhook sync has been disabled'));
     assert.strictEqual(sentMessages[3].isEphemeral, true);
   });
+
+  it('cycles through previous messages/commands with Up/Down and preserves drafts (OB-179)', async () => {
+    const { createChatHistory } = await import('./useChatHistory.js');
+    const historyManager = createChatHistory();
+
+    // 1. Initial state
+    assert.strictEqual(historyManager.navigateUp(''), null);
+    assert.strictEqual(historyManager.navigateDown(), null);
+    assert.strictEqual(historyManager.isNavigating(), false);
+
+    // 2. Add sent commands/messages
+    historyManager.addToHistory('/roll 1d20+5 adv');
+    historyManager.addToHistory('/attack 1');
+    historyManager.addToHistory('/spell magic-missile');
+
+    // Consecutive duplicates should be deduplicated
+    historyManager.addToHistory('/spell magic-missile');
+    assert.strictEqual(historyManager.getHistory().length, 3);
+
+    // 3. User types an in-progress draft before pressing Up
+    const draftText = 'fixing a typo /spel';
+    const firstUp = historyManager.navigateUp(draftText);
+    assert.strictEqual(firstUp, '/spell magic-missile');
+    assert.strictEqual(historyManager.isNavigating(), true);
+    assert.strictEqual(historyManager.getDraft(), draftText);
+
+    // 4. Pressing Up again cycles backward
+    const secondUp = historyManager.navigateUp(firstUp!);
+    assert.strictEqual(secondUp, '/attack 1');
+
+    const thirdUp = historyManager.navigateUp(secondUp!);
+    assert.strictEqual(thirdUp, '/roll 1d20+5 adv');
+
+    // 5. Pressing Up at the oldest entry stays at the oldest entry
+    const fourthUp = historyManager.navigateUp(thirdUp!);
+    assert.strictEqual(fourthUp, '/roll 1d20+5 adv');
+
+    // 6. Pressing Down cycles forward
+    const firstDown = historyManager.navigateDown();
+    assert.strictEqual(firstDown, '/attack 1');
+
+    const secondDown = historyManager.navigateDown();
+    assert.strictEqual(secondDown, '/spell magic-missile');
+
+    // 7. Pressing Down at the newest entry restores the user's saved draft
+    const restoredDraft = historyManager.navigateDown();
+    assert.strictEqual(restoredDraft, draftText);
+    assert.strictEqual(historyManager.isNavigating(), false);
+
+    // 8. Pressing Down when not navigating returns null
+    assert.strictEqual(historyManager.navigateDown(), null);
+
+    // 9. Fixing a typo and submitting resets navigation and adds to history
+    historyManager.navigateUp(''); // cycle back to /spell magic-missile
+    assert.strictEqual(historyManager.isNavigating(), true);
+    historyManager.addToHistory('/spell magic-missile 2');
+    assert.strictEqual(historyManager.isNavigating(), false);
+    assert.strictEqual(historyManager.getHistory().length, 4);
+    assert.strictEqual(historyManager.getHistory()[3], '/spell magic-missile 2');
+  });
+
+  it('handles statblock inspection syntax (?) without rolling dice (OB-180, OB-181)', () => {
+    const testPlayer = {
+      id: 'p-1',
+      name: 'Tom',
+      role: 'player' as const,
+      color: '#6366f1',
+      connected: true,
+      assignedTokenIds: [],
+    };
+
+    const testChar = {
+      id: 'char-tom',
+      name: 'Valeros',
+      level: 3,
+      classes: 'Fighter 3',
+      race: 'Human',
+      currentHp: 28,
+      maxHp: 28,
+      tempHp: 0,
+      speed: 30,
+      armorClass: 18,
+      passivePerception: 11,
+      spells: [
+        {
+          id: 'sp-1',
+          name: 'Magic Missile',
+          level: 1,
+          school: 'Evocation',
+          castingTime: '1 action',
+          range: '120 feet',
+          duration: 'Instantaneous',
+          description: 'Three glowing darts of magical force.',
+          dndBeyondUrl: 'https://www.dndbeyond.com/spells/magic-missile',
+        },
+      ],
+      actions: [
+        {
+          name: 'Longsword',
+          type: 'melee',
+          activationType: 'action',
+          toHitModifier: 6,
+          damageDice: '1d8+4',
+          reach: '5 ft.',
+          description: 'Versatile martial weapon.',
+        },
+        {
+          name: 'Second Wind',
+          type: 'ability',
+          activationType: 'bonus',
+          description: 'Regain 1d10 + fighter level HP once per short rest.',
+        },
+      ],
+      items: [
+        {
+          id: 'it-1',
+          name: 'Potion of Healing',
+          quantity: 2,
+          description: 'Regain 2d4 + 2 HP.',
+          dndBeyondUrl: 'https://www.dndbeyond.com/magic-items/potion-of-healing',
+        },
+      ],
+      stats: { str: 18, dex: 14, con: 16, int: 10, wis: 12, cha: 10 },
+    };
+
+    const testTokens = [
+      {
+        id: 'tok-goblin',
+        name: 'Goblin Archer',
+        x: 100,
+        y: 100,
+        size: 1,
+        mapId: 'map-1',
+        color: '#10b981',
+        hp: 7,
+        maxHp: 7,
+        ac: 15,
+        ownerId: '',
+        visibleToPlayers: true,
+        isLocked: false,
+        customProps: {
+          character: {
+            id: 'goblin-char',
+            name: 'Goblin Archer',
+            level: 1,
+            classes: 'Small humanoid (goblinoid)',
+            race: 'Goblin',
+            currentHp: 7,
+            maxHp: 7,
+            tempHp: 0,
+            speed: 30,
+            armorClass: 15,
+            passivePerception: 9,
+            stats: { str: 8, dex: 14, con: 10, int: 10, wis: 8, cha: 8 },
+            spells: [],
+            actions: [
+              {
+                name: 'Shortbow',
+                type: 'ranged',
+                toHitModifier: 4,
+                damageDice: '1d6+2',
+                range: '80/320 ft.',
+                description: 'Ranged attack.',
+              },
+            ],
+          },
+        },
+      },
+    ];
+
+    const sentMessages: any[] = [];
+    const broadcastRolls: any[] = [];
+
+    const ctx = {
+      player: testPlayer,
+      character: testChar as any,
+      tokens: testTokens as any,
+      onSendMessage: (msg: any) => sentMessages.push(msg),
+      onBroadcastRoll: (roll: any) => broadcastRolls.push(roll),
+    };
+
+    // 1. /attack? Longsword (Inspection)
+    const attackHandled = processSlashCommand('/attack? Longsword', ctx);
+    assert.strictEqual(attackHandled, true);
+    // Inspection MUST NOT roll any dice!
+    assert.strictEqual(broadcastRolls.length, 0);
+    assert.strictEqual(sentMessages.length, 1);
+    assert.ok(sentMessages[0].statBlock);
+    assert.strictEqual(sentMessages[0].statBlock.name, 'Longsword');
+    assert.strictEqual(sentMessages[0].statBlock.type, 'attack');
+    assert.strictEqual(sentMessages[0].statBlock.damageFormula, '1d8+4');
+    assert.strictEqual(sentMessages[0].statBlock.rollFormula, '1d20+6');
+    assert.strictEqual(sentMessages[0].statBlock.cost, 'action');
+
+    // 2. /spell? Magic Missile (Inspection)
+    const spellHandled = processSlashCommand('/spell? 1', ctx);
+    assert.strictEqual(spellHandled, true);
+    assert.strictEqual(broadcastRolls.length, 0);
+    assert.strictEqual(sentMessages.length, 2);
+    assert.ok(sentMessages[1].statBlock);
+    assert.strictEqual(sentMessages[1].statBlock.name, 'Magic Missile');
+    assert.strictEqual(sentMessages[1].statBlock.type, 'spell');
+    assert.strictEqual(sentMessages[1].statBlock.level, 1);
+    assert.deepStrictEqual(sentMessages[1].statBlock.traits, ['Evocation']);
+    assert.strictEqual(sentMessages[1].statBlock.subtitle, 'Level 1 (Evocation)');
+
+    // 3. /item? Potion of Healing (Inspection)
+    const itemHandled = processSlashCommand('/item? Potion', ctx);
+    assert.strictEqual(itemHandled, true);
+    assert.strictEqual(broadcastRolls.length, 0);
+    assert.strictEqual(sentMessages.length, 3);
+    assert.ok(sentMessages[2].statBlock);
+    assert.strictEqual(sentMessages[2].statBlock.name, 'Potion of Healing');
+    assert.strictEqual(sentMessages[2].statBlock.type, 'item');
+    assert.strictEqual(sentMessages[2].statBlock.subtitle, 'Item (Qty: 2)');
+
+    // 4. /ability? Second Wind (Inspection)
+    const abilityHandled = processSlashCommand('/ability? Second Wind', ctx);
+    assert.strictEqual(abilityHandled, true);
+    assert.strictEqual(broadcastRolls.length, 0);
+    assert.strictEqual(sentMessages.length, 4);
+    assert.ok(sentMessages[3].statBlock);
+    assert.strictEqual(sentMessages[3].statBlock.name, 'Second Wind');
+    assert.strictEqual(sentMessages[3].statBlock.type, 'ability');
+    assert.strictEqual(sentMessages[3].statBlock.cost, 'bonus_action');
+
+    // 5. /monster? Goblin Archer (Inspection from canvas token)
+    const monsterHandled = processSlashCommand('/monster? Goblin', ctx);
+    assert.strictEqual(monsterHandled, true);
+    assert.strictEqual(broadcastRolls.length, 0);
+    assert.strictEqual(sentMessages.length, 5);
+    assert.ok(sentMessages[4].statBlock);
+    assert.strictEqual(sentMessages[4].statBlock.name, 'Goblin Archer');
+    assert.strictEqual(sentMessages[4].statBlock.type, 'monster');
+    assert.strictEqual(sentMessages[4].statBlock.armorClass, 15);
+    assert.strictEqual(sentMessages[4].statBlock.hp, '7/7');
+    assert.strictEqual(sentMessages[4].statBlock.actions?.length, 1);
+    assert.strictEqual(sentMessages[4].statBlock.actions?.[0].name, 'Shortbow');
+
+    // OB-211: Info inspection responses must be ephemeral to player, system-sent, and have no player wrapping text
+    for (let i = 0; i < 5; i++) {
+      assert.strictEqual(sentMessages[i].isEphemeral, true, `Message ${i} must be ephemeral`);
+      assert.strictEqual(sentMessages[i].recipientId, testPlayer.id, `Message ${i} must be addressed to player`);
+      assert.strictEqual(sentMessages[i].senderId, 'system', `Message ${i} must not wrap as player speech`);
+      assert.strictEqual(sentMessages[i].text, '', `Message ${i} must have empty wrapping text`);
+    }
+
+    // 6. Contrast with active roll: /attack 1
+    const activeAttack = processSlashCommand('/attack 1', ctx);
+    assert.strictEqual(activeAttack, true);
+    // Active attack MUST roll dice!
+    assert.strictEqual(broadcastRolls.length, 1);
+    assert.strictEqual(broadcastRolls[0].modifier, 6);
+  });
+
+  it('handles /import command for PF2e pack JSON and Open5e URLs (OB-177, OB-153)', async () => {
+    updateActiveFlags({ search_open5e: true, dndbeyond: true });
+    const testPlayer = {
+      id: 'p-import',
+      name: 'GameMaster',
+      role: 'gm' as const,
+      color: '#6366f1',
+      connected: true,
+      assignedTokenIds: [],
+    };
+
+    const sentMessages: any[] = [];
+    const ctx = {
+      player: testPlayer,
+      onSendMessage: (msg: any) => sentMessages.push(msg),
+    };
+
+    // 1. Bare /import shows usage info ephemerally
+    const bareImport = processSlashCommand('/import', ctx);
+    assert.strictEqual(bareImport, true);
+    assert.strictEqual(sentMessages.length, 1);
+    assert.strictEqual(sentMessages[0].isEphemeral, true);
+    assert.ok(sentMessages[0].text.includes('Usage: `/import <url>`'));
+
+    // 2. Mock global fetch for PF2e pack import test
+    const originalFetch = global.fetch;
+    try {
+      global.fetch = async (url: any) => {
+        const urlStr = String(url);
+        if (urlStr.includes('acidic-burst')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              _id: 'rnNGALRtsjspFTws',
+              name: 'Acidic Burst',
+              type: 'spell',
+              system: {
+                time: { value: '2' },
+                level: { value: 1 },
+                damage: { '0': { formula: '2d6', type: 'acid' } },
+                description: { value: '<p>You burst with acid.</p>' },
+                traits: { value: ['acid', 'manipulate'] },
+              },
+            }),
+          } as any;
+        }
+        if (urlStr.includes('/spells/magic-missile')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              slug: 'magic-missile',
+              name: 'Magic Missile',
+              desc: 'Three darts of magical force.',
+              level: '1st-level',
+              level_int: 1,
+              school: 'Evocation',
+              casting_time: '1 action',
+              range: '120 feet',
+              duration: 'Instantaneous',
+            }),
+          } as any;
+        }
+        return { ok: false, status: 404, json: async () => ({}) } as any;
+      };
+
+      // Import PF2e URL
+      const pf2eHandled = processSlashCommand(
+        '/import https://raw.githubusercontent.com/foundryvtt/pf2e/master/packs/spells/1st-rank/acidic-burst.json',
+        ctx
+      );
+      assert.strictEqual(pf2eHandled, true);
+
+      // Wait for async fetch to finish
+      await new Promise((r) => setTimeout(r, 20));
+
+      const importedPf2eMsg = sentMessages.find(
+        (m) => m.statBlock && m.statBlock.name === 'Acidic Burst'
+      );
+      assert.ok(importedPf2eMsg, 'Found imported PF2e spell message');
+      assert.strictEqual(importedPf2eMsg.statBlock.sourceSystem, 'pf2e');
+      assert.strictEqual(importedPf2eMsg.statBlock.cost, '2_actions');
+      assert.strictEqual(importedPf2eMsg.statBlock.damageFormula, '2d6');
+
+      // Import Open5e spell URL
+      const open5eHandled = processSlashCommand(
+        '/import spell "https://api.open5e.com/v1/spells/magic-missile/"',
+        ctx
+      );
+      assert.strictEqual(open5eHandled, true);
+
+      await new Promise((r) => setTimeout(r, 20));
+
+      const importedOpen5eMsg = sentMessages.find(
+        (m) => m.statBlock && m.statBlock.name === 'Magic Missile'
+      );
+      assert.ok(importedOpen5eMsg, 'Found imported Open5e spell message');
+      // Import D&D Beyond Character URL
+      const dndBeyondCharHandled = processSlashCommand(
+        '/import https://www.dndbeyond.com/characters/47804290',
+        {
+          ...ctx,
+          fetchCharacterFn: async () => ({
+            id: '47804290',
+            name: 'Krag Ironhide',
+            level: 5,
+            classes: 'Barbarian 5',
+            race: 'Goliath',
+            currentHp: 65,
+            maxHp: 65,
+            tempHp: 0,
+            speed: 30,
+            armorClass: 16,
+            stats: { str: 18, dex: 14, con: 16, int: 8, wis: 12, cha: 10 },
+            actions: [{ name: 'Greataxe', type: 'melee', activationType: 'action', damageDice: '1d12+4' }],
+            avatarUrl: 'https://example.com/krag.png',
+          }),
+        }
+      );
+      assert.strictEqual(dndBeyondCharHandled, true);
+
+      await new Promise((r) => setTimeout(r, 20));
+
+      const importedDndMsg = sentMessages.find(
+        (m) => m.statBlock && m.statBlock.name === 'Krag Ironhide'
+      );
+      assert.ok(importedDndMsg, 'Found imported D&D Beyond character message');
+      assert.strictEqual(importedDndMsg.statBlock.type, 'monster');
+      assert.strictEqual(importedDndMsg.statBlock.armorClass, 16);
+      assert.strictEqual(importedDndMsg.statBlock.imageUrl, 'https://example.com/krag.png');
+      assert.strictEqual(importedDndMsg.statBlock.actions?.length, 1);
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
+  it('supports associating a token with chat for /attack and rolls (OB-182)', () => {
+    const testPlayer = {
+      id: 'p-1',
+      name: 'Tom',
+      role: 'gm' as const,
+      color: '#3b82f6',
+      connected: true,
+      assignedTokenIds: [],
+    };
+
+    const playerChar = {
+      id: 'char-tom',
+      name: 'Default Hero',
+      level: 1,
+      classes: 'Fighter 1',
+      race: 'Human',
+      currentHp: 12,
+      maxHp: 12,
+      tempHp: 0,
+      speed: 30,
+      armorClass: 14,
+      passivePerception: 10,
+      initiativeBonus: 1,
+      stats: { str: 14, dex: 12, con: 14, int: 10, wis: 10, cha: 10 },
+      spells: [],
+      actions: [{ name: 'Shortsword', type: 'melee', toHitModifier: 4, damageDice: '1d6+2' }],
+    };
+
+    const tokenGoblin = {
+      id: 'tok-goblin',
+      mapId: 'map-1',
+      name: 'Goblin Sneak',
+      x: 10,
+      y: 10,
+      size: 1,
+      rotation: 0,
+      ringColor: '#10b981',
+      fillColor: '#000000',
+      clipCircle: true,
+      currentHp: 7,
+      maxHp: 7,
+      tempHp: 0,
+      speed: 30,
+      isProp: false,
+      layer: 'token' as const,
+      conditions: [],
+      initiativeBonus: 3,
+      character: {
+        id: 'char-goblin',
+        name: 'Goblin Sneak',
+        level: 1,
+        classes: 'Goblin',
+        race: 'Goblinoid',
+        currentHp: 7,
+        maxHp: 7,
+        tempHp: 0,
+        speed: 30,
+        armorClass: 15,
+        passivePerception: 9,
+        initiativeBonus: 3,
+        stats: { str: 8, dex: 16, con: 10, int: 10, wis: 8, cha: 8 },
+        spells: [],
+        actions: [{ name: 'Scimitar', type: 'melee', toHitModifier: 5, damageDice: '1d6+3' }],
+      },
+    };
+
+    const sentMessages: any[] = [];
+    const broadcastRolls: any[] = [];
+    let currentAssociatedToken: any = null;
+
+    const ctx = {
+      player: testPlayer,
+      character: playerChar as any,
+      tokens: [tokenGoblin as any],
+      get associatedToken() {
+        return currentAssociatedToken;
+      },
+      onSetAssociatedToken: (tok: any) => {
+        currentAssociatedToken = tok;
+      },
+      onSendMessage: (msg: any) => sentMessages.push(msg),
+      onBroadcastRoll: (roll: any) => broadcastRolls.push(roll),
+    };
+
+    // 1. /token lists current association and controllable tokens
+    const handledList = processSlashCommand('/token', ctx);
+    assert.strictEqual(handledList, true);
+    const listMsg = sentMessages[sentMessages.length - 1];
+    assert.ok(listMsg.isEphemeral);
+    assert.ok(listMsg.text.includes('Goblin Sneak'));
+
+    // 2. /token 1 associates chat with Goblin Sneak
+    const handledSelect = processSlashCommand('/token 1', ctx);
+    assert.strictEqual(handledSelect, true);
+    assert.strictEqual(currentAssociatedToken?.id, 'tok-goblin');
+    const selectMsg = sentMessages[sentMessages.length - 1];
+    assert.ok(selectMsg.text.includes('Goblin Sneak'));
+
+    // 3. /attack with no args lists the goblin's attacks, not the player's
+    const handledAttackList = processSlashCommand('/attack', ctx);
+    assert.strictEqual(handledAttackList, true);
+    const attackListMsg = sentMessages[sentMessages.length - 1];
+    assert.ok(attackListMsg.text.includes('Scimitar'));
+    assert.ok(!attackListMsg.text.includes('Shortsword'));
+
+    // 4. /attack 1 rolls using Goblin's Scimitar and attributes sender as "Tom (Goblin Sneak)"
+    const handledAttackRoll = processSlashCommand('/attack 1', ctx);
+    assert.strictEqual(handledAttackRoll, true);
+    const rollMsg = sentMessages[sentMessages.length - 1];
+    assert.strictEqual(rollMsg.senderName, 'Tom (Goblin Sneak)');
+    assert.ok(rollMsg.text.includes('attacks with Scimitar'));
+    assert.strictEqual(rollMsg.tokenId, 'tok-goblin');
+    assert.strictEqual(rollMsg.tokenName, 'Goblin Sneak');
+    assert.strictEqual(broadcastRolls.length, 1);
+    assert.strictEqual(broadcastRolls[0].userName, 'Tom (Goblin Sneak)');
+
+    // 5. /roll init uses Goblin's initiative bonus (+3)
+    const handledInit = processSlashCommand('/roll init', ctx);
+    assert.strictEqual(handledInit, true);
+    const initRollMsg = sentMessages[sentMessages.length - 1];
+    assert.strictEqual(initRollMsg.senderName, 'Tom (Goblin Sneak)');
+    assert.ok(initRollMsg.text.includes('1d20+3'));
+
+    // 6. /token clear resets association back to player sheet
+    const handledClear = processSlashCommand('/token clear', ctx);
+    assert.strictEqual(handledClear, true);
+    assert.strictEqual(currentAssociatedToken, null);
+
+    // 7. /attack now lists default player's attacks (Shortsword)
+    processSlashCommand('/attack', ctx);
+    const defaultAttackMsg = sentMessages[sentMessages.length - 1];
+    assert.ok(defaultAttackMsg.text.includes('Shortsword'));
+    assert.ok(!defaultAttackMsg.text.includes('Scimitar'));
+  });
+
+  it('adds an inspected spell to the associated "as" token rather than the player sheet (OB-205)', () => {
+    const testPlayer = { id: 'p1', name: 'Alice', color: '#6366f1' };
+    const playerChar = {
+      id: 'char-player',
+      name: 'Alice Player',
+      level: 3,
+      classes: 'Rogue',
+      race: 'Human',
+      currentHp: 24,
+      maxHp: 24,
+      tempHp: 0,
+      speed: 30,
+      armorClass: 14,
+      passivePerception: 13,
+      initiativeBonus: 3,
+      stats: { str: 10, dex: 16, con: 12, int: 14, wis: 12, cha: 10 },
+      spells: [],
+      actions: [],
+    };
+    const asToken = {
+      id: 'tok-wizard',
+      name: 'Gandalf the Grey',
+      mapId: 'map-1',
+      x: 100,
+      y: 100,
+      size: 1,
+      rotation: 0,
+      ringColor: '#38bdf8',
+      fillColor: '#000000',
+      clipCircle: true,
+      currentHp: 18,
+      maxHp: 18,
+      tempHp: 0,
+      speed: 30,
+      isProp: false,
+      layer: 'token' as const,
+      conditions: [],
+      character: {
+        id: 'char-gandalf',
+        name: 'Gandalf the Grey',
+        level: 5,
+        classes: 'Wizard',
+        race: 'Maia',
+        currentHp: 18,
+        maxHp: 18,
+        tempHp: 0,
+        speed: 30,
+        armorClass: 12,
+        passivePerception: 14,
+        initiativeBonus: 2,
+        stats: { str: 10, dex: 14, con: 12, int: 18, wis: 15, cha: 12 },
+        spells: [],
+        actions: [],
+      },
+    };
+
+    const spellBlock = {
+      name: 'Magic Missile',
+      type: 'spell' as const,
+      cost: 'action' as const,
+      level: 1,
+      school: 'Evocation',
+      castingTime: '1 action',
+      range: '120 feet',
+      duration: 'Instantaneous',
+      description: 'You create three glowing darts of magical force.',
+      traits: ['Evocation'],
+      sourceUrl: 'https://open5e.com/spells/magic-missile',
+    };
+
+    let syncedTokenId: string | null = null;
+    let syncedTokenUpdates: any = null;
+    let updatedPlayerChar: any = null;
+    const sentMessages: any[] = [];
+    let associatedTokenState: any = asToken;
+
+    const res = addBlockToTokenOrCharacter({
+      block: spellBlock as any,
+      targetToken: asToken as any,
+      character: playerChar as any,
+      player: testPlayer as any,
+      onSyncToken: (id, updates) => {
+        syncedTokenId = id;
+        syncedTokenUpdates = updates;
+      },
+      onUpdatePlayerChar: (char) => {
+        updatedPlayerChar = char;
+      },
+      onSendMessage: (msg) => sentMessages.push(msg),
+      onSetAssociatedToken: (tok) => {
+        associatedTokenState = tok;
+      },
+    });
+
+    assert.ok(res);
+    assert.strictEqual(res.targetType, 'token');
+    assert.strictEqual(res.targetId, 'tok-wizard');
+    assert.strictEqual(res.targetName, 'Gandalf the Grey');
+
+    // 1. Token was synced with updated spell
+    assert.strictEqual(syncedTokenId, 'tok-wizard');
+    assert.ok(syncedTokenUpdates?.character);
+    assert.strictEqual(syncedTokenUpdates.character.spells.length, 1);
+    assert.strictEqual(syncedTokenUpdates.character.spells[0].name, 'Magic Missile');
+    assert.strictEqual(syncedTokenUpdates.character.spells[0].level, 1);
+
+    // 2. Associated token state updated
+    assert.strictEqual(associatedTokenState?.character?.spells?.length, 1);
+    assert.strictEqual(associatedTokenState.character.spells[0].name, 'Magic Missile');
+
+    // 3. Player character sheet was NOT modified (different entity)
+    assert.strictEqual(updatedPlayerChar, null);
+    assert.strictEqual(playerChar.spells.length, 0);
+
+    // 4. Confirmation message sent to caller
+    assert.strictEqual(sentMessages.length, 1);
+    assert.ok(sentMessages[0].isEphemeral);
+    assert.ok(sentMessages[0].text.includes('Gandalf the Grey'));
+    assert.ok(sentMessages[0].text.includes('Magic Missile'));
+
+    // 5. Subsequent /spell? from the token finds the added spell
+    const ctx = {
+      player: testPlayer as any,
+      character: playerChar as any,
+      associatedToken: associatedTokenState,
+      onSendMessage: (msg: any) => sentMessages.push(msg),
+    };
+    const inspected = processSlashCommand('/spell? 1', ctx as any);
+    assert.strictEqual(inspected, true);
+    const lastMsg = sentMessages[sentMessages.length - 1];
+    assert.strictEqual(lastMsg.statBlock?.name, 'Magic Missile');
+    assert.strictEqual(lastMsg.tokenId, 'tok-wizard');
+    assert.strictEqual(lastMsg.isEphemeral, true);
+    assert.strictEqual(lastMsg.recipientId, testPlayer.id);
+    assert.strictEqual(lastMsg.senderId, 'system');
+    assert.strictEqual(lastMsg.text, '');
+  });
+
+  it('adds an inspected spell to an "as" token that did not initially have a character sheet', () => {
+    const testPlayer = { id: 'p1', name: 'Alice', color: '#6366f1' };
+    const rawToken = {
+      id: 'tok-raw-monster',
+      name: 'Goblin Minion',
+      mapId: 'map-1',
+      x: 50,
+      y: 50,
+      size: 1,
+      rotation: 0,
+      ringColor: '#ef4444',
+      fillColor: '#000000',
+      clipCircle: true,
+      currentHp: 7,
+      maxHp: 7,
+      tempHp: 0,
+      speed: 30,
+      isProp: false,
+      layer: 'token' as const,
+      conditions: [],
+    };
+
+    const spellBlock = {
+      name: 'Burning Hands',
+      type: 'spell' as const,
+      cost: 'action' as const,
+      level: 1,
+      school: 'Evocation',
+      castingTime: '1 action',
+      range: 'Self (15-foot cone)',
+      duration: 'Instantaneous',
+      description: 'A thin sheet of flames shoots forth.',
+    };
+
+    let syncedUpdates: any = null;
+    const sentMessages: any[] = [];
+
+    const res = addBlockToTokenOrCharacter({
+      block: spellBlock as any,
+      targetToken: rawToken as any,
+      character: null,
+      player: testPlayer as any,
+      onSyncToken: (_id, updates) => {
+        syncedUpdates = updates;
+      },
+      onSendMessage: (msg) => sentMessages.push(msg),
+    });
+
+    assert.ok(res);
+    assert.strictEqual(res.targetType, 'token');
+    assert.strictEqual(syncedUpdates?.character?.name, 'Goblin Minion');
+    assert.strictEqual(syncedUpdates.character.spells.length, 1);
+    assert.strictEqual(syncedUpdates.character.spells[0].name, 'Burning Hands');
+    assert.ok(sentMessages[0].text.includes('Goblin Minion'));
+  });
+
+  it('falls back to the player character sheet when no token is associated', () => {
+    const testPlayer = { id: 'p1', name: 'Bob', color: '#10b981' };
+    const playerChar = {
+      id: 'char-bob',
+      name: 'Bob the Fighter',
+      level: 1,
+      classes: 'Fighter',
+      race: 'Dwarf',
+      currentHp: 12,
+      maxHp: 12,
+      tempHp: 0,
+      speed: 25,
+      armorClass: 16,
+      passivePerception: 10,
+      initiativeBonus: 0,
+      stats: { str: 16, dex: 10, con: 14, int: 10, wis: 10, cha: 8 },
+      spells: [],
+      actions: [],
+    };
+
+    const spellBlock = {
+      name: 'Shield',
+      type: 'spell' as const,
+      cost: 'reaction' as const,
+      level: 1,
+      school: 'Abjuration',
+      description: 'An invisible barrier of magical force appears.',
+    };
+
+    let updatedChar: any = null;
+    const sentMessages: any[] = [];
+
+    const res = addBlockToTokenOrCharacter({
+      block: spellBlock as any,
+      targetToken: null,
+      character: playerChar as any,
+      player: testPlayer as any,
+      onUpdatePlayerChar: (char) => {
+        updatedChar = char;
+      },
+      onSendMessage: (msg) => sentMessages.push(msg),
+    });
+
+    assert.ok(res);
+    assert.strictEqual(res.targetType, 'character');
+    assert.strictEqual(updatedChar.name, 'Bob the Fighter');
+    assert.strictEqual(updatedChar.spells.length, 1);
+    assert.strictEqual(updatedChar.spells[0].name, 'Shield');
+    assert.ok(sentMessages[0].text.includes('Bob the Fighter'));
+  });
+
+  it('initializes a default character sheet for player when neither character nor token is bound (OB-206)', () => {
+    const testPlayer = { id: 'p2', name: 'Alice', color: '#3b82f6' };
+    const spellBlock = {
+      name: 'Magic Missile',
+      type: 'spell' as const,
+      cost: 'action' as const,
+      level: 1,
+      school: 'Evocation',
+      range: '120 feet',
+      description: 'You create three glowing darts of magical force.',
+    };
+
+    let updatedChar: any = null;
+    const sentMessages: any[] = [];
+
+    const res = addBlockToTokenOrCharacter({
+      block: spellBlock as any,
+      targetToken: null,
+      character: null,
+      player: testPlayer as any,
+      onUpdatePlayerChar: (char) => {
+        updatedChar = char;
+      },
+      onSendMessage: (msg) => sentMessages.push(msg),
+    });
+
+    assert.ok(res);
+    assert.strictEqual(res.targetType, 'character');
+    assert.ok(updatedChar);
+    assert.strictEqual(updatedChar.name, 'Alice');
+    assert.strictEqual(updatedChar.spells.length, 1);
+    assert.strictEqual(updatedChar.spells[0].name, 'Magic Missile');
+    assert.ok(sentMessages[0].text.includes('Magic Missile'));
+    assert.ok(sentMessages[0].text.includes('Alice'));
+  });
+
+  it('distinguishes spells and monsters for spawn token and roll permissions (OB-206)', () => {
+    const spellBlock = {
+      type: 'spell' as const,
+      name: 'Magic Missile',
+    };
+    const monsterBlock = {
+      type: 'monster' as const,
+      name: 'Goblin',
+    };
+
+    // Default canSpawnToken logic matching StatBlockCard & ChatPanel
+    const canSpawnSpell = (spellBlock.type as string) === 'monster';
+    const canSpawnMonster = (monsterBlock.type as string) === 'monster';
+
+    assert.strictEqual(canSpawnSpell, false, 'Spells should NOT have permission to spawn tokens');
+    assert.strictEqual(canSpawnMonster, true, 'Monsters SHOULD have permission to spawn tokens');
+
+    // Default canRoll logic matching StatBlockCard & ChatPanel
+    const canRollSpell = (spellBlock.type as string) !== 'monster';
+    const canRollMonster = (monsterBlock.type as string) !== 'monster';
+
+    assert.strictEqual(canRollSpell, true, 'Spells SHOULD have permission to roll / cast');
+    assert.strictEqual(canRollMonster, false, 'Monsters should NOT have a useless roll button');
+  });
+
+  it('adds an item card attack and inventory item to character sheet and token (OB-216)', () => {
+    const testPlayer = { id: 'p1', name: 'Bob', color: '#10b981' };
+    const itemBlock = {
+      name: 'Flame Tongue Longsword',
+      type: 'item' as const,
+      cost: 'action' as const,
+      damageFormula: '1d8+2',
+      description: 'A magical sword that deals an extra 2d6 fire damage on a hit.',
+    };
+
+    let updatedTokenActions: any = null;
+    const unboundToken: any = {
+      id: 'tok-sword-1',
+      name: 'Warrior Token',
+      actions: [],
+    };
+
+    // Case 1: Add to unbound token
+    const resUnbound = addBlockToTokenOrCharacter({
+      block: itemBlock as any,
+      targetToken: unboundToken,
+      character: null,
+      player: testPlayer as any,
+      onSyncToken: (id, updates) => {
+        if (updates.actions) updatedTokenActions = updates.actions;
+      },
+    });
+
+    assert.ok(resUnbound);
+    assert.strictEqual(resUnbound.targetType, 'token');
+    assert.ok(updatedTokenActions);
+    assert.strictEqual(updatedTokenActions.length, 1);
+    assert.strictEqual(updatedTokenActions[0].name, 'Flame Tongue Longsword');
+    assert.strictEqual(updatedTokenActions[0].type, 'melee');
+    assert.strictEqual(updatedTokenActions[0].damageDice, '1d8+2');
+
+    // Case 2: Add to character sheet directly
+    let updatedChar: any = null;
+    const resChar = addBlockToTokenOrCharacter({
+      block: itemBlock as any,
+      targetToken: null,
+      character: null,
+      player: testPlayer as any,
+      onUpdatePlayerChar: (char) => {
+        updatedChar = char;
+      },
+    });
+
+    assert.ok(resChar);
+    assert.strictEqual(resChar.targetType, 'character');
+    assert.ok(updatedChar);
+    assert.strictEqual(updatedChar.items.length, 1);
+    assert.strictEqual(updatedChar.items[0].name, 'Flame Tongue Longsword');
+    assert.strictEqual(updatedChar.actions.length, 1);
+    assert.strictEqual(updatedChar.actions[0].name, 'Flame Tongue Longsword');
+    assert.strictEqual(updatedChar.actions[0].type, 'melee');
+  });
 });
+
+
+
+

@@ -57,7 +57,7 @@ export class NetworkClient {
     });
   }
 
-  connect(roomId: string, playerName: string, playerColor: string, gmKey?: string, playerId?: string) {
+  connect(roomId: string, playerName: string, playerColor: string, gmKey?: string, playerId?: string, mode?: 'vtt' | 'brawl') {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
     const wsUrl = `${protocol}//${host}/ws`;
@@ -87,6 +87,7 @@ export class NetworkClient {
         playerColor,
         gmKey,
         playerId: resolvedPlayerId,
+        mode,
       };
       this.sendWs(joinMsg);
     };
@@ -318,7 +319,27 @@ export class NetworkClient {
   }
 
   disconnect() {
-    this.ws?.close();
+    if (this.ws) {
+      const socket = this.ws;
+      this.ws = null;
+      socket.onopen = null;
+      socket.onmessage = null;
+      socket.onerror = null;
+      socket.onclose = null;
+      if (socket.readyState === WebSocket.CONNECTING) {
+        socket.onopen = () => {
+          try {
+            socket.close(1000, 'Client disconnecting');
+          } catch {}
+        };
+        socket.onerror = () => {};
+      } else if (socket.readyState === WebSocket.OPEN) {
+        try {
+          socket.close(1000, 'Client disconnecting');
+        } catch {}
+      }
+    }
+
     for (const pc of this.peerConnections.values()) {
       pc.close();
     }
@@ -326,3 +347,4 @@ export class NetworkClient {
     this.dataChannels.clear();
   }
 }
+

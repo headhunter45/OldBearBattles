@@ -1,25 +1,26 @@
-import { getDB, StoredAsset } from './db.js';
-import { GameSession } from '@oldbear/shared';
+import {GameSession} from '@oldbear/shared';
+
+import {importBinderData, isBinderData} from './BinderPipeline.js';
+import {getDB, StoredAsset} from './db.js';
+import {getImageDimensions} from '../utils/imageUtils.js';
 
 export interface BackupPayload {
   app: 'OldBearBattles';
   version: 1;
   exportedAt: number;
-  session?: GameSession | null;
+  session?: GameSession|null;
   assets: StoredAsset[];
   localStorage: Record<string, string>;
 }
 
-export async function exportAllData(
-  session?: GameSession | null,
-): Promise<Blob> {
+export async function exportAllData(session?: GameSession|null): Promise<Blob> {
   const db = await getDB();
   const assets = await db.getAll('assets');
 
   const storageMap: Record<string, string> = {};
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key && (key.startsWith('oldbear_') || key.startsWith('obr_'))) {
+    if (key && (key.startsWith('oldbear_') || key.startsWith('obb_'))) {
       const val = localStorage.getItem(key);
       if (val !== null) {
         storageMap[key] = val;
@@ -37,7 +38,7 @@ export async function exportAllData(
   };
 
   const json = JSON.stringify(payload, null, 2);
-  return new Blob([json], { type: 'application/json' });
+  return new Blob([json], {type: 'application/json'});
 }
 
 export function downloadBackupFile(blob: Blob, customName?: string) {
@@ -53,20 +54,45 @@ export function downloadBackupFile(blob: Blob, customName?: string) {
   URL.revokeObjectURL(url);
 }
 
-export async function importAllData(jsonString: string): Promise<{
-  assetCount: number;
-  charCount: number;
-  session?: GameSession | null;
-}> {
-  const data = JSON.parse(jsonString) as BackupPayload;
+export async function importAllData(jsonString: string): Promise<
+    {assetCount: number; charCount: number; session?: GameSession | null}> {
+  let parsed: any;
+  try {
+    parsed = JSON.parse(jsonString);
+  } catch (err: any) {
+    throw new Error(`Failed to parse backup or .binder file: ${err.message}`);
+  }
+
+  // Check if this is a .binder interchange document
+  if (isBinderData(parsed)) {
+    const binderResult = await importBinderData(parsed);
+    return {
+      assetCount: binderResult.assetCount,
+      charCount: binderResult.charCount,
+      session: binderResult.session,
+    };
+  }
+
+  const data = parsed as BackupPayload;
 
   if (data.app !== 'OldBearBattles' || !Array.isArray(data.assets)) {
     throw new Error(
-      'Invalid backup file: Not a recognized Old Bear Battles backup.',
-    );
+        'Invalid backup file: Not a recognized OldBearBattles backup or .binder file.');
   }
 
   // Restore IndexedDB assets
+  if (typeof Image !== 'undefined') {
+    for (const asset of data.assets) {
+      if (asset && asset.id && asset.type === 'map' && asset.dataUrl && (!asset.width || !asset.height)) {
+        try {
+          const dims = await getImageDimensions(asset.dataUrl);
+          asset.width = dims.width;
+          asset.height = dims.height;
+        } catch (_) {}
+      }
+    }
+  }
+
   const db = await getDB();
   const tx = db.transaction('assets', 'readwrite');
   for (const asset of data.assets) {

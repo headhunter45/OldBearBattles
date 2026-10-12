@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { GameMap, GridType } from '@oldbear/shared';
+import { GameMap, GridType, generateUUID } from '@oldbear/shared';
 import { Map, Plus, Upload, Check, Eye, Trash2, X, Settings, Sliders, Grid, ArrowRightLeft, Copy, Layers } from 'lucide-react';
 import { saveAsset, getAssetsByType, StoredAsset } from '../storage/db.js';
 import { MapSettingsModal } from './MapSettingsModal.js';
+import { duplicateSceneAsTemplate } from '../engine/SubmapManager.js';
+import { calculateDefaultTiles, getImageDimensions } from '../utils/imageUtils.js';
 
 interface MapManagerModalProps {
   maps: GameMap[];
@@ -57,7 +59,7 @@ export const MapManagerModal: React.FC<MapManagerModalProps> = ({
   const handleDuplicateScene = (scene: GameMap) => {
     const duplicated: GameMap = {
       ...scene,
-      id: `map-${crypto.randomUUID()}`,
+      id: `map-${generateUUID()}`,
       name: `${scene.name} (Copy)`,
       baseMapId: scene.baseMapId || scene.id,
       baseMapName: scene.baseMapName || scene.name,
@@ -66,7 +68,13 @@ export const MapManagerModal: React.FC<MapManagerModalProps> = ({
     onSelectGmPreviewMap(duplicated.id);
   };
 
-  const handleCreateSceneFromSelectedMap = () => {
+  const handleDuplicateAsTemplate = (scene: GameMap) => {
+    const templated = duplicateSceneAsTemplate(scene, `${scene.name} (Template Copy)`);
+    onAddMap(templated);
+    onSelectGmPreviewMap(templated.id);
+  };
+
+  const handleCreateSceneFromSelectedMap = async () => {
     const asset = mapAssets.find((a) => a.id === selectedAssetId);
     const existingMap = maps.find((m) => m.id === selectedAssetId);
 
@@ -74,16 +82,30 @@ export const MapManagerModal: React.FC<MapManagerModalProps> = ({
 
     const sourceName = asset?.name || existingMap?.name || 'Map';
     const imageUrl = asset?.dataUrl || existingMap?.imageUrl || '';
-    const width = asset?.width || existingMap?.width || 2000;
-    const height = asset?.height || existingMap?.height || 1500;
-    const gridSize = existingMap?.gridSize || 50;
+    let width = asset?.width || existingMap?.width;
+    let height = asset?.height || existingMap?.height;
+
+    if ((!width || !height) && imageUrl) {
+      try {
+        const dims = await getImageDimensions(imageUrl);
+        width = dims.width;
+        height = dims.height;
+        if (asset && width && height && (width !== asset.width || height !== asset.height)) {
+          await saveAsset({ ...asset, width, height });
+        }
+      } catch (_) {}
+    }
+    width = width || 2000;
+    height = height || 1500;
+    const { tilesX, tilesY, gridSize: defaultGridSize } = calculateDefaultTiles(width, height);
+    const gridSize = existingMap?.gridSize || defaultGridSize;
     const gridType = existingMap?.gridType || 'square';
     const gridColor = existingMap?.gridColor || '#ffffff';
     const gridOpacity = existingMap?.gridOpacity ?? 0.4;
     const backgroundColor = existingMap?.backgroundColor;
 
     const newScene: GameMap = {
-      id: `map-${crypto.randomUUID()}`,
+      id: `map-${generateUUID()}`,
       name: newSceneName.trim() || `${sourceName} Scene`,
       imageUrl,
       gridSize,
@@ -94,6 +116,10 @@ export const MapManagerModal: React.FC<MapManagerModalProps> = ({
       height,
       scaleFtPerCell: 5,
       showGrid: true,
+      tilesX: existingMap?.tilesX || tilesX,
+      tilesY: existingMap?.tilesY || tilesY,
+      gridOffsetX: existingMap?.gridOffsetX ?? 0,
+      gridOffsetY: existingMap?.gridOffsetY ?? 0,
       baseMapId: asset?.id || existingMap?.id,
       baseMapName: sourceName,
       backgroundColor,
@@ -119,7 +145,7 @@ export const MapManagerModal: React.FC<MapManagerModalProps> = ({
           const defaultTilesX = Math.max(10, Math.round(width / 70));
           const defaultTilesY = Math.max(10, Math.round(height / 70));
           const newMap: GameMap = {
-            id: `map-${crypto.randomUUID()}`,
+            id: `map-${generateUUID()}`,
             name: file.name.replace(/\.[^/.]+$/, ''),
             imageUrl: dataUrl,
             gridSize: Math.round(width / defaultTilesX),
@@ -242,7 +268,13 @@ export const MapManagerModal: React.FC<MapManagerModalProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    cursor: 'pointer',
                   }}
+                  onClick={() => {
+                    onSelectGmPreviewMap(map.id);
+                    onClose?.();
+                  }}
+                  title="Click to view this scene"
                 >
                   {!map.imageUrl && (
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Default Grid</span>
@@ -304,6 +336,14 @@ export const MapManagerModal: React.FC<MapManagerModalProps> = ({
                       <button
                         className="btn-icon"
                         style={{ width: '28px', height: '28px' }}
+                        onClick={() => handleDuplicateAsTemplate(map)}
+                        title="Duplicate as Scene Template (preserves submaps & staging areas)"
+                      >
+                        <Layers size={14} color="var(--accent-primary)" />
+                      </button>
+                      <button
+                        className="btn-icon"
+                        style={{ width: '28px', height: '28px' }}
                         onClick={() => {
                           onSelectGmPreviewMap(map.id);
                           setSelectedMapForEdit(map);
@@ -324,7 +364,10 @@ export const MapManagerModal: React.FC<MapManagerModalProps> = ({
                     <button
                       className="btn btn-secondary"
                       style={{ flex: 1, fontSize: '0.75rem', padding: '0.35rem' }}
-                      onClick={() => onSelectGmPreviewMap(map.id)}
+                      onClick={() => {
+                        onSelectGmPreviewMap(map.id);
+                        onClose?.();
+                      }}
                     >
                       <Eye size={13} /> GM View
                     </button>
@@ -356,6 +399,7 @@ export const MapManagerModal: React.FC<MapManagerModalProps> = ({
                           onClick={() => {
                             onSelectGmPreviewMap(map.id);
                             onSetActiveMapForPlayers(map.id);
+                            onClose?.();
                           }}
                           title="Send all players to this map"
                         >
@@ -368,6 +412,7 @@ export const MapManagerModal: React.FC<MapManagerModalProps> = ({
                             onClick={() => {
                               onSelectGmPreviewMap(map.id);
                               onSendPlayersWithTokens(map.id);
+                              onClose?.();
                             }}
                             title="Send all players and move all player tokens to this map"
                           >

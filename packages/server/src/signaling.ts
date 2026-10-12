@@ -1,17 +1,8 @@
-import { WebSocket, WebSocketServer } from 'ws';
+import {ClientToServerMessage, generateRandomName, Player, ServerToClientMessage,} from '@oldbear/shared';
 import crypto from 'node:crypto';
-import {
-  ClientToServerMessage,
-  ServerToClientMessage,
-  Player,
-  generateRandomName,
-} from '@oldbear/shared';
-import {
-  getSession,
-  getSessionGmKey,
-  createSession,
-  updateSession,
-} from './session.js';
+import {WebSocket, WebSocketServer} from 'ws';
+
+import {createSession, getSession, getSessionGmKey, updateSession,} from './session.js';
 
 interface ClientSocket extends WebSocket {
   roomId?: string;
@@ -43,10 +34,7 @@ export function setupWebSocket(wss: WebSocketServer) {
 }
 
 function broadcastToRoom(
-  roomId: string,
-  message: ServerToClientMessage,
-  excludeWs?: ClientSocket,
-) {
+    roomId: string, message: ServerToClientMessage, excludeWs?: ClientSocket) {
   const clients = rooms.get(roomId);
   if (!clients) return;
 
@@ -59,19 +47,14 @@ function broadcastToRoom(
 }
 
 function sendToPeer(
-  roomId: string,
-  targetPeerId: string,
-  message: ServerToClientMessage,
-) {
+    roomId: string, targetPeerId: string, message: ServerToClientMessage) {
   const clients = rooms.get(roomId);
   if (!clients) return;
 
   const payload = JSON.stringify(message);
   for (const client of clients) {
-    if (
-      client.playerId === targetPeerId &&
-      client.readyState === WebSocket.OPEN
-    ) {
+    if (client.playerId === targetPeerId &&
+        client.readyState === WebSocket.OPEN) {
       client.send(payload);
       break;
     }
@@ -79,18 +62,16 @@ function sendToPeer(
 }
 
 export async function sendDiscordWebhook(
-  webhookUrl: string,
-  payload: { username?: string; content: string },
-): Promise<boolean> {
+    webhookUrl: string,
+    payload: {username?: string; content: string}): Promise<boolean> {
   try {
     if (!webhookUrl || typeof fetch !== 'function') return false;
     const res = await fetch(webhookUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        username: payload.username
-          ? `${payload.username} (Old Bear)`
-          : 'Old Bear Battles',
+        username: payload.username ? `${payload.username} (Old Bear)` :
+                                     'Old Bear Battles',
         content: payload.content.slice(0, 2000),
       }),
     });
@@ -110,28 +91,28 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
         playerColor,
         gmKey,
         playerId: requestedPlayerId,
+        mode = 'vtt',
       } = msg;
       let session = getSession(roomId);
       let sessionGmKey = getSessionGmKey(roomId);
 
       const isNewRoom = !session;
-      // If room doesn't exist, create it with this exact roomId
+      // If room doesn't exist, create it with this exact roomId and mode
       if (!session) {
-        const created = createSession(`Session ${roomId}`, roomId);
+        const created = createSession(`Session ${roomId}`, roomId, mode);
         session = created.session;
         sessionGmKey = created.gmKey;
       }
 
-      const playerId =
-        requestedPlayerId &&
-        typeof requestedPlayerId === 'string' &&
-        requestedPlayerId.trim() !== ''
-          ? requestedPlayerId.trim()
-          : crypto.randomUUID();
+      const playerId = requestedPlayerId &&
+              typeof requestedPlayerId === 'string' &&
+              requestedPlayerId.trim() !== '' ?
+          requestedPlayerId.trim() :
+          crypto.randomUUID();
 
       // Only room creator or clients with matching secret gmKey are GM
       const isGm =
-        isNewRoom || Boolean(gmKey && sessionGmKey && gmKey === sessionGmKey);
+          isNewRoom || Boolean(gmKey && sessionGmKey && gmKey === sessionGmKey);
 
       if (isGm && !session.gmId) {
         session.gmId = playerId;
@@ -141,7 +122,8 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
       ws.playerId = playerId;
       ws.isGm = isGm;
 
-      // Add to room client set, closing any prior socket for the same player (e.g. from page refresh)
+      // Add to room client set, closing any prior socket for the same player
+      // (e.g. from page refresh)
       if (!rooms.has(roomId)) {
         rooms.set(roomId, new Set());
       }
@@ -162,11 +144,8 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
       if (session.players[playerId]) {
         player = session.players[playerId];
         player.connected = true;
-        if (
-          playerName &&
-          playerName !== 'Adventurer' &&
-          playerName !== 'Game Master'
-        ) {
+        if (playerName && playerName !== 'Adventurer' &&
+            playerName !== 'Game Master') {
           player.name = playerName;
         }
         if (playerColor) {
@@ -178,14 +157,11 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
       } else {
         player = {
           id: playerId,
-          name:
-            playerName &&
-            playerName !== 'Adventurer' &&
-            playerName !== 'Game Master'
-              ? playerName
-              : isGm
-                ? 'GM'
-                : generateRandomName(),
+          name: playerName && playerName !== 'Adventurer' &&
+                  playerName !== 'Game Master' ?
+              playerName :
+              isGm ? 'GM' :
+                     generateRandomName(),
           role: isGm ? 'gm' : 'player',
           color: playerColor || '#3b82f6',
           connected: true,
@@ -201,20 +177,18 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
         player,
         session,
         isGm,
-        gmKey: isGm ? sessionGmKey || undefined : undefined,
+        gmKey: isGm ? (sessionGmKey || undefined) : undefined,
       };
       ws.send(JSON.stringify(ackMsg));
 
       // Notify others in room
       broadcastToRoom(
-        roomId,
-        {
-          type: 'peer-joined',
-          peerId: playerId,
-          player,
-        },
-        ws,
-      );
+          roomId, {
+            type: 'peer-joined',
+            peerId: playerId,
+            player,
+          },
+          ws);
       break;
     }
 
@@ -257,16 +231,14 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
         if (msg.mapId) session.tokens[msg.id].mapId = msg.mapId;
       }
       broadcastToRoom(
-        ws.roomId,
-        {
-          type: 'token-moved',
-          id: msg.id,
-          x: msg.x,
-          y: msg.y,
-          mapId: msg.mapId,
-        },
-        ws,
-      );
+          ws.roomId, {
+            type: 'token-moved',
+            id: msg.id,
+            x: msg.x,
+            y: msg.y,
+            mapId: msg.mapId,
+          },
+          ws);
       break;
     }
 
@@ -277,14 +249,12 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
         Object.assign(session.tokens[msg.id], msg.updates);
       }
       broadcastToRoom(
-        ws.roomId,
-        {
-          type: 'token-updated',
-          id: msg.id,
-          updates: msg.updates,
-        },
-        ws,
-      );
+          ws.roomId, {
+            type: 'token-updated',
+            id: msg.id,
+            updates: msg.updates,
+          },
+          ws);
       break;
     }
 
@@ -294,7 +264,7 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
       if (session) {
         session.tokens[msg.token.id] = msg.token;
       }
-      broadcastToRoom(ws.roomId, { type: 'token-added', token: msg.token }, ws);
+      broadcastToRoom(ws.roomId, {type: 'token-added', token: msg.token}, ws);
       break;
     }
 
@@ -304,7 +274,7 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
       if (session) {
         delete session.tokens[msg.id];
       }
-      broadcastToRoom(ws.roomId, { type: 'token-deleted', id: msg.id }, ws);
+      broadcastToRoom(ws.roomId, {type: 'token-deleted', id: msg.id}, ws);
       break;
     }
 
@@ -317,16 +287,14 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
         session.tokens[msg.id].y = msg.y;
       }
       broadcastToRoom(
-        ws.roomId,
-        {
-          type: 'token-transferred',
-          id: msg.id,
-          toMapId: msg.toMapId,
-          x: msg.x,
-          y: msg.y,
-        },
-        ws,
-      );
+          ws.roomId, {
+            type: 'token-transferred',
+            id: msg.id,
+            toMapId: msg.toMapId,
+            x: msg.x,
+            y: msg.y,
+          },
+          ws);
       break;
     }
 
@@ -342,9 +310,9 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
             shapes: [],
           };
         }
-        updateSession(ws.roomId, { maps: session.maps, fog: session.fog });
+        updateSession(ws.roomId, {maps: session.maps, fog: session.fog});
       }
-      broadcastToRoom(ws.roomId, { type: 'map-added', map: msg.map });
+      broadcastToRoom(ws.roomId, {type: 'map-added', map: msg.map});
       break;
     }
 
@@ -355,7 +323,7 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
         const map = session.maps.find((m) => m.id === msg.id);
         if (map) {
           Object.assign(map, msg.updates);
-          updateSession(ws.roomId, { maps: session.maps });
+          updateSession(ws.roomId, {maps: session.maps});
         }
       }
       broadcastToRoom(ws.roomId, {
@@ -391,8 +359,8 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
 
     case 'map-switch': {
       if (!ws.roomId) return;
-      updateSession(ws.roomId, { activeMapId: msg.mapId });
-      broadcastToRoom(ws.roomId, { type: 'map-switched', mapId: msg.mapId });
+      updateSession(ws.roomId, {activeMapId: msg.mapId});
+      broadcastToRoom(ws.roomId, {type: 'map-switched', mapId: msg.mapId});
       break;
     }
 
@@ -417,7 +385,7 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
         if (msg.newShape) {
           fog.shapes.push(msg.newShape);
         }
-        updateSession(ws.roomId, { fog: session.fog });
+        updateSession(ws.roomId, {fog: session.fog});
       }
       broadcastToRoom(ws.roomId, {
         type: 'fog-updated',
@@ -433,24 +401,17 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
       if (!ws.roomId) return;
       const session = getSession(ws.roomId);
       if (session) {
-        session.markers.push(msg.marker);
-        // keep maximum 100 markers, but don't drop persistent markers if possible
-        if (session.markers.length > 100) {
-          const firstNonPersistIdx = session.markers.findIndex(
-            (m) => !m.persist,
-          );
-          if (firstNonPersistIdx !== -1) {
-            session.markers.splice(firstNonPersistIdx, 1);
-          } else {
+        // Only persist markers that have persist: true. Ephemeral pings and
+        // shapes should not pollute room session
+        if (msg.marker.persist) {
+          session.markers.push(msg.marker);
+          if (session.markers.length > 100) {
             session.markers.shift();
           }
         }
       }
       broadcastToRoom(
-        ws.roomId,
-        { type: 'marker-added', marker: msg.marker },
-        ws,
-      );
+          ws.roomId, {type: 'marker-added', marker: msg.marker}, ws);
       break;
     }
 
@@ -460,7 +421,7 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
       if (session) {
         session.markers = session.markers.filter((m) => m.id !== msg.id);
       }
-      broadcastToRoom(ws.roomId, { type: 'marker-deleted', id: msg.id });
+      broadcastToRoom(ws.roomId, {type: 'marker-deleted', id: msg.id});
       break;
     }
 
@@ -470,14 +431,18 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
       if (session) {
         const marker = session.markers.find((m) => m.id === msg.id);
         if (marker) {
-          Object.assign(marker, msg.updates);
+          for (const [k, v] of Object.entries(msg.updates)) {
+            if (v === null || v === undefined) {
+              delete (marker as any)[k];
+            } else {
+              (marker as any)[k] = v;
+            }
+          }
         }
       }
-      broadcastToRoom(ws.roomId, {
-        type: 'marker-updated',
-        id: msg.id,
-        updates: msg.updates,
-      });
+      broadcastToRoom(
+          ws.roomId,
+          {type: 'marker-updated', id: msg.id, updates: msg.updates});
       break;
     }
 
@@ -490,23 +455,22 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
 
         if (session.discordWebhookUrl) {
           const r = msg.roll;
-          const modStr = r.modifier
-            ? r.modifier >= 0
-              ? `+${r.modifier}`
-              : `${r.modifier}`
-            : '';
-          const advStr =
-            r.advantageMode && r.advantageMode !== 'normal'
-              ? ` (${r.advantageMode})`
-              : '';
-          const content = `🎲 **${r.userName}** rolled **${r.count}${r.diceType}${modStr}${advStr}**: **${r.total}** [${r.rolls.join(', ')}]`;
+          const modStr = r.modifier ?
+              (r.modifier >= 0 ? `+${r.modifier}` : `${r.modifier}`) :
+              '';
+          const advStr = r.advantageMode && r.advantageMode !== 'normal' ?
+              ` (${r.advantageMode})` :
+              '';
+          const content =
+              `🎲 **${r.userName}** rolled **${r.count}${r.diceType}${modStr}${
+                  advStr}**: **${r.total}** [${r.rolls.join(', ')}]`;
           sendDiscordWebhook(session.discordWebhookUrl, {
             username: `${r.userName} (Dice)`,
             content,
           });
         }
       }
-      broadcastToRoom(ws.roomId, { type: 'dice-rolled', roll: msg.roll });
+      broadcastToRoom(ws.roomId, {type: 'dice-rolled', roll: msg.roll});
       break;
     }
 
@@ -551,6 +515,50 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
       break;
     }
 
+    case 'clock-add': {
+      if (!ws.roomId) return;
+      const session = getSession(ws.roomId);
+      if (session) {
+        if (!session.clocks) session.clocks = [];
+        session.clocks.push(msg.clock);
+      }
+      broadcastToRoom(ws.roomId, {
+        type: 'clock-added',
+        clock: msg.clock,
+      });
+      break;
+    }
+
+    case 'clock-update': {
+      if (!ws.roomId) return;
+      const session = getSession(ws.roomId);
+      if (session && session.clocks) {
+        const idx = session.clocks.findIndex((c) => c.id === msg.id);
+        if (idx !== -1) {
+          session.clocks[idx] = {...session.clocks[idx], ...msg.updates};
+        }
+      }
+      broadcastToRoom(ws.roomId, {
+        type: 'clock-updated',
+        id: msg.id,
+        updates: msg.updates,
+      });
+      break;
+    }
+
+    case 'clock-delete': {
+      if (!ws.roomId) return;
+      const session = getSession(ws.roomId);
+      if (session && session.clocks) {
+        session.clocks = session.clocks.filter((c) => c.id !== msg.id);
+      }
+      broadcastToRoom(ws.roomId, {
+        type: 'clock-deleted',
+        id: msg.id,
+      });
+      break;
+    }
+
     case 'initiative-update': {
       if (!ws.roomId) return;
       const session = getSession(ws.roomId);
@@ -558,13 +566,11 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
         session.initiative = msg.initiative;
       }
       broadcastToRoom(
-        ws.roomId,
-        {
-          type: 'initiative-updated',
-          initiative: msg.initiative,
-        },
-        ws,
-      );
+          ws.roomId, {
+            type: 'initiative-updated',
+            initiative: msg.initiative,
+          },
+          ws);
       break;
     }
 
@@ -575,14 +581,12 @@ function handleMessage(ws: ClientSocket, msg: ClientToServerMessage) {
         Object.assign(session.players[ws.playerId], msg.updates);
       }
       broadcastToRoom(
-        ws.roomId,
-        {
-          type: 'player-updated',
-          playerId: ws.playerId,
-          updates: msg.updates,
-        },
-        ws,
-      );
+          ws.roomId, {
+            type: 'player-updated',
+            playerId: ws.playerId,
+            updates: msg.updates,
+          },
+          ws);
       break;
     }
 

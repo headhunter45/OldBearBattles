@@ -40,16 +40,16 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: 'npm'
+          cache: 'yarn'
+
+      - name: Enable Corepack
+        run: corepack enable
 
       - name: Install dependencies
-        run: npm ci
-
-      - name: Build TypeScript workspaces
-        run: npm run build
+        run: yarn install --immutable
 
       - name: Run automated test suites
-        run: npm test
+        run: yarn test
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4

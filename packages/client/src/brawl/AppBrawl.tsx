@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import {
   GameMap,
   GameSession,
@@ -16,6 +16,7 @@ import { TokenControls } from '../common/components/TokenControls.js';
 import { TokenEditorModal } from '../common/components/TokenEditorModal.js';
 import { DiceRoller } from '../common/components/DiceRoller.js';
 import { MapManagerModal } from '../common/components/MapManagerModal.js';
+import { MapSettingsModal } from '../common/components/MapSettingsModal.js';
 import { SoundboardModal } from '../common/components/SoundboardModal.js';
 import { MobileDrawer } from '../common/components/MobileDrawer.js';
 import { VoiceManager, VoiceState } from '../common/network/VoiceManager.js';
@@ -31,11 +32,45 @@ import { ChatPanel } from '../common/components/ChatPanel.js';
 import { MarkerControls } from '../common/components/MarkerControls.js';
 import { TOAST_DURATION_MS } from '../common/config/toast.js';
 import { BrawlTopBar } from './components/BrawlTopBar.js';
-import { ArmyRosterFlyout } from './components/ArmyRosterFlyout.js';
-import { WargamePhase, WargameUnit } from './types/brawl.js';
+import {
+  ArmyRosterFlyout,
+  loadSavedBrawlArmy,
+  saveBrawlArmy,
+} from './components/ArmyRosterFlyout.js';
+import { PhaseAnnouncementBanner } from './components/PhaseAnnouncementBanner.js';
+import { ChessClockWidget } from './components/ChessClockWidget.js';
+import { ScoreboardModal } from './components/ScoreboardModal.js';
+import { ObjectivesModal } from './components/ObjectivesModal.js';
+import { DeploymentStagingModal } from './components/DeploymentStagingModal.js';
+import { TournamentOrganizerModal } from './components/TournamentOrganizerModal.js';
+import { useFeatureFlag } from '../common/config/featureFlags.js';
+import { WargamePhase, WargameUnit, WargameArmy } from './types/brawl.js';
+import {
+  BrawlUserRole,
+  OfficialRuling,
+  MatchPrivacySettings,
+  formatOfficialRulingMessage,
+  filterTokensForSpectator,
+} from './domain/toManager.js';
+import { modelToToken, DEFAULT_PX_PER_INCH } from './domain/armyManager.js';
+import { updateTokensCoherency } from './domain/coherencyEngine.js';
+import {
+  ObjectiveMarker,
+  createStandardObjectives,
+  evaluateAllObjectives,
+} from './domain/objectiveEngine.js';
+import { advanceWargamePhase, WARGAME_PHASES, PhaseTransitionEvent } from './domain/phaseEngine.js';
+import { playLowTimeWarningSound, playOvertimeAlarmSound, playClockSwitchSound } from './domain/chessClock.js';
+import {
+  ScoreboardState,
+  ScoreAuditEntry,
+  ResourceType,
+  createInitialScoreboard,
+  updatePlayerResource,
+} from './domain/scoreboardEngine.js';
 import { Mic, Radio, Compass, Check, AlertTriangle, RefreshCw } from 'lucide-react';
 
-const PHASES: WargamePhase[] = ['Command', 'Movement', 'Shooting', 'Charge', 'Fight', 'Morale'];
+const PHASES: WargamePhase[] = WARGAME_PHASES;
 
 export const AppBrawl: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -49,6 +84,8 @@ export const AppBrawl: React.FC = () => {
   const [session, setSession] = useState<GameSession | null>(null);
   const sessionRef = useRef<GameSession | null>(null);
   sessionRef.current = session;
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'error' | 'disconnected'>('connecting');
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string, durationMs: number = TOAST_DURATION_MS) => {
@@ -70,14 +107,43 @@ export const AppBrawl: React.FC = () => {
   const [currentRound, setCurrentRound] = useState(1);
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
   const [activePlayerIndex, setActivePlayerIndex] = useState<1 | 2>(1);
+  const [phaseAnnouncement, setPhaseAnnouncement] = useState<PhaseTransitionEvent | null>(null);
+  const [isChessClockEnabled, setIsChessClockEnabled] = useState(false);
   const [p1ClockSeconds, setP1ClockSeconds] = useState(5400); // 90 min default
   const [p2ClockSeconds, setP2ClockSeconds] = useState(5400);
   const [isClockRunning, setIsClockRunning] = useState(false);
 
   // Modals & Flyouts
+  const [scoreboard, setScoreboard] = useState<ScoreboardState>(() => createInitialScoreboard());
+  const [scoreAuditTrail, setScoreAuditTrail] = useState<ScoreAuditEntry[]>([]);
+  const [showScoreboardModal, setShowScoreboardModal] = useState(false);
+  const [objectives, setObjectives] = useState<ObjectiveMarker[]>([]);
+  const [showObjectivesModal, setShowObjectivesModal] = useState(false);
+  const [showDeploymentModal, setShowDeploymentModal] = useState(false);
+  const [brawlRole, setBrawlRole] = useState<BrawlUserRole>('player');
+  const brawlRoleRef = useRef<BrawlUserRole>(brawlRole);
+  brawlRoleRef.current = brawlRole;
+  const [showToModal, setShowToModal] = useState(false);
+  const [rulings, setRulings] = useState<OfficialRuling[]>([]);
+  const [matchPrivacy, setMatchPrivacy] = useState<MatchPrivacySettings>({
+    allowSpectators: true,
+    hideSecretObjectives: false,
+    hideReservesFromSpectators: false,
+  });
   const [showArmyRoster, setShowArmyRoster] = useState(false);
+  const [localArmy, setLocalArmy] = useState<WargameArmy>(() => loadSavedBrawlArmy());
+  const isChessClockFeatureEnabled = useFeatureFlag('chess_clock');
+  const isDiceRollerEnabled = useFeatureFlag('dice_roller');
+  const isSoundboardEnabled = useFeatureFlag('soundboard');
+  const isVoiceChatEnabled = useFeatureFlag('voice_chat');
+  const isScoreboardEnabled = useFeatureFlag('scoreboard');
+  const isObjectivesEnabled = useFeatureFlag('objectives');
+  const isArmyRosterEnabled = useFeatureFlag('army_roster');
+  const isToModeEnabled = useFeatureFlag('to_mode');
+  const [showChessClockHUD, setShowChessClockHUD] = useState(false);
   const [showDiceRoller, setShowDiceRoller] = useState(false);
   const [showMapManager, setShowMapManager] = useState(false);
+  const [showSceneSettings, setShowSceneSettings] = useState(false);
   const [showSoundboard, setShowSoundboard] = useState(false);
   const [showBackupModal, setShowBackupModal] = useState(false);
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
@@ -88,6 +154,8 @@ export const AppBrawl: React.FC = () => {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [gmPreviewMapId, setGmPreviewMapId] = useState<string>('');
   const [voiceState, setVoiceState] = useState<VoiceState>({
     isInitialized: false,
     isMuted: true,
@@ -103,50 +171,376 @@ export const AppBrawl: React.FC = () => {
     isAudioStreaming: false,
     micVolume: 1.0,
     desktopVolume: 0.8,
-    localLevel: 0,
   });
 
-  const currentMap = session?.maps.find((m) => m.id === (session.activeMapId || '')) || session?.maps[0];
+  const topBarRef = useRef<HTMLElement>(null);
+  const [topBarHeight, setTopBarHeight] = useState<number>(0);
 
-  // Chess Clock Tick Effect
   useEffect(() => {
-    if (!isClockRunning) return;
-    const interval = setInterval(() => {
-      if (activePlayerIndex === 1) {
-        setP1ClockSeconds((prev) => Math.max(0, prev - 1));
-      } else {
-        setP2ClockSeconds((prev) => Math.max(0, prev - 1));
+    const updateHeight = () => {
+      if (topBarRef.current) {
+        setTopBarHeight(topBarRef.current.getBoundingClientRect().height);
       }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isClockRunning, activePlayerIndex]);
+    };
+    updateHeight();
+    const ro = new ResizeObserver(updateHeight);
+    if (topBarRef.current) {
+      ro.observe(topBarRef.current);
+    }
+    window.addEventListener('resize', updateHeight);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', updateHeight);
+    };
+  }, []);
 
-  // Phase Stepper
-  const handleNextPhase = () => {
-    const nextIdx = (currentPhaseIndex + 1) % PHASES.length;
-    setCurrentPhaseIndex(nextIdx);
-    if (nextIdx === 0) {
-      setCurrentRound((prev) => prev + 1);
-      showToast(`Battle Round ${currentRound + 1} Begins!`);
-    } else {
-      showToast(`Phase: ${PHASES[nextIdx]}`);
+  const currentMap = session?.maps.find((m) => m.id === (gmPreviewMapId || session.activeMapId || '')) || session?.maps[0];
+
+  const handleAddMap = (newMap: GameMap) => {
+    setSession((prev) => (prev ? { ...prev, maps: [...prev.maps, newMap] } : prev));
+    handleSelectGmPreviewMap(newMap.id);
+    networkRef.current?.send({ type: 'map-add', map: newMap });
+  };
+
+  const handleUpdateMap = (id: string, updates: Partial<GameMap>) => {
+    setSession((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        maps: prev.maps.map((m) => (m.id === id ? { ...m, ...updates } : m)),
+      };
+    });
+    networkRef.current?.send({ type: 'map-update', id, updates });
+  };
+
+  const handleDeleteMap = (id: string) => {
+    setSession((prev) => {
+      if (!prev) return prev;
+      const remaining = prev.maps.filter((m) => m.id !== id);
+      const newActive = prev.activeMapId === id ? (remaining[0]?.id || '') : prev.activeMapId;
+      return {
+        ...prev,
+        maps: remaining,
+        activeMapId: newActive,
+      };
+    });
+    networkRef.current?.send({ type: 'map-delete', mapId: id });
+  };
+
+  const handleSetActiveMapForPlayers = (mapId: string) => {
+    setSession((prev) => (prev ? { ...prev, activeMapId: mapId } : prev));
+    setGmPreviewMapId(mapId);
+    networkRef.current?.send({ type: 'map-switch', mapId });
+    if (engineRef.current) {
+      engineRef.current.setActiveMap(mapId, true);
     }
   };
 
+  const handleSelectGmPreviewMap = (mapId: string) => {
+    setGmPreviewMapId(mapId);
+    if (engineRef.current) {
+      engineRef.current.setActiveMap(mapId, true);
+    }
+    const targetMap = sessionRef.current?.maps.find((m) => m.id === mapId) || session?.maps.find((m) => m.id === mapId);
+    if (targetMap) {
+      showToast(`Viewing scene: ${targetMap.name}`);
+    }
+  };
+
+  // Chess Clock Toggle & Tick Effect (OB-158)
+  const handleToggleChessClockEnabled = () => {
+    setIsChessClockEnabled((prev) => {
+      const next = !prev;
+      if (next) {
+        setShowChessClockHUD(true);
+        showToast('Match chess clocks enabled');
+      } else {
+        setIsClockRunning(false);
+        setShowChessClockHUD(false);
+        showToast('Chess clocks disabled');
+      }
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (!isChessClockEnabled || !isClockRunning) return;
+    const interval = setInterval(() => {
+      if (activePlayerIndex === 1) {
+        setP1ClockSeconds((prev) => {
+          const next = prev - 1;
+          if (next === 300 || next === 60) playLowTimeWarningSound();
+          if (next === 0) playOvertimeAlarmSound();
+          return next;
+        });
+      } else {
+        setP2ClockSeconds((prev) => {
+          const next = prev - 1;
+          if (next === 300 || next === 60) playLowTimeWarningSound();
+          if (next === 0) playOvertimeAlarmSound();
+          return next;
+        });
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isChessClockEnabled, isClockRunning, activePlayerIndex]);
+
+  // Phase Stepper (OB-157)
+  const handleNextPhase = () => {
+    const playersList = session ? Object.values(session.players) : [];
+    const p1 = playersList[0]?.name || 'Player 1';
+    const p2 = playersList[1]?.name || 'Player 2';
+
+    const { nextState, event } = advanceWargamePhase({
+      currentRound,
+      maxRounds: 5,
+      activePlayer: activePlayerIndex,
+      currentPhaseIndex,
+      player1Name: p1,
+      player2Name: p2,
+    });
+
+    setCurrentRound(nextState.currentRound);
+    setActivePlayerIndex(nextState.activePlayer);
+    setCurrentPhaseIndex(nextState.currentPhaseIndex);
+    setPhaseAnnouncement(event);
+    showToast(`${event.bannerTitle}: ${event.bannerSubtitle}`);
+
+    if (event.commandPointsGranted) {
+      handleUpdateScoreResource(
+        event.commandPointsGranted.player,
+        'commandPoints',
+        event.commandPointsGranted.amount,
+        'Turn turnover CP grant'
+      );
+    }
+
+    if (networkRef.current && session) {
+      const auditMsg: ChatMessage = {
+        id: `audit-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        senderId: 'system',
+        senderName: 'Battle Overseer',
+        senderColor: '#f59e0b',
+        text: event.chatAuditMessage,
+        timestamp: Date.now(),
+        isCommand: true,
+      };
+      networkRef.current.send({ type: 'chat-send', message: auditMsg });
+    }
+  };
+
+  const handleNextPhaseRef = useRef(handleNextPhase);
+  handleNextPhaseRef.current = handleNextPhase;
+
+  // Phase Quick-Jump (OB-157)
+  const handleJumpPhase = (round: number, phaseIndex: number, playerIndex?: 1 | 2) => {
+    const nextPlayer = playerIndex || activePlayerIndex;
+    const playersList = session ? Object.values(session.players) : [];
+    const activePlayerName = (nextPlayer === 1 ? playersList[0]?.name : playersList[1]?.name) || `Player ${nextPlayer}`;
+    const newPhase = WARGAME_PHASES[phaseIndex] || 'Command';
+
+    setCurrentRound(round);
+    setActivePlayerIndex(nextPlayer);
+    setCurrentPhaseIndex(phaseIndex);
+
+    const event: PhaseTransitionEvent = {
+      type: 'phase_change',
+      previousPhase: WARGAME_PHASES[currentPhaseIndex],
+      newPhase,
+      activePlayer: nextPlayer,
+      currentRound: round,
+      bannerTitle: `${newPhase.toUpperCase()} PHASE`,
+      bannerSubtitle: `Round ${round} • ${activePlayerName}'s Turn (Quick Jump)`,
+      chatAuditMessage: `⏱️ **[Round ${round}]** Quick jumped to **${newPhase} Phase** (${activePlayerName}'s Turn).`,
+    };
+
+    setPhaseAnnouncement(event);
+    showToast(`Jumped to Round ${round} • ${newPhase} Phase (${activePlayerName})`);
+
+    if (networkRef.current && session) {
+      const auditMsg: ChatMessage = {
+        id: `audit-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        senderId: 'system',
+        senderName: 'Battle Overseer',
+        senderColor: '#f59e0b',
+        text: event.chatAuditMessage,
+        timestamp: Date.now(),
+        isCommand: true,
+      };
+      networkRef.current.send({ type: 'chat-send', message: auditMsg });
+    }
+  };
+
+  // Scoreboard Resource Adjuster (OB-159)
+  const handleUpdateScoreResource = (
+    player: 1 | 2,
+    resource: ResourceType,
+    delta: number,
+    reason?: string,
+    modifierNickname?: string,
+  ) => {
+    const actor =
+      modifierNickname ||
+      localPlayer?.name ||
+      (typeof localStorage !== 'undefined'
+        ? localStorage.getItem('oldbear_player_name') || ''
+        : '') ||
+      'Player';
+    const { nextState, audit } = updatePlayerResource(
+      scoreboard,
+      player,
+      resource,
+      delta,
+      reason,
+      actor,
+    );
+    setScoreboard(nextState);
+    setScoreAuditTrail((prev) => [audit, ...prev]);
+    showToast(audit.formattedMessage.replace(/\*\*/g, ''));
+
+    if (networkRef.current && session) {
+      const auditMsg: ChatMessage = {
+        id: audit.id,
+        senderId: localPlayer?.id || 'system',
+        senderName: actor,
+        senderColor: player === 1 ? '#38bdf8' : '#ec4899',
+        text: audit.formattedMessage,
+        timestamp: audit.timestamp,
+        isCommand: true,
+      };
+      networkRef.current.send({ type: 'chat-send', message: auditMsg });
+    }
+  };
+
+  const handleResetScoreboard = () => {
+    const p1 = scoreboard.p1Name;
+    const p2 = scoreboard.p2Name;
+    setScoreboard(createInitialScoreboard(p1, p2));
+    showToast('Match scores reset to 0 VP / 1 CP');
+  };
+
+  // Objective Control Evaluation & Auto-Scoring (OB-160)
+  const objectivesEvaluation = useMemo(() => {
+    return evaluateAllObjectives(objectives, session?.tokens || [], {
+      pixelsPerInch: 50,
+      p1Name: scoreboard.p1Name,
+      p2Name: scoreboard.p2Name,
+    });
+  }, [objectives, session?.tokens, scoreboard.p1Name, scoreboard.p2Name]);
+
+  useEffect(() => {
+    if (engineRef.current) {
+      const mapped = objectivesEvaluation.evaluations.map((ev) => ({
+        id: ev.marker.id,
+        label: ev.marker.label,
+        x: ev.marker.x,
+        y: ev.marker.y,
+        baseMm: ev.marker.baseMm,
+        controlRadiusInches: ev.marker.controlRadiusInches,
+        vpValue: ev.marker.vpValue,
+        status: ev.status,
+        controllingPlayerName: ev.controllingPlayerName,
+        p1OcTotal: ev.p1OcTotal,
+        p2OcTotal: ev.p2OcTotal,
+      }));
+      engineRef.current.setObjectives(mapped);
+    }
+  }, [objectivesEvaluation]);
+
+  const handleDeployStandardObjectives = () => {
+    const mapWidth = currentMap?.width || 3000;
+    const mapHeight = currentMap?.height || 2200;
+    const std = createStandardObjectives(mapWidth, mapHeight);
+    setObjectives(std);
+    showToast('Deployed standard 5 tournament objective markers with 3″ auras!');
+  };
+
+  const handleScoreObjectives = () => {
+    let scored = false;
+    if (objectivesEvaluation.p1VpEarned > 0) {
+      handleUpdateScoreResource(
+        1,
+        'primaryVp',
+        objectivesEvaluation.p1VpEarned,
+        `Objective Control (${objectivesEvaluation.p1ControlledCount} held)`
+      );
+      scored = true;
+    }
+    if (objectivesEvaluation.p2VpEarned > 0) {
+      handleUpdateScoreResource(
+        2,
+        'primaryVp',
+        objectivesEvaluation.p2VpEarned,
+        `Objective Control (${objectivesEvaluation.p2ControlledCount} held)`
+      );
+      scored = true;
+    }
+    if (!scored) {
+      showToast('No Primary VP scored (no uncontested objectives held).');
+    }
+  };
+
+  const handleRemoveObjective = (id: string) => {
+    setObjectives((prev) => prev.filter((m) => m.id !== id));
+    showToast('Objective marker removed');
+  };
+
   const handleSwitchActivePlayer = () => {
+    playClockSwitchSound();
     const nextPlayer = activePlayerIndex === 1 ? 2 : 1;
     setActivePlayerIndex(nextPlayer);
-    showToast(`Turn passed to Player ${nextPlayer}!`);
+    setCurrentPhaseIndex(0); // Start at Command phase for newly active player
+    const playersList = session ? Object.values(session.players) : [];
+    const nextPlayerName = (nextPlayer === 1 ? playersList[0]?.name : playersList[1]?.name) || `Player ${nextPlayer}`;
+
+    const event: PhaseTransitionEvent = {
+      type: 'turn_change',
+      previousPhase: WARGAME_PHASES[currentPhaseIndex],
+      newPhase: 'Command',
+      activePlayer: nextPlayer,
+      currentRound,
+      bannerTitle: `PLAYER ${nextPlayer} TURN`,
+      bannerSubtitle: `Round ${currentRound} • ${nextPlayerName}'s Command Phase`,
+      chatAuditMessage: `🛡️ **[Round ${currentRound}]** Turn passed to **${nextPlayerName}** (Command Phase).`,
+    };
+
+    setPhaseAnnouncement(event);
+    showToast(`Turn passed to ${nextPlayerName}!`);
+
+    if (networkRef.current && session) {
+      const auditMsg: ChatMessage = {
+        id: `audit-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        senderId: 'system',
+        senderName: 'Battle Overseer',
+        senderColor: '#f59e0b',
+        text: event.chatAuditMessage,
+        timestamp: Date.now(),
+        isCommand: true,
+      };
+      networkRef.current.send({ type: 'chat-send', message: auditMsg });
+    }
   };
 
   // Keep engine in sync with session, player and tools
   useEffect(() => {
     if (!engineRef.current) return;
     if (session) {
-      engineRef.current.setSession(session);
-      const mapIdToView = session.activeMapId || session.maps[0]?.id || '';
-      if (mapIdToView && engineRef.current.currentMapId !== mapIdToView) {
-        engineRef.current.setActiveMap(mapIdToView);
+      const tokenList: Token[] = Array.isArray(session.tokens)
+        ? (session.tokens as Token[])
+        : Object.values(session.tokens || {});
+      const visibleTokens = brawlRole === 'spectator'
+        ? filterTokensForSpectator(tokenList, matchPrivacy, currentMap?.submaps)
+        : tokenList;
+      const coherentTokens = updateTokensCoherency(visibleTokens);
+      const coherentRecord: Record<string, Token> = coherentTokens.reduce((acc, t) => {
+        acc[t.id] = t;
+        return acc;
+      }, {} as Record<string, Token>);
+      engineRef.current.setSession({ ...session, tokens: coherentRecord });
+      const mapIdToView = gmPreviewMapId || session.activeMapId || session.maps[0]?.id || '';
+      if (mapIdToView) {
+        const changed = engineRef.current.currentMapId !== mapIdToView;
+        engineRef.current.setActiveMap(mapIdToView, changed);
       }
     }
     if (localPlayer) {
@@ -154,57 +548,229 @@ export const AppBrawl: React.FC = () => {
     }
     engineRef.current.activeTool = activeTool;
     engineRef.current.snapEnabled = snapEnabled;
-  }, [session, localPlayer, activeTool, snapEnabled]);
+  }, [session, localPlayer, activeTool, snapEnabled, brawlRole, matchPrivacy, currentMap, gmPreviewMapId]);
 
   // Initialize CanvasEngine & Network
   useEffect(() => {
     if (!canvasRef.current) return;
-    const engine = new CanvasEngine(canvasRef.current);
+    const canvas = canvasRef.current;
+
+    // Resize to fit viewport matching VTT mode (OB-222)
+    const handleResize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    const engine = new CanvasEngine(canvas);
     engineRef.current = engine;
 
     engine.callbacks = {
       onTokenSelect: (token) => {
         setSelectedTokens(token ? [token] : []);
       },
+      onTokenMove: (id, x, y) => {
+        if (brawlRoleRef.current === 'spectator') return; // Spectators cannot move tokens
+        setSession((prev) => {
+          if (!prev) return prev;
+          const currentTokens: Token[] = Array.isArray(prev.tokens)
+            ? (prev.tokens as Token[])
+            : Object.values(prev.tokens || {});
+          const nextTokens = currentTokens.map((t) => (t.id === id ? { ...t, x, y } : t));
+          const coherentTokens = updateTokensCoherency(nextTokens);
+          const coherentRecord: Record<string, Token> = coherentTokens.reduce((acc, t) => {
+            acc[t.id] = t;
+            return acc;
+          }, {} as Record<string, Token>);
+          return { ...prev, tokens: coherentRecord };
+        });
+        networkRef.current?.send({ type: 'token-update', id, updates: { x, y } });
+      },
       onMarkerSelect: (marker) => {
         setSelectedMarker(marker);
       },
+      onMarkerAdd: (marker) => {
+        setSession((prev) => {
+          if (!prev) return prev;
+          if (prev.markers?.some((m) => m.id === marker.id)) return prev;
+          return { ...prev, markers: [...(prev.markers || []), marker] };
+        });
+        if (marker.persist) {
+          setSelectedMarker(marker);
+          if (engineRef.current) engineRef.current.selectedMarkerId = marker.id;
+        }
+        networkRef.current?.send({ type: 'marker-add', marker });
+      },
+      onMarkerDelete: (id) => {
+        networkRef.current?.send({ type: 'marker-delete', id });
+        setSession((prev) => (prev ? { ...prev, markers: (prev.markers || []).filter((m) => m.id !== id) } : prev));
+        setSelectedMarker((cur) => (cur?.id === id ? null : cur));
+      },
+      onMarkerUpdate: (id, updates) => {
+        networkRef.current?.send({ type: 'marker-update', id, updates });
+        setSession((prev) => (prev ? { ...prev, markers: (prev.markers || []).map((m) => (m.id === id ? { ...m, ...updates } : m)) } : prev));
+        setSelectedMarker((cur) => (cur?.id === id ? { ...cur, ...updates } : cur));
+      },
+      onObjectiveMove: (id, x, y) => {
+        setObjectives((prev) =>
+          prev.map((obj) => (obj.id === id ? { ...obj, x, y } : obj))
+        );
+      },
     };
 
+    const searchParams = new URLSearchParams(window.location.search);
+    const roomParam = searchParams.get('room');
     const path = window.location.pathname.replace(/^\/|\/$/g, '');
-    const currentRoomId = path || 'brawl-table';
+    const currentRoomId = roomParam || path || 'brawl-table';
     setRoomId(currentRoomId);
     setRoomUrl(window.location.href);
 
     const network = new NetworkClient();
     networkRef.current = network;
 
+    network.onStatusChange((status, error) => {
+      setConnectionStatus(status);
+      if (error) {
+        setConnectionError(error);
+      }
+    });
+
     const initialPlayerName = generateRandomName('random');
 
     network.onMessage((msg) => {
       if (msg.type === 'join-ack') {
+        setConnectionStatus('connected');
+        setConnectionError(null);
         setLocalPlayer(msg.player);
         setSession(msg.session);
         setIsOrganizer(msg.isGm);
-        if (msg.session.maps.length > 0 && !engine.currentMapId) {
-          engine.setActiveMap(msg.session.activeMapId || msg.session.maps[0].id);
-        }
+        setGmPreviewMapId(msg.session.activeMapId || msg.session.maps[0]?.id || '');
       } else if (msg.type === 'sync-session') {
         setSession(msg.session);
-        engine.setSession(msg.session);
-        if (msg.session.maps.length > 0 && !engine.currentMapId) {
-          engine.setActiveMap(msg.session.activeMapId || msg.session.maps[0].id);
-        }
+      } else if (msg.type === 'map-added') {
+        setSession((prev) => {
+          if (!prev) return prev;
+          if (prev.maps.some((m) => m.id === msg.map.id)) return prev;
+          return { ...prev, maps: [...prev.maps, msg.map] };
+        });
+      } else if (msg.type === 'map-updated') {
+        setSession((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            maps: prev.maps.map((m) => (m.id === msg.id ? { ...m, ...msg.updates } : m)),
+          };
+        });
+      } else if (msg.type === 'map-deleted') {
+        setSession((prev) => {
+          if (!prev) return prev;
+          const remaining = prev.maps.filter((m) => m.id !== msg.mapId);
+          return {
+            ...prev,
+            maps: remaining,
+            activeMapId: msg.activeMapId || (prev.activeMapId === msg.mapId ? (remaining[0]?.id || '') : prev.activeMapId),
+          };
+        });
+      } else if (msg.type === 'map-switched') {
+        setSession((prev) => {
+          if (!prev) return prev;
+          const targetMap = prev.maps.find((m) => m.id === msg.mapId);
+          if (!isOrganizer && targetMap) {
+            showToast(`Tournament Referee moved everyone to ${targetMap.name}`);
+          }
+          return { ...prev, activeMapId: msg.mapId };
+        });
+        setGmPreviewMapId(msg.mapId);
+        engine.setActiveMap(msg.mapId, true);
+      } else if (msg.type === 'chat-msg') {
+        setChatMessages((prev) => [...prev, msg.message]);
+        setUnreadChatCount((prev) => prev + 1);
+      } else if (msg.type === 'token-added') {
+        setSession((prev) => {
+          if (!prev) return prev;
+          const currentTokens = Array.isArray(prev.tokens)
+            ? prev.tokens.reduce((acc, t) => ({ ...acc, [t.id]: t }), {} as Record<string, Token>)
+            : { ...(prev.tokens || {}) };
+          return {
+            ...prev,
+            tokens: { ...currentTokens, [msg.token.id]: msg.token },
+          };
+        });
+      } else if (msg.type === 'token-updated') {
+        setSession((prev) => {
+          if (!prev) return prev;
+          const currentTokens = Array.isArray(prev.tokens)
+            ? prev.tokens.reduce((acc, t) => ({ ...acc, [t.id]: t }), {} as Record<string, Token>)
+            : { ...(prev.tokens || {}) };
+          if (!currentTokens[msg.id]) return prev;
+          return {
+            ...prev,
+            tokens: {
+              ...currentTokens,
+              [msg.id]: { ...currentTokens[msg.id], ...msg.updates },
+            },
+          };
+        });
+      } else if (msg.type === 'token-deleted') {
+        setSession((prev) => {
+          if (!prev) return prev;
+          const currentTokens = Array.isArray(prev.tokens)
+            ? prev.tokens.reduce((acc, t) => ({ ...acc, [t.id]: t }), {} as Record<string, Token>)
+            : { ...(prev.tokens || {}) };
+          const next = { ...currentTokens };
+          delete next[msg.id];
+          return {
+            ...prev,
+            tokens: next,
+          };
+        });
       }
     });
 
-    network.connect(currentRoomId, initialPlayerName, '#f59e0b', '');
+    network.connect(currentRoomId, initialPlayerName, '#f59e0b', '', undefined, 'brawl');
 
     return () => {
+      window.removeEventListener('resize', handleResize);
       engine.destroy();
       network.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || (e.target as HTMLElement)?.isContentEditable) {
+        return;
+      }
+
+      // Toggle Chat (` or ~) (OB-221)
+      if ((e.key === '`' || e.key === '~' || e.code === 'Backquote') && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setIsChatOpen((v) => {
+          if (!v) setUnreadChatCount(0);
+          return !v;
+        });
+        return;
+      }
+
+      // Next Phase via Spacebar (OB-157)
+      if (e.code === 'Space' && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        handleNextPhaseRef.current();
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        if (isChatOpen) {
+          setIsChatOpen(false);
+          return;
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isChatOpen]);
 
   return (
     <div className="app-root" style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
@@ -223,26 +789,52 @@ export const AppBrawl: React.FC = () => {
         p1ClockSeconds={p1ClockSeconds}
         p2ClockSeconds={p2ClockSeconds}
         isClockRunning={isClockRunning}
+        isChessClockEnabled={isChessClockEnabled}
+        onToggleChessClockEnabled={handleToggleChessClockEnabled}
+        p1TotalVp={scoreboard.p1.totalVp}
+        p2TotalVp={scoreboard.p2.totalVp}
         onToggleClock={() => setIsClockRunning((prev) => !prev)}
         onNextPhase={handleNextPhase}
+        onJumpPhase={handleJumpPhase}
         onSwitchActivePlayer={handleSwitchActivePlayer}
+        onOpenScoreboard={() => setShowScoreboardModal(true)}
+        onOpenObjectives={() => setShowObjectivesModal(true)}
+        onOpenStaging={() => setShowDeploymentModal(true)}
+        onOpenToModal={() => setShowToModal(true)}
+        currentRole={brawlRole}
         onOpenArmyRoster={() => setShowArmyRoster(true)}
         onOpenDice={() => setShowDiceRoller((prev) => !prev)}
         onOpenMaps={() => setShowMapManager(true)}
+        onOpenSceneSettings={() => setShowSceneSettings(true)}
         onOpenSoundboard={() => setShowSoundboard(true)}
         onOpenBackup={() => setShowBackupModal(true)}
         onAddNewModel={() => setShowTokenPickerModal(true)}
         onToggleMobileDrawer={() => setIsMobileDrawerOpen(true)}
+        onToggleChessClockHUD={() => setShowChessClockHUD((prev) => !prev)}
         voiceState={voiceState}
+        headerRef={topBarRef}
+      />
+
+      {/* Phase Transition Banner (OB-157) */}
+      <PhaseAnnouncementBanner
+        announcement={phaseAnnouncement}
+        onDismiss={() => setPhaseAnnouncement(null)}
       />
 
       {/* Main Left Toolbar */}
       <ToolBar
+        topOffset={topBarHeight > 0 ? `${12 + topBarHeight + 10}px` : undefined}
         activeTool={activeTool}
         onSelectTool={(tool) => {
           setActiveTool(tool);
           if (engineRef.current) {
             engineRef.current.activeTool = tool;
+            if (engineRef.current.isDrawing) {
+              engineRef.current.isDrawing = false;
+              engineRef.current.drawStart = null;
+              engineRef.current.drawCurrent = null;
+              engineRef.current.laserPoints = [];
+            }
           }
         }}
         isGm={isOrganizer}
@@ -263,20 +855,107 @@ export const AppBrawl: React.FC = () => {
         onToggleGrid={() => setShowGrid(!showGrid)}
         onClearAllFog={() => {}}
         onCoverAllFog={() => {}}
+        onToggleChat={() => setIsChatOpen((v) => !v)}
+        isChatOpen={isChatOpen}
+        unreadChatCount={unreadChatCount}
       />
 
       {/* Army Roster Flyout */}
-      {showArmyRoster && (
+      {isArmyRosterEnabled && showArmyRoster && (
         <ArmyRosterFlyout
+          army={localArmy}
+          onArmyChange={(updated) => {
+            setLocalArmy(updated);
+            saveBrawlArmy(updated);
+          }}
           onClose={() => setShowArmyRoster(false)}
-          onDeployUnit={(unit) => {
-            showToast(`Deploying ${unit.name} (${unit.models.length} models) to battlefield!`);
+          onDeployUnit={(unit, army) => {
+            const currentMapId = currentMap?.id || gmPreviewMapId || session?.activeMapId || session?.maps[0]?.id || '';
+            let startX = 400;
+            let startY = 400;
+            if (engineRef.current) {
+              try {
+                const center = engineRef.current.screenToWorld(window.innerWidth / 2, window.innerHeight / 2);
+                startX = Math.round(center.x);
+                startY = Math.round(center.y);
+              } catch {}
+            }
+            const spacing = 70;
+            const deployBatchId = Date.now().toString(36);
+            const newTokens = unit.models.map((model, idx) => {
+              const positionedModel = {
+                ...model,
+                x: startX + (idx % 5) * spacing,
+                y: startY + Math.floor(idx / 5) * spacing,
+              };
+              const tok = modelToToken(positionedModel, unit, army, DEFAULT_PX_PER_INCH, currentMapId);
+              tok.id = `${tok.id}_${deployBatchId}_${idx}`;
+              if (localPlayer?.id) {
+                tok.ownerId = localPlayer.id;
+              }
+              return tok;
+            });
+
+            setSession((prev) => {
+              if (!prev) return prev;
+              const currentTokensRecord: Record<string, Token> = Array.isArray(prev.tokens)
+                ? prev.tokens.reduce((acc, t) => ({ ...acc, [t.id]: t }), {} as Record<string, Token>)
+                : { ...(prev.tokens || {}) };
+              newTokens.forEach((tok) => {
+                currentTokensRecord[tok.id] = tok;
+              });
+              return {
+                ...prev,
+                tokens: currentTokensRecord,
+              };
+            });
+
+            if (newTokens.length > 0 && engineRef.current) {
+              engineRef.current.selectToken(newTokens[0].id);
+            }
+
+            newTokens.forEach((tok) => {
+              networkRef.current?.send({ type: 'token-add', token: tok });
+            });
+
+            showToast(`Deployed ${unit.name} (${unit.models.length} models) to battlefield!`);
           }}
         />
       )}
 
+      {/* Selected Persistent Shape Controls (OB-129) */}
+      {selectedMarker && session && (
+        <MarkerControls
+          marker={selectedMarker}
+          onDelete={(id) => {
+            setSession((prev) => (prev ? { ...prev, markers: (prev.markers || []).filter((m) => m.id !== id) } : prev));
+            setSelectedMarker(null);
+            if (engineRef.current) engineRef.current.selectedMarkerId = null;
+            networkRef.current?.send({ type: 'marker-delete', id });
+          }}
+          onToggleLock={(id, locked) => {
+            setSession((prev) => (prev ? { ...prev, markers: (prev.markers || []).map((m) => (m.id === id ? { ...m, locked } : m)) } : prev));
+            setSelectedMarker((cur) => (cur && cur.id === id ? { ...cur, locked } : cur));
+            networkRef.current?.send({ type: 'marker-update', id, updates: { locked } });
+          }}
+          onUpdate={(id, updates) => {
+            setSession((prev) => (prev ? { ...prev, markers: (prev.markers || []).map((m) => (m.id === id ? { ...m, ...updates } : m)) } : prev));
+            setSelectedMarker((cur) => (cur && cur.id === id ? { ...cur, ...updates } : cur));
+            networkRef.current?.send({ type: 'marker-update', id, updates });
+          }}
+          onClose={() => {
+            setSelectedMarker(null);
+            if (engineRef.current) engineRef.current.selectedMarkerId = null;
+          }}
+          canControl={isOrganizer || selectedMarker.userId === localPlayer?.id}
+          tokens={session.tokens}
+          gridSize={session.maps[0]?.gridSize}
+          scaleFtPerCell={session.maps[0]?.scaleFtPerCell}
+        />
+      )}
+
       {/* Chat & Dice Roller */}
-      {showDiceRoller && (
+      {isDiceRollerEnabled && showDiceRoller && (
         <DiceRoller
           userName={localPlayer?.name || 'Player'}
           userColor={localPlayer?.color || '#f59e0b'}
@@ -285,6 +964,290 @@ export const AppBrawl: React.FC = () => {
           onClose={() => setShowDiceRoller(false)}
           onRoll={(roll) => {
             networkRef.current?.send({ type: 'dice-roll', roll });
+          }}
+        />
+      )}
+
+      {/* Floating Chess Clock HUD Widget (OB-158) */}
+      {isChessClockFeatureEnabled && showChessClockHUD && (
+        <ChessClockWidget
+          p1Seconds={p1ClockSeconds}
+          p2Seconds={p2ClockSeconds}
+          activePlayer={activePlayerIndex}
+          isRunning={isClockRunning}
+          p1Name={session ? Object.values(session.players)[0]?.name || 'Player 1' : 'Player 1'}
+          p2Name={session ? Object.values(session.players)[1]?.name || 'Player 2' : 'Player 2'}
+          onToggleRunning={() => setIsClockRunning((prev) => !prev)}
+          onSwitchPlayer={handleSwitchActivePlayer}
+          onResetClock={(secs) => {
+            setP1ClockSeconds(secs);
+            setP2ClockSeconds(secs);
+            setIsClockRunning(false);
+            showToast(`Match clocks reset to ${secs / 60} minutes`);
+          }}
+          onClose={() => setShowChessClockHUD(false)}
+          onDisable={handleToggleChessClockEnabled}
+        />
+      )}
+
+      {/* Scoreboard Modal (OB-159) */}
+      {isScoreboardEnabled && showScoreboardModal && (
+        <ScoreboardModal
+          scoreboard={scoreboard}
+          onUpdateResource={handleUpdateScoreResource}
+          onResetScoreboard={handleResetScoreboard}
+          auditTrail={scoreAuditTrail}
+          onClose={() => setShowScoreboardModal(false)}
+          userNickname={
+            localPlayer?.name ||
+            (typeof localStorage !== 'undefined'
+              ? localStorage.getItem('oldbear_player_name') || ''
+              : '') ||
+            'Player'
+          }
+        />
+      )}
+
+      {/* Objectives & Control Zones Modal (OB-160) */}
+      {isObjectivesEnabled && showObjectivesModal && (
+        <ObjectivesModal
+          objectives={objectives}
+          evaluation={objectivesEvaluation}
+          p1Name={scoreboard.p1Name}
+          p2Name={scoreboard.p2Name}
+          onDeployStandardObjectives={handleDeployStandardObjectives}
+          onScoreObjectives={handleScoreObjectives}
+          onRemoveObjective={handleRemoveObjective}
+          onClose={() => setShowObjectivesModal(false)}
+        />
+      )}
+
+      {/* Deployment & Staging Submaps Modal (OB-162) */}
+      {showDeploymentModal && currentMap && (
+        <DeploymentStagingModal
+          map={currentMap}
+          tokens={Array.isArray(session?.tokens) ? session.tokens : Object.values(session?.tokens || {})}
+          selectedTokenIds={selectedTokens.map((t) => t.id)}
+          onClose={() => setShowDeploymentModal(false)}
+          onUpdateMap={(updatedMap) => {
+            setSession((prev) => {
+              if (!prev) return prev;
+              const nextMaps = prev.maps.map((m) => (m.id === updatedMap.id ? updatedMap : m));
+              return { ...prev, maps: nextMaps };
+            });
+            if (networkRef.current && session) {
+              networkRef.current.send({
+                type: 'map-update',
+                id: updatedMap.id,
+                updates: updatedMap,
+              });
+            }
+          }}
+          onUpdateTokens={(updatedTokens) => {
+            setSession((prev) => {
+              if (!prev) return prev;
+              const currentTokensRecord: Record<string, Token> = Array.isArray(prev.tokens)
+                ? prev.tokens.reduce((acc, t) => ({ ...acc, [t.id]: t }), {} as Record<string, Token>)
+                : { ...(prev.tokens || {}) };
+              updatedTokens.forEach((t) => {
+                currentTokensRecord[t.id] = t;
+              });
+              return { ...prev, tokens: currentTokensRecord };
+            });
+            updatedTokens.forEach((t) => {
+              networkRef.current?.send({ type: 'token-update', id: t.id, updates: t });
+            });
+          }}
+          onRecordCasualties={(player, count, reason) => {
+            handleUpdateScoreResource(player, 'casualtiesCount', count, reason);
+          }}
+          onShowToast={showToast}
+        />
+      )}
+
+      {/* Map Manager Modal */}
+      {showMapManager && session && (
+        <MapManagerModal
+          maps={session.maps}
+          activeMapId={session.activeMapId}
+          currentGmPreviewMapId={gmPreviewMapId || session.activeMapId}
+          onSelectGmPreviewMap={handleSelectGmPreviewMap}
+          onSetActiveMapForPlayers={handleSetActiveMapForPlayers}
+          onAddMap={handleAddMap}
+          onUpdateMap={handleUpdateMap}
+          onDeleteMap={handleDeleteMap}
+          onClose={() => setShowMapManager(false)}
+        />
+      )}
+
+      {/* Active Scene Settings Modal (OB-209) */}
+      {showSceneSettings && currentMap && session && (
+        <MapSettingsModal
+          key={currentMap.id}
+          map={currentMap}
+          canDelete={session.maps.length > 1}
+          onSave={(updates) => {
+            handleUpdateMap(currentMap.id, updates);
+            setShowSceneSettings(false);
+          }}
+          onDelete={(mapId) => {
+            handleDeleteMap(mapId);
+            setShowSceneSettings(false);
+          }}
+          onClose={() => setShowSceneSettings(false)}
+        />
+      )}
+
+      {/* Asset Manager / Data Backup Modal */}
+      {showBackupModal && session && (
+        <DataBackupModal
+          session={session}
+          isGm={isOrganizer}
+          tokens={Array.isArray(session?.tokens) ? session.tokens.reduce((acc, t) => ({ ...acc, [t.id]: t }), {}) : (session?.tokens || {})}
+          activeMapId={currentMap?.id || session?.activeMapId || ''}
+          maps={session.maps}
+          currentGmPreviewMapId={gmPreviewMapId || session.activeMapId}
+          onSelectGmPreviewMap={handleSelectGmPreviewMap}
+          onSetActiveMapForPlayers={handleSetActiveMapForPlayers}
+          onAddMap={handleAddMap}
+          onUpdateMap={handleUpdateMap}
+          onDeleteMap={handleDeleteMap}
+          onCenterOnPosition={(x, y) => engineRef.current?.centerOnPosition(x, y)}
+          onClose={() => setShowBackupModal(false)}
+        />
+      )}
+
+      {/* Soundboard Modal */}
+      {isSoundboardEnabled && showSoundboard && session && (
+        <SoundboardModal
+          isGm={isOrganizer}
+          onClose={() => setShowSoundboard(false)}
+          onBroadcastAudioAction={(trackId, action, volume) => {
+            networkRef.current?.send({ type: 'audio-action', trackId, action, volume });
+          }}
+        />
+      )}
+
+      {/* Voice Settings Modal */}
+      {isVoiceChatEnabled && showVoiceSettings && voiceManagerRef.current && (
+        <VoiceSettingsModal
+          voiceState={voiceState}
+          voiceManager={voiceManagerRef.current}
+          players={session ? Object.values(session.players) : []}
+          localPlayer={localPlayer}
+          isGm={isOrganizer}
+          onClose={() => setShowVoiceSettings(false)}
+        />
+      )}
+
+      {/* Tournament Organizer & Spectator Controls Modal (OB-163) */}
+      {isToModeEnabled && showToModal && (
+        <TournamentOrganizerModal
+          currentRole={brawlRole}
+          scoreboard={scoreboard}
+          battleRound={currentRound}
+          p1ClockSeconds={p1ClockSeconds}
+          p2ClockSeconds={p2ClockSeconds}
+          isClockRunning={isClockRunning}
+          scoreAuditTrail={scoreAuditTrail}
+          rulings={rulings}
+          privacySettings={matchPrivacy}
+          onRoleChange={setBrawlRole}
+          onUpdateScoreboard={(nextSb, audit) => {
+            setScoreboard(nextSb);
+            setScoreAuditTrail((prev) => [audit, ...prev]);
+            showToast(audit.formattedMessage.replace(/\*\*/g, ''));
+            if (networkRef.current && session) {
+              const chatMsg: ChatMessage = {
+                id: audit.id,
+                senderId: 'system',
+                senderName: 'Tournament Referee',
+                senderColor: '#f59e0b',
+                text: audit.formattedMessage,
+                timestamp: Date.now(),
+                isCommand: true,
+              };
+              networkRef.current.send({ type: 'chat-send', message: chatMsg });
+            }
+          }}
+          onAdjustClock={(player, delta) => {
+            if (player === 1) {
+              setP1ClockSeconds((prev) => prev + delta);
+            } else {
+              setP2ClockSeconds((prev) => prev + delta);
+            }
+            showToast(`Adjusted Player ${player} clock by ${delta > 0 ? `+${delta / 60}m` : `${delta / 60}m`}`);
+          }}
+          onToggleClockRunning={() => setIsClockRunning((prev) => !prev)}
+          onIssueRuling={(ruling) => {
+            setRulings((prev) => [...prev, ruling]);
+            const chatMsg = formatOfficialRulingMessage(ruling);
+            if (networkRef.current && session) {
+              networkRef.current.send({ type: 'chat-send', message: chatMsg });
+            }
+            showToast(`Official Ruling broadcast by ${ruling.toName}`);
+          }}
+          onUpdatePrivacy={setMatchPrivacy}
+          onClose={() => setShowToModal(false)}
+          onShowToast={showToast}
+        />
+      )}
+
+      {/* Mobile Navigation Drawer */}
+      <MobileDrawer
+        isOpen={isMobileDrawerOpen}
+        onClose={() => setIsMobileDrawerOpen(false)}
+        localPlayer={localPlayer}
+        players={session ? Object.values(session.players).filter((p) => p.connected !== false) : []}
+        onUpdatePlayerName={(name, color) => {
+          if (localPlayer) {
+            const updated = { ...localPlayer, name, color };
+            setLocalPlayer(updated);
+            networkRef.current?.send({ type: 'player-update', updates: { name, color } });
+          }
+        }}
+        onAddNewToken={() => setShowTokenPickerModal(true)}
+        onOpenDice={() => setShowDiceRoller(true)}
+        onOpenInitiative={() => {}}
+        onOpenCharacter={() => {}}
+        onOpenMaps={() => setShowMapManager(true)}
+        onOpenSoundboard={() => setShowSoundboard(true)}
+        onOpenBackup={() => setShowBackupModal(true)}
+        onToggleChat={() => setIsChatOpen((v) => !v)}
+        isChatOpen={isChatOpen}
+        unreadChatCount={unreadChatCount}
+        voiceState={voiceState}
+        isGm={isOrganizer}
+      />
+
+      {/* Chat & Commands Panel (OB-221) */}
+      {localPlayer && (
+        <ChatPanel
+          player={localPlayer}
+          tokens={
+            (() => {
+              const owned = Object.values(session?.tokens || {}).filter(
+                (t) => t.ownerId === localPlayer.id || localPlayer.assignedTokenIds?.includes(t.id)
+              );
+              const list = owned.length > 0 ? owned : (isOrganizer ? Object.values(session?.tokens || {}) : []);
+              return [...list].sort((a, b) => a.name.localeCompare(b.name));
+            })()
+          }
+          selectedToken={selectedTokens[0] || null}
+          messages={chatMessages}
+          onSendMessage={(m) => {
+            if (m.isEphemeral) {
+              setChatMessages((prev) => [...prev, m]);
+            } else {
+              networkRef.current?.send({ type: 'chat-send', message: m });
+            }
+          }}
+          isOpen={isChatOpen}
+          onToggleOpen={() => {
+            setIsChatOpen((v) => {
+              if (!v) setUnreadChatCount(0);
+              return !v;
+            });
           }}
         />
       )}
@@ -311,6 +1274,108 @@ export const AppBrawl: React.FC = () => {
           {toastMessage}
         </div>
       )}
+      {/* Connection & Loading Screen */}
+      {!session && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#1e293b',
+              border: '1px solid #334155',
+              borderRadius: '16px',
+              padding: '2.5rem',
+              maxWidth: '460px',
+              width: '90%',
+              textAlign: 'center',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+            }}
+          >
+            {connectionStatus === 'error' || connectionStatus === 'disconnected' ? (
+              <div>
+                <div
+                  style={{
+                    width: '56px',
+                    height: '56px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    color: '#ef4444',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 1.25rem',
+                  }}
+                >
+                  <AlertTriangle size={32} />
+                </div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem', color: '#fff' }}>
+                  Connection Failed
+                </h3>
+                <p style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+                  {connectionError || 'Unable to connect to the backend server. Please verify the server is running (`npm run dev`).'}
+                </p>
+
+                <button
+                  className="btn btn-primary"
+                  style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '8px' }}
+                  onClick={() => {
+                    setConnectionStatus('connecting');
+                    setConnectionError(null);
+                    const net = networkRef.current;
+                    if (net) {
+                      const searchParams = new URLSearchParams(window.location.search);
+                      const roomParam = searchParams.get('room');
+                      const path = window.location.pathname.replace(/^\/|\/$/g, '');
+                      const currentRoomId = roomParam || path || 'brawl-table';
+                      net.connect(currentRoomId, generateRandomName('random'), '#f59e0b', '');
+                    } else {
+                      window.location.reload();
+                    }
+                  }}
+                >
+                  <RefreshCw size={16} /> Retry Connection
+                </button>
+              </div>
+            ) : (
+              <div>
+                <div
+                  style={{
+                    width: '56px',
+                    height: '56px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                    color: '#f59e0b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 1.25rem',
+                    animation: 'pulse 2s infinite',
+                  }}
+                >
+                  <Compass size={32} />
+                </div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem', color: '#fff' }}>
+                  Joining Brawl Table...
+                </h3>
+                <p style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
+                  Connecting to real-time session server
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+

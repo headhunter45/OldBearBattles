@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Token, Player } from '@oldbear/shared';
-import { X, Upload, Check, ZoomIn, ZoomOut, RotateCcw, Move } from 'lucide-react';
+import { Token, Player, GameMap, DnDAction, DnDSpell } from '@oldbear/shared';
+import { X, Upload, Check, ZoomIn, ZoomOut, RotateCcw, Move, Swords, Sparkles, Plus, Trash2, Edit2 } from 'lucide-react';
 import { saveAsset } from '../storage/db.js';
 import { traceTokenShape } from '../engine/TokenRenderer.js';
+import { resolveStatusDefinitions, formatCondition } from '../status/StatusManager.js';
+import { CustomStatusModal } from './CustomStatusModal.js';
+import { TokenImageBrowserModal } from './TokenImageBrowserModal.js';
 
 interface TokenEditorModalProps {
   token: Token;
@@ -10,16 +13,12 @@ interface TokenEditorModalProps {
   onSave: (updates: Partial<Token>) => void;
   players: Player[];
   isGm: boolean;
+  activeMap?: GameMap;
+  onUpdateMap?: (mapId: string, updates: Partial<GameMap>) => void;
 }
 
-const RING_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#64748b', '#ffffff'];
+const RING_COLORS = ['transparent', '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#64748b', '#ffffff'];
 const FILL_COLORS = ['#0f172a', '#1e293b', '#1e3a8a', '#7f1d1d', '#064e3b', '#78350f', '#581c87', '#000000'];
-
-const ALL_CONDITIONS = [
-  'Blinded', 'Charmed', 'Deafened', 'Frightened', 'Grappled', 'Incapacitated',
-  'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained',
-  'Stunned', 'Unconscious', 'Concentrating', 'Exhaustion'
-];
 
 export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
   token,
@@ -27,15 +26,25 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
   onSave,
   players,
   isGm,
+  activeMap,
+  onUpdateMap,
 }) => {
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showImageBrowserModal, setShowImageBrowserModal] = useState(false);
+  const statusDefs = resolveStatusDefinitions(activeMap);
+  const allAvailableStatuses = Object.keys(statusDefs).sort();
   const [name, setName] = useState(token.name);
   const [imageUrl, setImageUrl] = useState(token.imageUrl || '');
   const [size, setSize] = useState(token.size);
   const [speed, setSpeed] = useState(token.speed || 30);
   const [currentHp, setCurrentHp] = useState(token.currentHp);
   const [maxHp, setMaxHp] = useState(token.maxHp);
-  const [tempHp, setTempHp] = useState(token.tempHp || 0);
-  const [ringColor, setRingColor] = useState(token.ringColor || '#3b82f6');
+  const isPropOrTile = Boolean(token.isProp || token.layer === 'map' || token.layer === 'prop');
+  const [ringColor, setRingColor] = useState(
+    token.ringColor !== undefined && token.ringColor !== ''
+      ? token.ringColor
+      : (isPropOrTile ? 'transparent' : '#3b82f6')
+  );
   const [fillColor, setFillColor] = useState(token.fillColor || '#1e293b');
   const [ownerId, setOwnerId] = useState(token.ownerId || '');
   const [isPlayerToken, setIsPlayerToken] = useState(token.isPlayerToken || token.ownerId === 'unassigned');
@@ -46,12 +55,47 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
   const [clipZoom, setClipZoom] = useState(token.clipZoom || 1.0);
   const [clipPanX, setClipPanX] = useState(token.clipPanX || 0);
   const [clipPanY, setClipPanY] = useState(token.clipPanY || 0);
-  const [isProp, setIsProp] = useState(token.isProp || false);
-  const [propWidth, setPropWidth] = useState<number | undefined>(token.propWidth ?? (token.isProp ? token.size : undefined));
-  const [propHeight, setPropHeight] = useState<number | undefined>(token.propHeight ?? (token.isProp ? token.size : undefined));
+  const [isProp, setIsProp] = useState(token.isProp || token.layer === 'map' || false);
+  const [propWidth, setPropWidth] = useState<number | undefined>(token.propWidth ?? (token.isProp || token.layer === 'map' ? token.size : undefined));
+  const [propHeight, setPropHeight] = useState<number | undefined>(token.propHeight ?? (token.isProp || token.layer === 'map' ? token.size : undefined));
   const [rotation, setRotation] = useState<number>(token.rotation || 0);
   const [locked, setLocked] = useState<boolean>(token.locked || false);
   const [conditions, setConditions] = useState<string[]>(token.conditions || []);
+  const [actions, setActions] = useState<DnDAction[]>(
+    token.actions && token.actions.length > 0
+      ? token.actions
+      : token.character?.actions || []
+  );
+  const [isAddingAction, setIsAddingAction] = useState(false);
+  const [editingActionIndex, setEditingActionIndex] = useState<number | null>(null);
+  const [actionForm, setActionForm] = useState<DnDAction>({
+    name: '',
+    type: 'melee',
+    toHitModifier: 0,
+    damageDice: '',
+    range: '',
+    reach: '',
+    description: '',
+    diceMacro: '',
+  });
+  const [spells, setSpells] = useState<DnDSpell[]>(
+    token.spells && token.spells.length > 0
+      ? token.spells
+      : token.character?.spells || []
+  );
+  const [isAddingSpell, setIsAddingSpell] = useState(false);
+  const [editingSpellIndex, setEditingSpellIndex] = useState<number | null>(null);
+  const [spellForm, setSpellForm] = useState<DnDSpell>({
+    id: '',
+    name: '',
+    level: 0,
+    school: 'Evocation',
+    castingTime: '1 action',
+    range: '60 ft',
+    duration: 'Instantaneous',
+    description: '',
+    dndBeyondUrl: '',
+  });
 
   const [previewImg, setPreviewImg] = useState<HTMLImageElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -141,10 +185,12 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
     ctx.restore();
 
     // 4. Outer Ring
-    traceTokenShape(ctx, clipShape, r - borderWidth / 2);
-    ctx.strokeStyle = ringColor;
-    ctx.lineWidth = borderWidth;
-    ctx.stroke();
+    if (ringColor && ringColor !== 'transparent') {
+      traceTokenShape(ctx, clipShape, r - borderWidth / 2);
+      ctx.strokeStyle = ringColor;
+      ctx.lineWidth = borderWidth;
+      ctx.stroke();
+    }
 
     // 5. Guides when dragging
     if (isDragging) {
@@ -196,49 +242,97 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
     setClipZoom((prev) => Math.max(0.5, Math.min(4.0, Number((prev + delta).toFixed(2)))));
   };
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
-    if (e.touches.length === 1) {
-      setIsDragging(true);
-      dragStartRef.current = {
-        x: e.touches[0].clientX,
-        y: e.touches[0].clientY,
-        panX: clipPanX,
-        panY: clipPanY,
-      };
-    } else if (e.touches.length === 2) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      touchDistRef.current = dist;
-      touchStartZoomRef.current = clipZoom;
-    }
-  };
+  const clipPanRef = useRef({ x: clipPanX, y: clipPanY });
+  const clipZoomRef = useRef(clipZoom);
+  useEffect(() => {
+    clipPanRef.current = { x: clipPanX, y: clipPanY };
+    clipZoomRef.current = clipZoom;
+  }, [clipPanX, clipPanY, clipZoom]);
 
-  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
-    if (e.touches.length === 1 && isDragging && dragStartRef.current) {
-      const r = (180 - 20) / 2;
-      const dx = e.touches[0].clientX - dragStartRef.current.x;
-      const dy = e.touches[0].clientY - dragStartRef.current.y;
-      const nextPanX = Math.round(Math.max(-100, Math.min(100, dragStartRef.current.panX + (dx / r) * 100)));
-      const nextPanY = Math.round(Math.max(-100, Math.min(100, dragStartRef.current.panY + (dy / r) * 100)));
-      setClipPanX(nextPanX);
-      setClipPanY(nextPanY);
-    } else if (e.touches.length === 2 && touchDistRef.current) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      const scale = dist / touchDistRef.current;
-      setClipZoom(Math.max(0.5, Math.min(4.0, Number((touchStartZoomRef.current * scale).toFixed(2)))));
-    }
-  };
+  // Touch and Pinch-Zoom handling with non-passive listeners to prevent browser page zoom (OB-220)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-    dragStartRef.current = null;
-    touchDistRef.current = null;
-  };
+    const onTouchStart = (e: TouchEvent) => {
+      e.preventDefault();
+      if (e.touches.length === 1) {
+        setIsDragging(true);
+        dragStartRef.current = {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY,
+          panX: clipPanRef.current.x,
+          panY: clipPanRef.current.y,
+        };
+      } else if (e.touches.length === 2) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        touchDistRef.current = dist;
+        touchStartZoomRef.current = clipZoomRef.current;
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+      if (e.touches.length === 1 && dragStartRef.current) {
+        const r = (180 - 20) / 2;
+        const dx = e.touches[0].clientX - dragStartRef.current.x;
+        const dy = e.touches[0].clientY - dragStartRef.current.y;
+        const nextPanX = Math.round(Math.max(-100, Math.min(100, dragStartRef.current.panX + (dx / r) * 100)));
+        const nextPanY = Math.round(Math.max(-100, Math.min(100, dragStartRef.current.panY + (dy / r) * 100)));
+        setClipPanX(nextPanX);
+        setClipPanY(nextPanY);
+      } else if (e.touches.length === 2 && touchDistRef.current) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        const scale = dist / touchDistRef.current;
+        setClipZoom(Math.max(0.5, Math.min(4.0, Number((touchStartZoomRef.current * scale).toFixed(2)))));
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      e.preventDefault();
+      if (e.touches.length === 0) {
+        setIsDragging(false);
+        dragStartRef.current = null;
+        touchDistRef.current = null;
+      } else if (e.touches.length === 1) {
+        touchDistRef.current = null;
+        dragStartRef.current = {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY,
+          panX: clipPanRef.current.x,
+          panY: clipPanRef.current.y,
+        };
+      }
+    };
+
+    const onGesture = (e: Event) => {
+      e.preventDefault();
+    };
+
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+    canvas.addEventListener('touchend', onTouchEnd, { passive: false });
+    canvas.addEventListener('touchcancel', onTouchEnd, { passive: false });
+    canvas.addEventListener('gesturestart', onGesture);
+    canvas.addEventListener('gesturechange', onGesture);
+    canvas.addEventListener('gestureend', onGesture);
+
+    return () => {
+      canvas.removeEventListener('touchstart', onTouchStart);
+      canvas.removeEventListener('touchmove', onTouchMove);
+      canvas.removeEventListener('touchend', onTouchEnd);
+      canvas.removeEventListener('touchcancel', onTouchEnd);
+      canvas.removeEventListener('gesturestart', onGesture);
+      canvas.removeEventListener('gesturechange', onGesture);
+      canvas.removeEventListener('gestureend', onGesture);
+    };
+  }, []);
 
   const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -262,13 +356,138 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
     reader.readAsDataURL(file);
   };
 
-  const toggleCondition = (c: string) => {
-    setConditions((prev) =>
-      prev.includes(c) ? prev.filter((item) => item !== c) : [...prev, c]
-    );
+  const toggleCondition = (label: string) => {
+    const isPresent = conditions.some((c) => c.split(':')[0] === label);
+    if (isPresent) {
+      setConditions((prev) => prev.filter((item) => item.split(':')[0] !== label));
+    } else {
+      const def = statusDefs[label];
+      const conditionFormatted =
+        def?.counter?.start !== undefined ? formatCondition(label, def.counter.start) : label;
+      setConditions((prev) => [...prev, conditionFormatted]);
+    }
+  };
+
+  const handleStartAddAction = () => {
+    setActionForm({
+      name: '',
+      type: 'melee',
+      toHitModifier: 0,
+      damageDice: '',
+      range: '',
+      reach: '',
+      description: '',
+      diceMacro: '',
+    });
+    setEditingActionIndex(null);
+    setIsAddingAction(true);
+  };
+
+  const handleStartEditAction = (idx: number) => {
+    setActionForm({ ...actions[idx] });
+    setEditingActionIndex(idx);
+    setIsAddingAction(true);
+  };
+
+  const handleSaveAction = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!actionForm.name?.trim()) return;
+    const toHit =
+      actionForm.toHitModifier !== undefined &&
+      actionForm.toHitModifier !== null &&
+      String(actionForm.toHitModifier).trim() !== '' &&
+      !isNaN(Number(actionForm.toHitModifier))
+        ? Number(actionForm.toHitModifier)
+        : undefined;
+    const newAction: DnDAction = {
+      name: actionForm.name.trim(),
+      type: actionForm.type || 'melee',
+      toHitModifier: toHit,
+      damageDice: actionForm.damageDice?.trim() || undefined,
+      range: actionForm.range?.trim() || undefined,
+      reach: actionForm.reach?.trim() || undefined,
+      description: actionForm.description?.trim() || undefined,
+      diceMacro: actionForm.diceMacro?.trim() || undefined,
+    };
+    if (editingActionIndex !== null) {
+      setActions((prev) => prev.map((a, i) => (i === editingActionIndex ? newAction : a)));
+    } else {
+      setActions((prev) => [...prev, newAction]);
+    }
+    setIsAddingAction(false);
+    setEditingActionIndex(null);
+  };
+
+  const handleDeleteAction = (idx: number) => {
+    setActions((prev) => prev.filter((_, i) => i !== idx));
+    if (editingActionIndex === idx) {
+      setIsAddingAction(false);
+      setEditingActionIndex(null);
+    }
+  };
+
+  const handleStartAddSpell = () => {
+    setSpellForm({
+      id: crypto.randomUUID(),
+      name: '',
+      level: 0,
+      school: 'Evocation',
+      castingTime: '1 action',
+      range: '60 ft',
+      duration: 'Instantaneous',
+      description: '',
+      dndBeyondUrl: '',
+    });
+    setEditingSpellIndex(null);
+    setIsAddingSpell(true);
+  };
+
+  const handleStartEditSpell = (idx: number) => {
+    setSpellForm({ ...spells[idx] });
+    setEditingSpellIndex(idx);
+    setIsAddingSpell(true);
+  };
+
+  const handleSaveSpell = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!spellForm.name?.trim()) return;
+    const newSpell: DnDSpell = {
+      id: spellForm.id || crypto.randomUUID(),
+      name: spellForm.name.trim(),
+      level: Number(spellForm.level) || 0,
+      school: spellForm.school?.trim() || 'Evocation',
+      castingTime: spellForm.castingTime?.trim() || '1 action',
+      range: spellForm.range?.trim() || 'Self',
+      duration: spellForm.duration?.trim() || 'Instantaneous',
+      description: spellForm.description?.trim() || '',
+      dndBeyondUrl: spellForm.dndBeyondUrl?.trim() || '',
+    };
+    if (editingSpellIndex !== null) {
+      setSpells((prev) => prev.map((s, i) => (i === editingSpellIndex ? newSpell : s)));
+    } else {
+      setSpells((prev) => [...prev, newSpell]);
+    }
+    setIsAddingSpell(false);
+    setEditingSpellIndex(null);
+  };
+
+  const handleDeleteSpell = (idx: number) => {
+    setSpells((prev) => prev.filter((_, i) => i !== idx));
+    if (editingSpellIndex === idx) {
+      setIsAddingSpell(false);
+      setEditingSpellIndex(null);
+    }
   };
 
   const handleSave = () => {
+    const updatedCharacter = token.character
+      ? {
+          ...token.character,
+          actions,
+          spells,
+        }
+      : undefined;
+
     onSave({
       name,
       imageUrl,
@@ -293,12 +512,16 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
       rotation: Number(rotation) || 0,
       locked,
       conditions,
+      actions,
+      spells,
+      character: updatedCharacter,
     });
     onClose();
   };
 
   return (
-    <div
+    <>
+      <div
       style={{
         position: 'fixed',
         inset: 0,
@@ -387,7 +610,7 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
                 cursor: isDragging ? 'grabbing' : 'grab',
                 touchAction: 'none',
                 userSelect: 'none',
-                boxShadow: `0 4px 20px ${ringColor}22`,
+                boxShadow: ringColor === 'transparent' ? '0 4px 20px rgba(0, 0, 0, 0.2)' : `0 4px 20px ${ringColor}22`,
                 flexShrink: 0,
               }}
             >
@@ -395,15 +618,17 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
                 ref={canvasRef}
                 width={180}
                 height={180}
-                style={{ width: '100%', height: '100%', display: 'block' }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'block',
+                  touchAction: 'none',
+                }}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
                 onWheel={handleWheel}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
               />
               <div
                 style={{
@@ -423,10 +648,36 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
             </div>
 
             <div style={{ flex: 1, minWidth: '180px' }}>
-              <label className="btn btn-secondary" style={{ cursor: 'pointer', display: 'inline-flex', marginBottom: '0.6rem' }}>
-                <Upload size={16} /> Upload Image
-                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageFile} />
-              </label>
+              <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.6rem', flexWrap: 'wrap' }}>
+                <label className="btn btn-secondary" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem', padding: '0.35rem 0.65rem' }}>
+                  <Upload size={14} /> Upload Image
+                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageFile} />
+                </label>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowImageBrowserModal(true)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem', padding: '0.35rem 0.65rem' }}
+                >
+                  <Sparkles size={14} color="var(--accent-primary)" /> Choose Existing...
+                </button>
+                {imageUrl && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setImageUrl('');
+                      setClipZoom(1.0);
+                      setClipPanX(0);
+                      setClipPanY(0);
+                    }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', padding: '0.35rem 0.55rem', color: '#ef4444' }}
+                    title="Remove image and use initials avatar"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                )}
+              </div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                 <span style={{ color: 'var(--primary)', fontWeight: 600 }}>• Drag</span> preview to pan image.
               </div>
@@ -443,23 +694,63 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
         {/* Ring & Fill Color Palettes */}
         <div style={{ marginBottom: '1.25rem' }}>
           <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Ring Color</label>
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.35rem' }}>
-            {RING_COLORS.map((c) => (
-              <div
-                key={c}
-                onClick={() => setRingColor(c)}
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
-                  backgroundColor: c,
-                  cursor: 'pointer',
-                  border: ringColor === c ? '2px solid white' : '1px solid transparent',
-                  transform: ringColor === c ? 'scale(1.15)' : 'none',
-                  transition: 'transform 0.15s',
-                }}
-              />
-            ))}
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.35rem', alignItems: 'center' }}>
+            {RING_COLORS.map((c) => {
+              const isSelected = ringColor === c;
+              if (c === 'transparent') {
+                return (
+                  <div
+                    key="transparent"
+                    onClick={() => setRingColor('transparent')}
+                    title="Transparent (No Ring)"
+                    style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      cursor: 'pointer',
+                      border: isSelected ? '2px solid white' : '1px solid transparent',
+                      transform: isSelected ? 'scale(1.15)' : 'none',
+                      transition: 'transform 0.15s',
+                      flexShrink: 0,
+                      boxSizing: 'border-box',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      style={{ display: 'block', width: '100%', height: '100%' }}
+                    >
+                      <circle cx="12" cy="12" r="12" fill="#e2e8f0" />
+                      <circle cx="12" cy="12" r="7" fill="none" stroke="#ef4444" strokeWidth="2" />
+                      <line x1="7.05" y1="7.05" x2="16.95" y2="16.95" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                );
+              }
+              return (
+                <div
+                  key={c}
+                  onClick={() => setRingColor(c)}
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    backgroundColor: c,
+                    cursor: 'pointer',
+                    boxSizing: 'border-box',
+                    border: isSelected ? '2px solid white' : '1px solid transparent',
+                    transform: isSelected ? 'scale(1.15)' : 'none',
+                    transition: 'transform 0.15s',
+                    flexShrink: 0,
+                  }}
+                />
+              );
+            })}
           </div>
         </div>
 
@@ -792,31 +1083,783 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
           )}
         </div>
 
+        {/* Token Attacks & Actions (OB-200) */}
+        {!isProp && (
+          <div
+            style={{
+              marginBottom: '1.5rem',
+              backgroundColor: 'var(--bg-surface-elevated)',
+              borderRadius: 'var(--radius-md)',
+              padding: '1rem',
+              border: '1px solid var(--border-subtle)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '0.75rem',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  color: 'var(--text-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                }}
+              >
+                <Swords size={16} color="var(--accent-primary)" />
+                <span>Attacks & Actions ({actions.length})</span>
+              </div>
+              {!isAddingAction && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{
+                    fontSize: '0.75rem',
+                    padding: '0.3rem 0.65rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.3rem',
+                  }}
+                  onClick={handleStartAddAction}
+                >
+                  <Plus size={14} /> Add Attack
+                </button>
+              )}
+            </div>
+
+            {/* Inline Add / Edit Action Form */}
+            {isAddingAction && (
+              <div
+                style={{
+                  backgroundColor: 'var(--bg-surface)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '0.85rem',
+                  border: '1px solid var(--border-subtle)',
+                  marginBottom: '0.85rem',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    marginBottom: '0.65rem',
+                    color: 'var(--text-primary)',
+                  }}
+                >
+                  {editingActionIndex !== null ? 'Edit Attack / Action' : 'New Attack / Action'}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem', marginBottom: '0.65rem' }}>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Attack Name *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Longsword, Bite, Shortbow"
+                      value={actionForm.name}
+                      onChange={(e) => setActionForm((prev) => ({ ...prev, name: e.target.value }))}
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                      }}
+                      autoFocus
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Type
+                    </label>
+                    <select
+                      value={actionForm.type || 'melee'}
+                      onChange={(e) => setActionForm((prev) => ({ ...prev, type: e.target.value }))}
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                      }}
+                    >
+                      <option value="melee">Melee Attack</option>
+                      <option value="ranged">Ranged Attack</option>
+                      <option value="spell">Spell</option>
+                      <option value="action">Action / Ability</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      To-Hit Modifier
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 5 for +5"
+                      value={actionForm.toHitModifier ?? ''}
+                      onChange={(e) =>
+                        setActionForm((prev) => ({
+                          ...prev,
+                          toHitModifier: e.target.value === '' ? undefined : Number(e.target.value),
+                        }))
+                      }
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Damage Formula
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 1d8+3, 2d6"
+                      value={actionForm.damageDice || ''}
+                      onChange={(e) => setActionForm((prev) => ({ ...prev, damageDice: e.target.value }))}
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Reach / Range
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 5 ft, 30/120 ft"
+                      value={actionForm.range || actionForm.reach || ''}
+                      onChange={(e) =>
+                        setActionForm((prev) => ({
+                          ...prev,
+                          range: e.target.value,
+                          reach: e.target.value,
+                        }))
+                      }
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Dice Macro (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 1d20+5 or 2d6+3"
+                      value={actionForm.diceMacro || ''}
+                      onChange={(e) => setActionForm((prev) => ({ ...prev, diceMacro: e.target.value }))}
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Description / Effect Notes (Optional)
+                    </label>
+                    <textarea
+                      placeholder="e.g. Slashing damage, versatile (1d10)"
+                      value={actionForm.description || ''}
+                      onChange={(e) => setActionForm((prev) => ({ ...prev, description: e.target.value }))}
+                      rows={2}
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                        resize: 'vertical',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ fontSize: '0.75rem', padding: '0.35rem 0.7rem' }}
+                    onClick={() => {
+                      setIsAddingAction(false);
+                      setEditingActionIndex(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    style={{ fontSize: '0.75rem', padding: '0.35rem 0.7rem' }}
+                    onClick={handleSaveAction}
+                    disabled={!actionForm.name?.trim()}
+                  >
+                    <Check size={14} /> {editingActionIndex !== null ? 'Update Attack' : 'Save Attack'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* List of Actions */}
+            {actions.length === 0 && !isAddingAction ? (
+              <div
+                style={{
+                  fontSize: '0.75rem',
+                  color: 'var(--text-muted)',
+                  fontStyle: 'italic',
+                  padding: '0.5rem 0',
+                }}
+              >
+                No attacks added to this token. Click "+ Add Attack" to give this token attacks without needing a character sheet.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                {actions.map((act, idx) => (
+                  <div
+                    key={`${act.name}-${idx}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      backgroundColor: 'var(--bg-surface)',
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border-subtle)',
+                    }}
+                  >
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                          {act.name}
+                        </span>
+                        {act.type && (
+                          <span
+                            style={{
+                              fontSize: '0.65rem',
+                              padding: '1px 5px',
+                              borderRadius: '4px',
+                              backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                              color: '#60a5fa',
+                              border: '1px solid rgba(59, 130, 246, 0.3)',
+                              textTransform: 'capitalize',
+                            }}
+                          >
+                            {act.type}
+                          </span>
+                        )}
+                        {act.toHitModifier !== undefined && (
+                          <span
+                            style={{
+                              fontSize: '0.7rem',
+                              fontWeight: 700,
+                              color: 'var(--accent-primary)',
+                            }}
+                          >
+                            {act.toHitModifier >= 0 ? `+${act.toHitModifier}` : act.toHitModifier} to hit
+                          </span>
+                        )}
+                        {act.damageDice && (
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                            {act.damageDice} dmg
+                          </span>
+                        )}
+                        {(act.range || act.reach) && (
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                            ({act.range || act.reach})
+                          </span>
+                        )}
+                      </div>
+                      {act.description && (
+                        <div
+                          style={{
+                            fontSize: '0.7rem',
+                            color: 'var(--text-muted)',
+                            marginTop: '0.15rem',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {act.description}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginLeft: '0.5rem' }}>
+                      <button
+                        type="button"
+                        className="btn-icon"
+                        style={{ width: '26px', height: '26px', padding: 0 }}
+                        onClick={() => handleStartEditAction(idx)}
+                        title="Edit Attack"
+                      >
+                        <Edit2 size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-icon"
+                        style={{ width: '26px', height: '26px', padding: 0, color: '#f43f5e' }}
+                        onClick={() => handleDeleteAction(idx)}
+                        title="Delete Attack"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Spells & Magic Section */}
+        {!isProp && (
+          <div style={{ marginBottom: '1.5rem' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '0.6rem',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  color: 'var(--text-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                }}
+              >
+                <Sparkles size={16} color="#a855f7" />
+                <span>Spells & Magic ({spells.length})</span>
+              </div>
+              {!isAddingSpell && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{
+                    fontSize: '0.75rem',
+                    padding: '0.3rem 0.6rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                  }}
+                  onClick={handleStartAddSpell}
+                >
+                  <Plus size={14} /> Add Spell
+                </button>
+              )}
+            </div>
+
+            {/* Add / Edit Spell Inline Form */}
+            {isAddingSpell && (
+              <div
+                style={{
+                  backgroundColor: 'var(--bg-surface)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '1rem',
+                  border: '1px solid var(--border-subtle)',
+                  marginBottom: '1rem',
+                }}
+              >
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.75rem', color: '#c084fc' }}>
+                  {editingSpellIndex !== null ? 'Edit Spell' : 'Add New Spell'}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Spell Name *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Fireball, Cure Wounds, Misty Step"
+                      value={spellForm.name}
+                      onChange={(e) => setSpellForm((prev) => ({ ...prev, name: e.target.value }))}
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Level
+                    </label>
+                    <select
+                      value={spellForm.level}
+                      onChange={(e) => setSpellForm((prev) => ({ ...prev, level: Number(e.target.value) }))}
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                      }}
+                    >
+                      <option value={0}>Cantrip (0)</option>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((lvl) => (
+                        <option key={lvl} value={lvl}>
+                          Level {lvl}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      School
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Evocation, Abjuration"
+                      value={spellForm.school}
+                      onChange={(e) => setSpellForm((prev) => ({ ...prev, school: e.target.value }))}
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Casting Time
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 1 action, 1 bonus action"
+                      value={spellForm.castingTime}
+                      onChange={(e) => setSpellForm((prev) => ({ ...prev, castingTime: e.target.value }))}
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Range
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 60 ft, Self, Touch"
+                      value={spellForm.range}
+                      onChange={(e) => setSpellForm((prev) => ({ ...prev, range: e.target.value }))}
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Duration
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Instantaneous, 1 minute (Concentration)"
+                      value={spellForm.duration}
+                      onChange={(e) => setSpellForm((prev) => ({ ...prev, duration: e.target.value }))}
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Description / Effect Notes
+                    </label>
+                    <textarea
+                      placeholder="Spell details, damage formula, saving throw notes..."
+                      value={spellForm.description}
+                      onChange={(e) => setSpellForm((prev) => ({ ...prev, description: e.target.value }))}
+                      rows={3}
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        marginTop: '0.2rem',
+                        resize: 'vertical',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ fontSize: '0.75rem', padding: '0.35rem 0.7rem' }}
+                    onClick={() => {
+                      setIsAddingSpell(false);
+                      setEditingSpellIndex(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    style={{ fontSize: '0.75rem', padding: '0.35rem 0.7rem' }}
+                    onClick={handleSaveSpell}
+                    disabled={!spellForm.name?.trim()}
+                  >
+                    <Check size={14} /> {editingSpellIndex !== null ? 'Update Spell' : 'Save Spell'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* List of Spells */}
+            {spells.length === 0 && !isAddingSpell ? (
+              <div
+                style={{
+                  fontSize: '0.75rem',
+                  color: 'var(--text-muted)',
+                  fontStyle: 'italic',
+                  padding: '0.5rem 0',
+                }}
+              >
+                No spells added to this token. Click "+ Add Spell" to assign spells to this token.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                {spells.map((sp, idx) => (
+                  <div
+                    key={`${sp.name}-${idx}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      backgroundColor: 'var(--bg-surface)',
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border-subtle)',
+                      borderLeft: '3px solid #a855f7',
+                    }}
+                  >
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                          {sp.name}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: '0.65rem',
+                            padding: '1px 5px',
+                            borderRadius: '4px',
+                            backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                            color: '#c084fc',
+                            border: '1px solid rgba(168, 85, 247, 0.3)',
+                            fontWeight: 700,
+                          }}
+                        >
+                          {sp.level === 0 ? 'Cantrip' : `Level ${sp.level}`}
+                        </span>
+                        {sp.school && (
+                          <span
+                            style={{
+                              fontSize: '0.65rem',
+                              padding: '1px 5px',
+                              borderRadius: '4px',
+                              backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                              color: 'var(--text-secondary)',
+                            }}
+                          >
+                            {sp.school}
+                          </span>
+                        )}
+                        {sp.castingTime && (
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                            • {sp.castingTime}
+                          </span>
+                        )}
+                        {sp.range && (
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                            • {sp.range}
+                          </span>
+                        )}
+                      </div>
+                      {sp.description && (
+                        <div
+                          style={{
+                            fontSize: '0.7rem',
+                            color: 'var(--text-muted)',
+                            marginTop: '0.15rem',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {sp.description}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginLeft: '0.5rem' }}>
+                      <button
+                        type="button"
+                        className="btn-icon"
+                        style={{ width: '26px', height: '26px', padding: 0 }}
+                        onClick={() => handleStartEditSpell(idx)}
+                        title="Edit Spell"
+                      >
+                        <Edit2 size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-icon"
+                        style={{ width: '26px', height: '26px', padding: 0, color: '#f43f5e' }}
+                        onClick={() => handleDeleteSpell(idx)}
+                        title="Delete Spell"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Conditions Selector */}
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>
-            Conditions & Statuses
-          </label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              Conditions & Statuses
+            </label>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setShowStatusModal(true)}
+              style={{ fontSize: '0.72rem', padding: '2px 8px', display: 'flex', alignItems: 'center', gap: '4px' }}
+            >
+              <Sparkles size={12} color="var(--accent-primary)" /> Manage Custom Statuses...
+            </button>
+          </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-            {ALL_CONDITIONS.map((c) => {
-              const active = conditions.includes(c);
+            {allAvailableStatuses.map((label) => {
+              const active = conditions.some((c) => c.split(':')[0] === label);
+              const def = statusDefs[label];
+              const badgeColor = def?.color || '#f43f5e';
               return (
                 <button
-                  key={c}
+                  key={label}
                   type="button"
-                  onClick={() => toggleCondition(c)}
+                  onClick={() => toggleCondition(label)}
                   style={{
                     fontSize: '0.75rem',
                     padding: '4px 8px',
                     borderRadius: 'var(--radius-sm)',
                     border: '1px solid',
-                    borderColor: active ? '#f43f5e' : 'var(--border-subtle)',
-                    backgroundColor: active ? 'rgba(244, 63, 94, 0.2)' : 'var(--bg-surface)',
-                    color: active ? '#f43f5e' : 'var(--text-secondary)',
+                    borderColor: active ? badgeColor : 'var(--border-subtle)',
+                    backgroundColor: active ? `${badgeColor}25` : 'var(--bg-surface)',
+                    color: active ? badgeColor : 'var(--text-secondary)',
                     cursor: 'pointer',
+                    fontWeight: active ? 700 : 500,
                   }}
                 >
-                  {c}
+                  {label}
+                  {def?.counter && active && (
+                    <span> ({conditions.find((c) => c.startsWith(`${label}:`))?.split(':')[1] || def.counter.start})</span>
+                  )}
                 </button>
               );
             })}
@@ -829,7 +1872,13 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
             type="checkbox"
             id="isPropCheck"
             checked={isProp}
-            onChange={(e) => setIsProp(e.target.checked)}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              setIsProp(checked);
+              if (checked && (!ringColor || ringColor === '#3b82f6')) {
+                setRingColor('transparent');
+              }
+            }}
           />
           <label htmlFor="isPropCheck" style={{ fontSize: '0.875rem' }}>
             Treat as Map Prop (no health bar)
@@ -847,5 +1896,39 @@ export const TokenEditorModal: React.FC<TokenEditorModalProps> = ({
         </div>
       </div>
     </div>
+    {showStatusModal && (
+      <CustomStatusModal
+        isOpen={showStatusModal}
+        onClose={() => setShowStatusModal(false)}
+        activeMap={activeMap}
+        onUpdateMap={onUpdateMap}
+        onApplyStatusToToken={(conditionStr) => {
+          const base = conditionStr.split(':')[0];
+          if (!conditions.some((c) => c.split(':')[0] === base)) {
+            setConditions((prev) => [...prev, conditionStr]);
+          }
+        }}
+      />
+    )}
+    {showImageBrowserModal && (
+      <TokenImageBrowserModal
+        isOpen={showImageBrowserModal}
+        onClose={() => setShowImageBrowserModal(false)}
+        currentImageUrl={imageUrl}
+        onSelectImage={(newUrl, options) => {
+          setImageUrl(newUrl);
+          if (options?.zoom !== undefined) setClipZoom(options.zoom);
+          if (options?.panX !== undefined) setClipPanX(options.panX);
+          if (options?.panY !== undefined) setClipPanY(options.panY);
+        }}
+        onRemoveImage={() => {
+          setImageUrl('');
+          setClipZoom(1.0);
+          setClipPanX(0);
+          setClipPanY(0);
+        }}
+      />
+    )}
+    </>
   );
 };

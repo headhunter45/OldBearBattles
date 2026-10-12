@@ -14,7 +14,11 @@ import {
 import { GameMap, Token } from '@oldbear/shared';
 import { saveAsset, StoredAsset } from '../storage/db.js';
 import { importAllData } from '../storage/BackupManager.js';
+import { importBinderData } from '../storage/BinderPipeline.js';
 import { TOAST_DURATION_MS } from '../config/toast.js';
+import { inspectImportFile, ImportInspectionResult } from '../utils/importDetector.js';
+import { ImportConfirmationModal } from './ImportConfirmationModal.js';
+import { snapToGrid, getTokenPivot } from '../engine/GridRenderer.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -87,6 +91,11 @@ export const GlobalDropOverlay: React.FC<GlobalDropOverlayProps> = ({
   const [dropPosition, setDropPosition] = useState<{ x: number; y: number }>({ x: 400, y: 400 });
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [pendingConfirmation, setPendingConfirmation] = useState<{
+    inspection: ImportInspectionResult;
+    text: string;
+    file: File;
+  } | null>(null);
 
   const showToast = useCallback((msg: string) => {
     setToastMessage(msg);
@@ -147,16 +156,62 @@ export const GlobalDropOverlay: React.FC<GlobalDropOverlayProps> = ({
           const asset = JSON.parse(internalAssetJson);
           if (asset && (asset.id || asset.name) && (asset.type || asset.dataUrl)) {
             let newToken: Token;
-            if (asset.isProp || asset.type === 'prop') {
+            if (asset.type === 'tile' || asset.layer === 'map') {
+              const { pivotOffsetX, pivotOffsetY } = getTokenPivot(
+                { propWidth: asset.propWidth || 4, propHeight: asset.propHeight || 4, isProp: true },
+                gridSize
+              );
+              const snapped = snapToGrid(
+                worldPos.x - pivotOffsetX,
+                worldPos.y - pivotOffsetY,
+                gridSize,
+                1
+              );
+              newToken = {
+                id: `tile-${crypto.randomUUID()}`,
+                name: asset.name || 'Modular Tile',
+                mapId: activeMapId,
+                x: snapped.x,
+                y: snapped.y,
+                size: Math.max(asset.propWidth || 4, asset.propHeight || 4),
+                imageUrl: asset.dataUrl || '',
+                ringColor: asset.ringColor || 'transparent',
+                fillColor: asset.fillColor || '#1e293b',
+                currentHp: 100,
+                maxHp: 100,
+                conditions: [],
+                rotation: asset.rotation || 0,
+                clipCircle: false,
+                clipShape: 'square',
+                tempHp: 0,
+                speed: 0,
+                elevation: 0,
+                isProp: true,
+                layer: 'map',
+                propWidth: asset.propWidth || 4,
+                propHeight: asset.propHeight || 4,
+                locked: asset.locked,
+              };
+            } else if (asset.isProp || asset.type === 'prop') {
+              const { pivotOffsetX, pivotOffsetY } = getTokenPivot(
+                { propWidth: asset.propWidth, propHeight: asset.propHeight, size: asset.size || 1, isProp: true },
+                gridSize
+              );
+              const snapped = snapToGrid(
+                worldPos.x - pivotOffsetX,
+                worldPos.y - pivotOffsetY,
+                gridSize,
+                asset.size || 1
+              );
               newToken = {
                 id: `token-${crypto.randomUUID()}`,
                 name: asset.name || 'Prop',
                 mapId: activeMapId,
-                x: worldPos.x,
-                y: worldPos.y,
+                x: snapped.x,
+                y: snapped.y,
                 size: asset.size || 1,
                 imageUrl: asset.dataUrl,
-                ringColor: asset.ringColor || '#10b981',
+                ringColor: asset.ringColor || 'transparent',
                 currentHp: asset.hp || 10,
                 maxHp: asset.maxHp || asset.hp || 10,
                 conditions: [],
@@ -260,43 +315,50 @@ export const GlobalDropOverlay: React.FC<GlobalDropOverlayProps> = ({
       const files = Array.from(e.dataTransfer.files);
       setDropPosition({ x: mouseX, y: mouseY });
 
-      // 1. Custom / Domain specific file handling (e.g. .monster in VTT or .rosz in Brawl)
-      if (onDropCustomFile) {
-        let customHandled = false;
-        for (const file of files) {
-          if (
-            file.name.toLowerCase().endsWith('.monster') ||
-            file.name.toLowerCase().endsWith('.json') ||
-            file.name.toLowerCase().endsWith('.rosz')
-          ) {
-            try {
-              const text = await file.text();
-              const handled = await onDropCustomFile(file, text, worldPos, existingList);
-              if (handled) {
-                customHandled = true;
-              }
-            } catch {
-              // Proceed to next handler
-            }
-          }
-        }
-        if (customHandled) {
-          return;
-        }
-      }
+      // 1. Data files (.json, .binder, .monster, .card, .rosz, etc.)
+      const dataFiles = files.filter(
+        (f) =>
+          f.name.toLowerCase().endsWith('.monster') ||
+          f.name.toLowerCase().endsWith('.binder') ||
+          f.name.toLowerCase().endsWith('.json') ||
+          f.name.toLowerCase().endsWith('.card') ||
+          f.name.toLowerCase().endsWith('.rosz')
+      );
 
-      // 2. JSON files (Backups)
-      const jsonFiles = files.filter((f) => f.name.endsWith('.json'));
-      if (jsonFiles.length > 0) {
-        for (const jsonFile of jsonFiles) {
+      if (dataFiles.length > 0) {
+        for (const dataFile of dataFiles) {
           try {
-            const text = await jsonFile.text();
-            const res = await importAllData(text);
-            showToast(`Restored backup with ${res.assetCount} asset(s)!`);
-            onDataRestored?.();
-            return;
+            const text = await dataFile.text();
+            const inspection = inspectImportFile(dataFile, text);
+
+            // Large bundle or complex multi-item archive requiring user confirmation (OB-140)
+            if (inspection.requiresConfirmation) {
+              setPendingConfirmation({ inspection, text, file: dataFile });
+              return;
+            }
+
+            // Custom domain handler (e.g. D&D Beyond, Pathbuilder, TetraCube, MonsterCard in VTT)
+            if (onDropCustomFile) {
+              const handled = await onDropCustomFile(dataFile, text, worldPos, existingList);
+              if (handled) return;
+            }
+
+            // Universal .binder or Backup restore
+            if (inspection.category === 'binder') {
+              const res = await importBinderData(text);
+              showToast(`Restored .binder collection with ${res.assetCount} asset(s)!`);
+              onDataRestored?.();
+              return;
+            }
+
+            if (inspection.category === 'backup') {
+              const res = await importAllData(text);
+              showToast(`Restored backup with ${res.assetCount} asset(s)!`);
+              onDataRestored?.();
+              return;
+            }
           } catch (err: any) {
-            showToast(`Backup error: ${err.message}`);
+            showToast(`Import error: ${err.message}`);
           }
         }
         return;
@@ -373,6 +435,28 @@ export const GlobalDropOverlay: React.FC<GlobalDropOverlayProps> = ({
   };
 
   // ── import logic ──────────────────────────────────────────────────────────
+
+  const handleConfirmImport = async () => {
+    if (!pendingConfirmation) return;
+    setIsImporting(true);
+    try {
+      const { inspection, text } = pendingConfirmation;
+      if (inspection.category === 'binder') {
+        const res = await importBinderData(text);
+        showToast(`Restored .binder collection with ${res.assetCount} asset(s)!`);
+      } else {
+        const res = await importAllData(text);
+        const isBinder = text.includes('schemaVersion');
+        showToast(`Restored ${isBinder ? '.binder collection' : 'backup'} with ${res.assetCount} asset(s)!`);
+      }
+      onDataRestored?.();
+    } catch (err: any) {
+      showToast(`Import error: ${err.message}`);
+    } finally {
+      setIsImporting(false);
+      setPendingConfirmation(null);
+    }
+  };
 
   const handleImport = async () => {
     if (!pendingEntries) return;
@@ -453,7 +537,7 @@ export const GlobalDropOverlay: React.FC<GlobalDropOverlayProps> = ({
           y: dropPosition.y,
           size: 1,
           rotation: 0,
-          ringColor: isProp ? '#94a3b8' : '#6366f1',
+          ringColor: isProp ? 'transparent' : '#6366f1',
           fillColor: '#1e293b',
           clipCircle: !isProp,
           currentHp: isProp ? 0 : 25,
@@ -582,6 +666,16 @@ export const GlobalDropOverlay: React.FC<GlobalDropOverlayProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Large / Complex Bundle Import Confirmation Modal (OB-140) ── */}
+      {pendingConfirmation && (
+        <ImportConfirmationModal
+          inspection={pendingConfirmation.inspection}
+          isImporting={isImporting}
+          onConfirm={handleConfirmImport}
+          onCancel={() => !isImporting && setPendingConfirmation(null)}
+        />
       )}
 
       {/* ── Multi-file Image Import Modal (Bug #74) ── */}

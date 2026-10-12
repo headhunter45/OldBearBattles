@@ -1,6 +1,6 @@
-# Implementation Plan - Old Bear Battles Virtual Tabletop (VTT)
+# Implementation Plan - OldBearBattles Virtual Tabletop (VTT)
 
-Old Bear Battles is a lightweight, mobile-friendly, easy-to-host Virtual Tabletop (VTT) designed for quick game sessions without mandatory sign-ins. It features browser-local asset storage, peer-to-peer (WebRTC) networking with server relay fallback, a multi-layer canvas engine (maps, tokens, fog of war, dynamic pointers), HP and speed tracking, initiative management, dice rolling with advantage/disadvantage, and D&D Beyond character synchronization.
+OldBearBattles is a lightweight, mobile-friendly, easy-to-host Virtual Tabletop (VTT) designed for quick game sessions without mandatory sign-ins. It features browser-local asset storage, peer-to-peer (WebRTC) networking with server relay fallback, a multi-layer canvas engine (maps, tokens, fog of war, dynamic pointers), HP and speed tracking, initiative management, dice rolling with advantage/disadvantage, and D&D Beyond character synchronization.
 
 ## User Review Required
 
@@ -60,24 +60,19 @@ OldBearBattles/
 ## Phased Implementation Plan
 
 ### Phase 1: Git Setup & Monorepo Foundation
-
 - Create and switch to `develop` branch from `main`.
 - Commit the modified `README.md` and initialize `.gitignore` for Node, Vite, and environment files.
 - Configure npm workspaces (`packages/shared`, `packages/client`, `packages/server`).
 - Set up TypeScript configurations and shared build pipelines.
 
-#### [NEW] [package.json](package.json)
-
-#### [NEW] [.gitignore](.gitignore)
-
-#### [NEW] [packages/shared/package.json](packages/shared/package.json)
-
-#### [NEW] [packages/shared/src/index.ts](packages/shared/src/index.ts)
+#### [NEW] [package.json](file:///Users/tom/Projects/OldBearBattles/package.json)
+#### [NEW] [.gitignore](file:///Users/tom/Projects/OldBearBattles/.gitignore)
+#### [NEW] [packages/shared/package.json](file:///Users/tom/Projects/OldBearBattles/packages/shared/package.json)
+#### [NEW] [packages/shared/src/index.ts](file:///Users/tom/Projects/OldBearBattles/packages/shared/src/index.ts)
 
 ---
 
 ### Phase 2: Backend Signaling, Relay & Session Server
-
 - Implement Node.js HTTP + WebSocket server using native `ws`.
 - Session creation:
   - Generate unique room IDs (e.g. `daring-owlbear-42`) with GM key generated and returned to creator.
@@ -88,20 +83,15 @@ OldBearBattles/
 - D&D Beyond proxy endpoint (`/api/dndbeyond/:characterId`) to fetch and normalize public character stats.
 - PostgreSQL database client with local in-memory store adapter for seamless execution without Docker.
 
-#### [NEW] [packages/server/package.json](packages/server/package.json)
-
-#### [NEW] [packages/server/src/index.ts](packages/server/src/index.ts)
-
-#### [NEW] [packages/server/src/session.ts](packages/server/src/session.ts)
-
-#### [NEW] [packages/server/src/signaling.ts](packages/server/src/signaling.ts)
-
-#### [NEW] [packages/server/src/dndbeyond.ts](packages/server/src/dndbeyond.ts)
+#### [NEW] [packages/server/package.json](file:///Users/tom/Projects/OldBearBattles/packages/server/package.json)
+#### [NEW] [packages/server/src/index.ts](file:///Users/tom/Projects/OldBearBattles/packages/server/src/index.ts)
+#### [NEW] [packages/server/src/session.ts](file:///Users/tom/Projects/OldBearBattles/packages/server/src/session.ts)
+#### [NEW] [packages/server/src/signaling.ts](file:///Users/tom/Projects/OldBearBattles/packages/server/src/signaling.ts)
+#### [NEW] [packages/server/src/dndbeyond.ts](file:///Users/tom/Projects/OldBearBattles/packages/server/src/dndbeyond.ts)
 
 ---
 
 ### Phase 3: Client Canvas Engine & Touch Gesture System
-
 - Vite + React + TypeScript setup with Lucide icons and dark-mode VTT design system.
 - Canvas viewport with hardware-accelerated 2D context:
   - Multi-touch gesture engine: pinch-to-zoom (with smooth focal point anchoring), two-finger panning, inertia, and mouse wheel/middle-click controls.
@@ -114,24 +104,17 @@ OldBearBattles/
     5. **Pointers & Measurement Layer**: Laser trails, pings, area circles/rectangles, and movement rulers.
 - IndexedDB local storage integration for offline asset caching (maps, tokens, audio).
 
-#### [NEW] [packages/client/src/engine/Viewport.ts](packages/client/src/engine/Viewport.ts)
-
-#### [NEW] [packages/client/src/engine/CanvasEngine.ts](packages/client/src/engine/CanvasEngine.ts)
-
-#### [NEW] [packages/client/src/engine/layers/MapLayer.ts](packages/client/src/engine/layers/MapLayer.ts)
-
-#### [NEW] [packages/client/src/engine/layers/FogLayer.ts](packages/client/src/engine/layers/FogLayer.ts)
-
-#### [NEW] [packages/client/src/engine/layers/TokenLayer.ts](packages/client/src/engine/layers/TokenLayer.ts)
-
-#### [NEW] [packages/client/src/engine/layers/OverlayLayer.ts](packages/client/src/engine/layers/OverlayLayer.ts)
-
-#### [NEW] [packages/client/src/storage/db.ts](packages/client/src/storage/db.ts)
+#### [NEW] [packages/client/src/engine/Viewport.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/engine/Viewport.ts)
+#### [NEW] [packages/client/src/engine/CanvasEngine.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/engine/CanvasEngine.ts)
+#### [NEW] [packages/client/src/engine/layers/MapLayer.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/engine/layers/MapLayer.ts)
+#### [NEW] [packages/client/src/engine/layers/FogLayer.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/engine/layers/FogLayer.ts)
+#### [NEW] [packages/client/src/engine/layers/TokenLayer.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/engine/layers/TokenLayer.ts)
+#### [NEW] [packages/client/src/engine/layers/OverlayLayer.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/engine/layers/OverlayLayer.ts)
+#### [NEW] [packages/client/src/storage/db.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/storage/db.ts)
 
 ---
 
 ### Phase 4: Token Generator, Health Bars & Movement Ruler
-
 - Token Customizer:
   - Upload image with automatic circular clipping.
   - Customizable border ring color and solid background fill for non-square or transparent images.
@@ -146,16 +129,13 @@ OldBearBattles/
   - Real-time distance measurement during token dragging.
   - Visual warning indicator (ruler line color transition) when dragging exceeds token speed.
 
-#### [NEW] [packages/client/src/components/TokenEditorModal.tsx](packages/client/src/components/TokenEditorModal.tsx)
-
-#### [NEW] [packages/client/src/components/TokenControls.tsx](packages/client/src/components/TokenControls.tsx)
-
-#### [NEW] [packages/client/src/engine/Ruler.ts](packages/client/src/engine/Ruler.ts)
+#### [NEW] [packages/client/src/components/TokenEditorModal.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/components/TokenEditorModal.tsx)
+#### [NEW] [packages/client/src/components/TokenControls.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/components/TokenControls.tsx)
+#### [NEW] [packages/client/src/engine/Ruler.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/engine/Ruler.ts)
 
 ---
 
 ### Phase 5: Dynamic On-Screen Pointers & Ephemeral Markers
-
 - Laser Pointer:
   - Broadcasts pointer position in real time with smooth fading trailing effect in user's chosen accent color.
 - Ephemeral Screen Markers:
@@ -165,14 +145,12 @@ OldBearBattles/
   - Rectangle zone marker.
 - Synchronized automatic fade-out timers per effect broadcasted across peers.
 
-#### [NEW] [packages/client/src/engine/PointerSystem.ts](packages/client/src/engine/PointerSystem.ts)
-
-#### [NEW] [packages/client/src/components/ToolBar.tsx](packages/client/src/components/ToolBar.tsx)
+#### [NEW] [packages/client/src/engine/PointerSystem.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/engine/PointerSystem.ts)
+#### [NEW] [packages/client/src/components/ToolBar.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/components/ToolBar.tsx)
 
 ---
 
 ### Phase 6: Dice Roller & Initiative Tracker
-
 - Dice Roller:
   - Die icons for d4, d6, d8, d10, d12, d20, d100.
   - Dedicated buttons for d20 with Advantage and Disadvantage.
@@ -183,14 +161,12 @@ OldBearBattles/
   - Sortable turn order, current turn indicator, and round counter.
   - Map focus: clicking on a combatant pans/highlights their token on the active map.
 
-#### [NEW] [packages/client/src/components/DiceRoller.tsx](packages/client/src/components/DiceRoller.tsx)
-
-#### [NEW] [packages/client/src/components/InitiativeTracker.tsx](packages/client/src/components/InitiativeTracker.tsx)
+#### [NEW] [packages/client/src/components/DiceRoller.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/components/DiceRoller.tsx)
+#### [NEW] [packages/client/src/components/InitiativeTracker.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/components/InitiativeTracker.tsx)
 
 ---
 
 ### Phase 7: D&D Beyond Integration & Mobile Flyout UX
-
 - D&D Beyond Character Sheet Flyout:
   - Input character ID or share link.
   - Fetch character profile, current/max HP, speed, and active spells via backend proxy.
@@ -200,45 +176,37 @@ OldBearBattles/
   - Responsive hamburger menus and bottom sheet drawers.
   - Frictionless switching between chat, character sheet, dice roller, and map view.
 
-#### [NEW] [packages/client/src/components/CharacterFlyout.tsx](packages/client/src/components/CharacterFlyout.tsx)
-
-#### [NEW] [packages/client/src/components/MobileDrawer.tsx](packages/client/src/components/MobileDrawer.tsx)
+#### [NEW] [packages/client/src/components/CharacterFlyout.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/components/CharacterFlyout.tsx)
+#### [NEW] [packages/client/src/components/MobileDrawer.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/components/MobileDrawer.tsx)
 
 ---
 
 ### Phase 8: Soundboard & Audio Foundation (Future Roadmap)
-
 - Soundboard audio manager:
   - Upload audio tracks/sound effects to local storage.
   - Looping ambient background vs one-off sound effects.
   - Relative volume sliders.
   - GM broadcast toggle (mute audio to players vs play locally).
 
-#### [NEW] [packages/client/src/engine/AudioManager.ts](packages/client/src/engine/AudioManager.ts)
-
-#### [NEW] [packages/client/src/components/Soundboard.tsx](packages/client/src/components/Soundboard.tsx)
+#### [NEW] [packages/client/src/engine/AudioManager.ts](file:///Users/tom/Projects/OldBearBattles/packages/client/src/engine/AudioManager.ts)
+#### [NEW] [packages/client/src/components/Soundboard.tsx](file:///Users/tom/Projects/OldBearBattles/packages/client/src/components/Soundboard.tsx)
 
 ---
 
 ### Phase 9: Docker & Production Deployment Ready
-
 - Dockerfiles for client and server.
 - Docker Compose configuration with PostgreSQL and Nginx reverse proxy with WebSocket/WebRTC proxying support.
 
-#### [NEW] [docker/Dockerfile.client](docker/Dockerfile.client)
-
-#### [NEW] [docker/Dockerfile.server](docker/Dockerfile.server)
-
-#### [NEW] [docker/nginx.conf](docker/nginx.conf)
-
-#### [NEW] [docker-compose.yml](docker-compose.yml)
+#### [NEW] [docker/Dockerfile.client](file:///Users/tom/Projects/OldBearBattles/docker/Dockerfile.client)
+#### [NEW] [docker/Dockerfile.server](file:///Users/tom/Projects/OldBearBattles/docker/Dockerfile.server)
+#### [NEW] [docker/nginx.conf](file:///Users/tom/Projects/OldBearBattles/docker/nginx.conf)
+#### [NEW] [docker-compose.yml](file:///Users/tom/Projects/OldBearBattles/docker-compose.yml)
 
 ---
 
 ## Verification Plan
 
 ### Automated Tests
-
 - Workspace build verification:
   ```bash
   npm run build --workspaces
@@ -253,7 +221,6 @@ OldBearBattles/
   ```
 
 ### Manual Verification
-
 - **Multi-Client Real-Time Sync**: Open GM session in one browser tab and Player invite link in an incognito window/secondary browser:
   - Verify token movement syncs instantly.
   - Verify player can only move their own token.

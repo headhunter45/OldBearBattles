@@ -1,7 +1,26 @@
-import React from 'react';
-import { ScreenMarker } from '@oldbear/shared';
-import { Lock, Unlock, Trash2, X, Circle, Square, ArrowUpRight, Crosshair, Sparkles, Triangle } from 'lucide-react';
+import React, { useState } from 'react';
+import { ScreenMarker, Token } from '@oldbear/shared';
+import {
+  Lock,
+  Unlock,
+  Trash2,
+  X,
+  Circle,
+  Square,
+  ArrowUpRight,
+  Crosshair,
+  Sparkles,
+  Triangle,
+  Link,
+  Palette,
+  Anchor,
+  Unlink,
+  PieChart,
+  Stamp,
+  Image as ImageIcon,
+} from 'lucide-react';
 import { RotationCompass } from './TokenControls.js';
+import { AVAILABLE_COLORS } from '../config/colors.js';
 
 interface MarkerControlsProps {
   marker: ScreenMarker;
@@ -10,6 +29,10 @@ interface MarkerControlsProps {
   onUpdate?: (id: string, updates: Partial<ScreenMarker>) => void;
   onClose: () => void;
   canControl: boolean;
+  tokens?: Record<string, Token>;
+  selectedTokenId?: string | null;
+  gridSize?: number;
+  scaleFtPerCell?: number;
 }
 
 export const MarkerControls: React.FC<MarkerControlsProps> = ({
@@ -19,8 +42,14 @@ export const MarkerControls: React.FC<MarkerControlsProps> = ({
   onUpdate,
   onClose,
   canControl,
+  tokens = {},
+  selectedTokenId,
+  gridSize = 50,
+  scaleFtPerCell = 5,
 }) => {
   if (!canControl) return null;
+
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   const typeLabel =
     marker.type === 'circle'
@@ -33,6 +62,12 @@ export const MarkerControls: React.FC<MarkerControlsProps> = ({
       ? 'Cone Template'
       : marker.type === 'crosshair'
       ? 'Target Ping'
+      : marker.type === 'tether'
+      ? 'Token Tether'
+      : marker.type === 'clock'
+      ? 'Progress Clock'
+      : marker.type === 'spray'
+      ? 'Spray Decal / Hazard'
       : 'Drawing Shape';
 
   const renderIcon = () => {
@@ -47,9 +82,101 @@ export const MarkerControls: React.FC<MarkerControlsProps> = ({
         return <ArrowUpRight size={16} color={marker.color} />;
       case 'crosshair':
         return <Crosshair size={16} color={marker.color} />;
+      case 'tether':
+        return <Link size={16} color={marker.color} />;
+      case 'clock':
+        return <PieChart size={16} color={marker.color} />;
+      case 'spray':
+        return <Stamp size={16} color={marker.color} />;
       default:
         return <Sparkles size={16} color={marker.color} />;
     }
+  };
+
+  const attachedToken = marker.attachedTokenId ? tokens[marker.attachedTokenId] : null;
+  const targetToken = marker.tetherTargetId ? tokens[marker.tetherTargetId] : null;
+  const tokensList = Object.values(tokens);
+  const currentRadiusFt = Math.round(((marker.radius ?? 50) / gridSize) * scaleFtPerCell);
+
+  const handleStartChange = (tokenId: string) => {
+    if (!onUpdate) return;
+    if (!tokenId) {
+      let curX = marker.x;
+      let curY = marker.y;
+      if (marker.attachedTokenId && tokens[marker.attachedTokenId]) {
+        const t = tokens[marker.attachedTokenId];
+        const isProp = Boolean(t.isProp);
+        const w = (isProp && t.propWidth !== undefined ? t.propWidth : t.size) * gridSize;
+        const h = (isProp && t.propHeight !== undefined ? t.propHeight : t.size) * gridSize;
+        curX = t.x + w / 2;
+        curY = t.y + h / 2;
+      }
+      onUpdate(marker.id, { attachedTokenId: null as any, x: curX, y: curY });
+    } else {
+      const t = tokens[tokenId];
+      if (t) {
+        const isProp = Boolean(t.isProp);
+        const w = (isProp && t.propWidth !== undefined ? t.propWidth : t.size) * gridSize;
+        const h = (isProp && t.propHeight !== undefined ? t.propHeight : t.size) * gridSize;
+        onUpdate(marker.id, { attachedTokenId: t.id, x: t.x + w / 2, y: t.y + h / 2 });
+      }
+    }
+  };
+
+  const handleEndChange = (tokenId: string) => {
+    if (!onUpdate) return;
+    if (!tokenId) {
+      let curX = marker.targetX ?? marker.x;
+      let curY = marker.targetY ?? marker.y;
+      if (marker.tetherTargetId && tokens[marker.tetherTargetId]) {
+        const t = tokens[marker.tetherTargetId];
+        const isProp = Boolean(t.isProp);
+        const w = (isProp && t.propWidth !== undefined ? t.propWidth : t.size) * gridSize;
+        const h = (isProp && t.propHeight !== undefined ? t.propHeight : t.size) * gridSize;
+        curX = t.x + w / 2;
+        curY = t.y + h / 2;
+      }
+      onUpdate(marker.id, { tetherTargetId: null as any, targetX: curX, targetY: curY });
+    } else {
+      const t = tokens[tokenId];
+      if (t) {
+        const isProp = Boolean(t.isProp);
+        const w = (isProp && t.propWidth !== undefined ? t.propWidth : t.size) * gridSize;
+        const h = (isProp && t.propHeight !== undefined ? t.propHeight : t.size) * gridSize;
+        onUpdate(marker.id, { tetherTargetId: t.id, targetX: t.x + w / 2, targetY: t.y + h / 2 });
+      }
+    }
+  };
+
+  const handleGeneralAttachChange = (tokenId: string) => {
+    if (!onUpdate) return;
+    if (!tokenId) {
+      let curX = marker.x;
+      let curY = marker.y;
+      if (marker.attachedTokenId && tokens[marker.attachedTokenId]) {
+        const t = tokens[marker.attachedTokenId];
+        const isProp = Boolean(t.isProp);
+        const w = (isProp && t.propWidth !== undefined ? t.propWidth : t.size) * gridSize;
+        const h = (isProp && t.propHeight !== undefined ? t.propHeight : t.size) * gridSize;
+        curX = t.x + w / 2;
+        curY = t.y + h / 2;
+      }
+      onUpdate(marker.id, { attachedTokenId: null as any, x: curX, y: curY });
+    } else {
+      const t = tokens[tokenId];
+      if (t) {
+        const isProp = Boolean(t.isProp);
+        const w = (isProp && t.propWidth !== undefined ? t.propWidth : t.size) * gridSize;
+        const h = (isProp && t.propHeight !== undefined ? t.propHeight : t.size) * gridSize;
+        onUpdate(marker.id, { attachedTokenId: t.id, x: t.x + w / 2, y: t.y + h / 2 });
+      }
+    }
+  };
+
+  const setRadiusFt = (ft: number) => {
+    const clampedFt = Math.max(1, ft);
+    const px = (clampedFt / scaleFtPerCell) * gridSize;
+    onUpdate?.(marker.id, { radius: px });
   };
 
   return (
@@ -63,23 +190,244 @@ export const MarkerControls: React.FC<MarkerControlsProps> = ({
         display: 'flex',
         alignItems: 'center',
         gap: '0.75rem',
-        maxWidth: '92vw',
+        maxWidth: '94vw',
         zIndex: 50,
+        flexWrap: 'wrap',
       }}
     >
+      {/* Icon & Name / Label Input */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         {renderIcon()}
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
-            {typeLabel}
-          </span>
-          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-            Created by {marker.userName}
-          </span>
-        </div>
+        <input
+          type="text"
+          className="input"
+          value={marker.label ?? ''}
+          placeholder={typeLabel}
+          onChange={(e) => onUpdate?.(marker.id, { label: e.target.value })}
+          title="Custom Indicator Label (e.g. Spirit Guardians, Captain 6&quot; Aura)"
+          style={{
+            padding: '0.25rem 0.5rem',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            width: '160px',
+            background: 'rgba(0,0,0,0.3)',
+            borderRadius: '4px',
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--text-main)',
+          }}
+        />
       </div>
 
-      {/* Cone Spread Angle Preset Chips (Task #118) */}
+      <div style={{ width: '1px', height: '24px', background: 'var(--border-subtle)' }} />
+
+      {/* Colors Dropdown / Chips */}
+      <div style={{ position: 'relative' }}>
+        <button
+          className="btn btn-secondary"
+          onClick={() => setShowColorPicker((v) => !v)}
+          title="Indicator Color & Opacity"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.3rem 0.5rem',
+            fontSize: '0.8rem',
+          }}
+        >
+          <div
+            style={{
+              width: '14px',
+              height: '14px',
+              borderRadius: '50%',
+              backgroundColor: marker.color,
+              border: '1px solid rgba(255,255,255,0.4)',
+            }}
+          />
+          <Palette size={14} />
+        </button>
+
+        {showColorPicker && (
+          <div
+            className="glass-panel"
+            style={{
+              position: 'absolute',
+              bottom: 'calc(100% + 8px)',
+              left: 0,
+              padding: '0.6rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
+              zIndex: 100,
+              minWidth: '200px',
+            }}
+          >
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Colors:</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.35rem' }}>
+              {AVAILABLE_COLORS.map((c) => (
+                <button
+                  key={c.value}
+                  onClick={() => {
+                    onUpdate?.(marker.id, { color: c.value });
+                    setShowColorPicker(false);
+                  }}
+                  title={c.name}
+                  style={{
+                    width: '26px',
+                    height: '26px',
+                    borderRadius: '50%',
+                    backgroundColor: c.value,
+                    border: marker.color === c.value ? '2px solid #ffffff' : '1px solid rgba(255,255,255,0.2)',
+                    cursor: 'pointer',
+                  }}
+                />
+              ))}
+            </div>
+
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+              Fill Opacity: {Math.round((marker.opacity ?? 0.22) * 100)}%
+            </span>
+            <input
+              type="range"
+              min="0.05"
+              max="1.0"
+              step="0.05"
+              value={marker.opacity ?? 0.22}
+              onChange={(e) => onUpdate?.(marker.id, { opacity: parseFloat(e.target.value) })}
+              style={{ width: '100%', cursor: 'pointer' }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Radius Controls (for Circle, Cone, Crosshair, Spray) */}
+      {(marker.type === 'circle' || marker.type === 'cone' || marker.type === 'crosshair' || marker.type === 'spray') && onUpdate && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Radius:</span>
+          <button
+            className="btn btn-secondary"
+            style={{ padding: '0.2rem 0.4rem', fontSize: '0.75rem' }}
+            onClick={() => setRadiusFt(currentRadiusFt - 5)}
+            title="Decrease radius by 5ft"
+          >
+            -5'
+          </button>
+          <input
+            type="number"
+            min="1"
+            max="500"
+            value={currentRadiusFt}
+            onChange={(e) => setRadiusFt(parseInt(e.target.value, 10) || 5)}
+            style={{
+              width: '48px',
+              padding: '0.2rem 0.35rem',
+              fontSize: '0.8rem',
+              textAlign: 'center',
+              background: 'rgba(0,0,0,0.3)',
+              borderRadius: '4px',
+              border: '1px solid var(--border-subtle)',
+              color: 'var(--text-main)',
+            }}
+          />
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ft</span>
+          <button
+            className="btn btn-secondary"
+            style={{ padding: '0.2rem 0.4rem', fontSize: '0.75rem' }}
+            onClick={() => setRadiusFt(currentRadiusFt + 5)}
+            title="Increase radius by 5ft"
+          >
+            +5'
+          </button>
+        </div>
+      )}
+
+      {/* Clock Controls: Fill/Dim Wedges and Segments (OB-132) */}
+      {marker.type === 'clock' && onUpdate && (
+        <>
+          <div style={{ width: '1px', height: '24px', background: 'var(--border-subtle)' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <button
+              className="btn btn-secondary"
+              style={{ padding: '0.2rem 0.55rem', fontWeight: 'bold' }}
+              onClick={() => {
+                const cur = marker.filled ?? 0;
+                onUpdate(marker.id, { filled: Math.max(0, cur - 1) });
+              }}
+              title="Dim clockwise wedge (-)"
+            >
+              -
+            </button>
+            <span
+              style={{
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                color: marker.color,
+                minWidth: '42px',
+                textAlign: 'center',
+              }}
+            >
+              {marker.filled ?? 0} / {marker.segments ?? 8}
+            </span>
+            <button
+              className="btn btn-primary"
+              style={{ padding: '0.2rem 0.55rem', fontWeight: 'bold' }}
+              onClick={() => {
+                const seg = marker.segments ?? 8;
+                const cur = marker.filled ?? 0;
+                onUpdate(marker.id, { filled: Math.min(seg, cur + 1) });
+              }}
+              title="Light up next clockwise wedge (+)"
+            >
+              +
+            </button>
+          </div>
+
+          <div style={{ width: '1px', height: '24px', background: 'var(--border-subtle)' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Wedges:</span>
+            {[4, 6, 8, 10, 12].map((s) => {
+              const isActive = (marker.segments ?? 8) === s;
+              return (
+                <button
+                  key={s}
+                  className={`btn ${isActive ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ padding: '0.2rem 0.4rem', fontSize: '0.75rem', fontWeight: isActive ? 600 : 400 }}
+                  onClick={() => onUpdate(marker.id, { segments: s, filled: Math.min(s, marker.filled ?? 0) })}
+                >
+                  {s}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Anchor Toggle: Center vs Base Edge (OB-129) */}
+      {(marker.type === 'circle' || marker.type === 'cone') && onUpdate && (
+        <>
+          <div style={{ width: '1px', height: '24px', background: 'var(--border-subtle)' }} />
+          <button
+            className={`btn ${marker.anchor === 'edge' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => onUpdate(marker.id, { anchor: marker.anchor === 'edge' ? 'center' : 'edge' })}
+            title={
+              marker.anchor === 'edge'
+                ? 'Measured from Token Base Perimeter Edge'
+                : 'Measured from Token Center Point'
+            }
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              padding: '0.3rem 0.55rem',
+              fontSize: '0.75rem',
+            }}
+          >
+            <Anchor size={14} />
+            <span>{marker.anchor === 'edge' ? 'Base Edge' : 'Center'}</span>
+          </button>
+        </>
+      )}
+
+      {/* Cone Spread Angle & Rotation Controls */}
       {marker.type === 'cone' && onUpdate && (
         <>
           <div style={{ width: '1px', height: '24px', background: 'var(--border-subtle)' }} />
@@ -105,7 +453,6 @@ export const MarkerControls: React.FC<MarkerControlsProps> = ({
             })}
           </div>
 
-          {/* Cone Rotation Controls (Task #118) */}
           <div style={{ width: '1px', height: '24px', background: 'var(--border-subtle)' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <RotationCompass
@@ -129,6 +476,292 @@ export const MarkerControls: React.FC<MarkerControlsProps> = ({
               ↻ +15°
             </button>
           </div>
+        </>
+      )}
+
+      {/* Spray Indicator Rotation & Decal Presets (OB-134, OB-169) */}
+      {marker.type === 'spray' && onUpdate && (
+        <>
+          <div style={{ width: '1px', height: '24px', background: 'var(--border-subtle)' }} />
+          {/* Shape Selector (Circle / Square) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Shape:</span>
+            <button
+              className={`btn ${(marker.sprayShape || 'circle') === 'circle' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+              onClick={() => onUpdate(marker.id, { sprayShape: 'circle' })}
+              title="Circle Spray Decal"
+            >
+              <Circle size={12} /> Circle
+            </button>
+            <button
+              className={`btn ${marker.sprayShape === 'square' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+              onClick={() => onUpdate(marker.id, { sprayShape: 'square' })}
+              title="Square Spray Decal"
+            >
+              <Square size={12} /> Square
+            </button>
+          </div>
+
+          <div style={{ width: '1px', height: '24px', background: 'var(--border-subtle)' }} />
+          {/* Rotation Controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Rotate:</span>
+            <RotationCompass
+              rotation={marker.rotation ?? marker.angle ?? 0}
+              onChange={(deg) => onUpdate(marker.id, { rotation: deg, angle: deg })}
+            />
+            <button
+              className="btn btn-secondary"
+              style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem' }}
+              onClick={() => {
+                const cur = marker.rotation ?? marker.angle ?? 0;
+                const next = (cur - 15 + 360) % 360;
+                onUpdate(marker.id, { rotation: next, angle: next });
+              }}
+              title="Rotate Left 15°"
+            >
+              ↺ -15°
+            </button>
+            <button
+              className="btn btn-secondary"
+              style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem' }}
+              onClick={() => {
+                const cur = marker.rotation ?? marker.angle ?? 0;
+                const next = (cur + 15) % 360;
+                onUpdate(marker.id, { rotation: next, angle: next });
+              }}
+              title="Rotate Right 15°"
+            >
+              ↻ +15°
+            </button>
+          </div>
+
+          <div style={{ width: '1px', height: '24px', background: 'var(--border-subtle)' }} />
+
+          {/* Preset Decals Chips */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Preset:</span>
+            {[
+              { id: 'hazard', label: '⚠️ Hazard' },
+              { id: 'biohazard', label: '☣️ Bio' },
+              { id: 'radiation', label: '☢️ Rad' },
+              { id: 'objective', label: '🎯 Target' },
+              { id: 'fire', label: '🔥 Fire' },
+              { id: 'magic', label: '🔯 Arcane' },
+            ].map((p) => {
+              const isActive = (marker.imageUrl || 'hazard').toLowerCase() === p.id;
+              return (
+                <button
+                  key={p.id}
+                  className={`btn ${isActive ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{
+                    padding: '0.2rem 0.4rem',
+                    fontSize: '0.7rem',
+                    fontWeight: isActive ? 600 : 400,
+                  }}
+                  onClick={() => onUpdate(marker.id, { imageUrl: p.id })}
+                  title={`Use ${p.label} decal overlay`}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div style={{ width: '1px', height: '24px', background: 'var(--border-subtle)' }} />
+
+          {/* Custom Image URL Input */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <ImageIcon size={14} color="var(--text-muted)" />
+            <input
+              type="text"
+              className="input"
+              value={marker.imageUrl ?? ''}
+              placeholder="Custom image URL..."
+              onChange={(e) => onUpdate(marker.id, { imageUrl: e.target.value })}
+              title="Custom Image Decal URL (PNG/SVG/JPG/WebP) or preset ID"
+              style={{
+                width: '130px',
+                padding: '0.2rem 0.4rem',
+                fontSize: '0.75rem',
+                background: 'rgba(0,0,0,0.3)',
+                borderRadius: '4px',
+                border: '1px solid var(--border-subtle)',
+                color: 'var(--text-main)',
+              }}
+            />
+          </div>
+        </>
+      )}
+
+      {/* Tether Specific Controls (OB-129) */}
+      {marker.type === 'tether' && onUpdate && (
+        <>
+          <div style={{ width: '1px', height: '24px', background: 'var(--border-subtle)' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <button
+              className={`btn ${marker.tetherStyle !== 'wiggly' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+              onClick={() => onUpdate(marker.id, { tetherStyle: 'straight' })}
+              title="Straight connecting line"
+            >
+              Straight
+            </button>
+            <button
+              className={`btn ${marker.tetherStyle === 'wiggly' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+              onClick={() => onUpdate(marker.id, { tetherStyle: 'wiggly' })}
+              title="Wiggly sine wave connecting line"
+            >
+              Wiggly ~
+            </button>
+
+            {marker.tetherStyle === 'wiggly' && (
+              <>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.3rem' }}>Wave:</span>
+                <input
+                  type="range"
+                  min="4"
+                  max="25"
+                  value={marker.tetherAmplitude ?? 10}
+                  onChange={(e) => onUpdate(marker.id, { tetherAmplitude: parseInt(e.target.value, 10) })}
+                  title={`Wave Amplitude: ${marker.tetherAmplitude ?? 10}px`}
+                  style={{ width: '60px' }}
+                />
+              </>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Attached Token Controls (OB-129 / OB-165) */}
+      {onUpdate && (
+        <>
+          <div style={{ width: '1px', height: '24px', background: 'var(--border-subtle)' }} />
+          {marker.type === 'tether' ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+              {/* Start / From Endpoint */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>From:</span>
+                <select
+                  className="input"
+                  value={marker.attachedTokenId || ''}
+                  onChange={(e) => handleStartChange(e.target.value)}
+                  title="Tether Start Endpoint: Select token/prop or detached point"
+                  style={{
+                    padding: '0.2rem 0.4rem',
+                    fontSize: '0.75rem',
+                    height: '26px',
+                    maxWidth: '120px',
+                    background: 'rgba(0,0,0,0.3)',
+                    color: 'var(--text-main)',
+                    borderRadius: '4px',
+                    border: '1px solid var(--border-subtle)',
+                  }}
+                >
+                  <option value="">(Detached Point)</option>
+                  {tokensList
+                    .filter((t) => t.id !== marker.tetherTargetId)
+                    .map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name} {t.isProp ? '(Prop)' : ''}
+                      </option>
+                    ))}
+                </select>
+                {attachedToken && (
+                  <button
+                    className="btn-icon"
+                    onClick={() => handleStartChange('')}
+                    title={`Detach from ${attachedToken.name}`}
+                    style={{ padding: '0.2rem' }}
+                  >
+                    <Unlink size={13} />
+                  </button>
+                )}
+              </div>
+
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>➔</span>
+
+              {/* End / To Endpoint */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>To:</span>
+                <select
+                  className="input"
+                  value={marker.tetherTargetId || ''}
+                  onChange={(e) => handleEndChange(e.target.value)}
+                  title="Tether Target Endpoint: Select token/prop or detached point"
+                  style={{
+                    padding: '0.2rem 0.4rem',
+                    fontSize: '0.75rem',
+                    height: '26px',
+                    maxWidth: '120px',
+                    background: 'rgba(0,0,0,0.3)',
+                    color: 'var(--text-main)',
+                    borderRadius: '4px',
+                    border: '1px solid var(--border-subtle)',
+                  }}
+                >
+                  <option value="">(Detached Point)</option>
+                  {tokensList
+                    .filter((t) => t.id !== marker.attachedTokenId)
+                    .map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name} {t.isProp ? '(Prop)' : ''}
+                      </option>
+                    ))}
+                </select>
+                {targetToken && (
+                  <button
+                    className="btn-icon"
+                    onClick={() => handleEndChange('')}
+                    title={`Detach from ${targetToken.name}`}
+                    style={{ padding: '0.2rem' }}
+                  >
+                    <Unlink size={13} />
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Attached:</span>
+              <select
+                className="input"
+                value={marker.attachedTokenId || ''}
+                onChange={(e) => handleGeneralAttachChange(e.target.value)}
+                title="Attach indicator to token or prop"
+                style={{
+                  padding: '0.2rem 0.4rem',
+                  fontSize: '0.75rem',
+                  height: '26px',
+                  maxWidth: '130px',
+                  background: 'rgba(0,0,0,0.3)',
+                  color: 'var(--text-main)',
+                  borderRadius: '4px',
+                  border: '1px solid var(--border-subtle)',
+                }}
+              >
+                <option value="">(Detached / Map Pos)</option>
+                {tokensList.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name} {t.isProp ? '(Prop)' : ''}
+                  </option>
+                ))}
+              </select>
+              {attachedToken && (
+                <button
+                  className="btn-icon"
+                  onClick={() => handleGeneralAttachChange('')}
+                  title={`Detach from ${attachedToken.name}`}
+                  style={{ padding: '0.2rem' }}
+                >
+                  <Unlink size={13} />
+                </button>
+              )}
+            </div>
+          )}
         </>
       )}
 
@@ -180,3 +813,4 @@ export const MarkerControls: React.FC<MarkerControlsProps> = ({
     </div>
   );
 };
+

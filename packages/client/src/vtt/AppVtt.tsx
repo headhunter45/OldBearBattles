@@ -1,52 +1,85 @@
-import React, { useEffect, useRef, useState } from 'react';
 import {
+  ChatMessage,
+  DiceRollResult,
+  DnDAction,
+  DnDCharacter,
   GameMap,
   GameSession,
-  Player,
-  Token,
-  DiceRollResult,
-  InitiativeState,
-  InitiativeItem,
-  DnDCharacter,
-  ScreenMarker,
-  ChatMessage,
   generateRandomName,
+  generateUUID,
+  InitiativeItem,
+  Player,
+  ProgressClock,
+  ScreenMarker,
+  Token
 } from '@oldbear/shared';
-import { CanvasEngine, ActiveTool } from '../common/engine/CanvasEngine.js';
-import { NetworkClient } from '../common/network/NetworkClient.js';
-import { ToolBar } from '../common/components/ToolBar.js';
-import { TopBar } from '../common/components/TopBar.js';
+import { AlertTriangle, Compass, Mic, Radio, RefreshCw } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { BatchTokenTransferModal } from '../common/components/BatchTokenTransferModal.js';
+import { ChatPanel, parseDiceExpression } from '../common/components/ChatPanel.js';
+import { ClockWidget } from '../common/components/ClockWidget.js';
+import { ClockWidgetBar } from '../common/components/ClockWidgetBar.js';
+import { AssetTab, DataBackupModal } from '../common/components/DataBackupModal.js';
+import { DiceRoller } from '../common/components/DiceRoller.js';
+import { GlobalDropOverlay } from '../common/components/GlobalDropOverlay.js';
+import { HotkeyCheatSheetModal } from '../common/components/HotkeyCheatSheetModal.js';
+import { MapManagerModal } from '../common/components/MapManagerModal.js';
+import { MapSettingsModal } from '../common/components/MapSettingsModal.js';
+import { MarkerControls } from '../common/components/MarkerControls.js';
+import { MobileDrawer } from '../common/components/MobileDrawer.js';
+import { PlayerTokenPickerModal } from '../common/components/PlayerTokenPickerModal.js';
+import { ProgressClockModal } from '../common/components/ProgressClockModal.js';
+import { RollAnnouncementBanner } from '../common/components/RollAnnouncementBanner.js';
+import { SoundboardModal } from '../common/components/SoundboardModal.js';
+import { TimerHUD } from '../common/components/TimerHUD.js';
 import { TokenControls } from '../common/components/TokenControls.js';
 import { TokenEditorModal } from '../common/components/TokenEditorModal.js';
-import { DiceRoller } from '../common/components/DiceRoller.js';
-import { InitiativeTracker } from './components/InitiativeTracker.js';
-import { CharacterFlyout } from './components/CharacterFlyout.js';
+import { TokenPickerModal, TokenSpawnData } from '../common/components/TokenPickerModal.js';
+import { ToolBar } from '../common/components/ToolBar.js';
+import { TopBar } from '../common/components/TopBar.js';
+import { TurnAnnouncement, TurnAnnouncementBanner } from '../common/components/TurnAnnouncementBanner.js';
+import { VoiceSettingsModal } from '../common/components/VoiceSettingsModal.js';
+import { TOAST_DURATION_MS } from '../common/config/toast.js';
 import {
-  saveCharacterToStorage,
-  getSavedCharacters,
+  formatRollDetails,
+  isAdvancedDiceExpression,
+  parseAndRollAdvanced,
+} from '../common/dice/AdvancedDiceEngine.js';
+import { ActiveTool, CanvasEngine } from '../common/engine/CanvasEngine.js';
+import { getTokenAABB } from '../common/engine/GridRenderer.js';
+import { duplicateAttachedMarkers } from '../common/engine/PointerSystem.js';
+import { NetworkClient } from '../common/network/NetworkClient.js';
+import { VoiceManager, VoiceState } from '../common/network/VoiceManager.js';
+import { useFeatureFlag } from '../common/config/featureFlags.js';
+import { processTurnTransition, resolveStatusDefinitions } from '../common/status/StatusManager.js';
+import { formatTimerCompletionText } from '../common/timer/timerUtils.js';
+import {
+  createTokenFromMonsterCard,
+  isMonsterCard,
+} from '../common/utils/importDetector.js';
+import { CharacterFlyout } from './components/CharacterFlyout.js';
+import { InitiativeTracker } from './components/InitiativeTracker.js';
+import {
   deleteSavedCharacter,
+  getSavedCharacters,
+  saveCharacterToStorage,
 } from './storage/characterStorage.js';
 import {
+  createDnDBeyondToken,
+  isDnDBeyondExport,
+  parseDnDBeyondCharacter,
+} from './utils/dndBeyondParser.js';
+import {
+  createMonsterToken,
   isTetraCubeMonsterFile,
   parseTetraCubeMonster,
-  createMonsterToken,
 } from './utils/monsterParser.js';
-import { MapManagerModal } from '../common/components/MapManagerModal.js';
-import { SoundboardModal } from '../common/components/SoundboardModal.js';
-import { MobileDrawer } from '../common/components/MobileDrawer.js';
-import { VoiceManager, VoiceState } from '../common/network/VoiceManager.js';
-import { VoiceSettingsModal } from '../common/components/VoiceSettingsModal.js';
-import { DataBackupModal, AssetTab, AssetManagerExtensions } from '../common/components/DataBackupModal.js';
-import { GlobalDropOverlay } from '../common/components/GlobalDropOverlay.js';
-import { TokenPickerModal, TokenSpawnData } from '../common/components/TokenPickerModal.js';
-import { BatchTokenTransferModal } from '../common/components/BatchTokenTransferModal.js';
-import { PlayerTokenPickerModal } from '../common/components/PlayerTokenPickerModal.js';
-import { RollAnnouncementBanner } from '../common/components/RollAnnouncementBanner.js';
-import { TurnAnnouncementBanner, TurnAnnouncement } from '../common/components/TurnAnnouncementBanner.js';
-import { ChatPanel } from '../common/components/ChatPanel.js';
-import { TOAST_DURATION_MS } from '../common/config/toast.js';
-import { Mic, Radio, Compass, Check, AlertTriangle, RefreshCw } from 'lucide-react';
-import { MarkerControls } from '../common/components/MarkerControls.js';
+import {
+  createPathbuilderToken,
+  isPathbuilderExport,
+  parsePathbuilderExport,
+} from './utils/pathbuilderParser.js';
+import { canPlayerDuplicateToken } from './utils/tokenPermissions.js';
 
 export const AppVtt: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -96,6 +129,9 @@ export const AppVtt: React.FC = () => {
     desktopVolume: 0.8,
     localLevel: 0,
   });
+  const isVoiceChatEnabled = useFeatureFlag('voice_chat');
+  const isSoundboardEnabled = useFeatureFlag('soundboard');
+  const isDiceRollerEnabled = useFeatureFlag('dice_roller');
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
 
   // Modals & Flyouts
@@ -105,6 +141,7 @@ export const AppVtt: React.FC = () => {
   const [showInitiative, setShowInitiative] = useState(false);
   const [showCharacterFlyout, setShowCharacterFlyout] = useState(false);
   const [showMapManager, setShowMapManager] = useState(false);
+  const [showSceneSettings, setShowSceneSettings] = useState(false);
   const [showSoundboard, setShowSoundboard] = useState(false);
   const [showBackupModal, setShowBackupModal] = useState(false);
   const [backupModalTab, setBackupModalTab] = useState<AssetTab | undefined>(undefined);
@@ -121,6 +158,39 @@ export const AppVtt: React.FC = () => {
   const prevInitTurnRef = useRef<{ round: number; index: number; id?: string } | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [fogBrushRadius, setFogBrushRadius] = useState<number>(40);
+
+  // Timers & Progress Clocks State (OB-132)
+  const [timerDuration, setTimerDuration] = useState<number>(60);
+  const [timerLabel, setTimerLabel] = useState<string>('Round Timer');
+  const [isTimerOpen, setIsTimerOpen] = useState<boolean>(false);
+  const [isClocksModalOpen, setIsClocksModalOpen] = useState<boolean>(false);
+  const [selectedClockId, setSelectedClockId] = useState<string | null>(null);
+  const [minimizedClockIds, setMinimizedClockIds] = useState<Set<string>>(() => {
+    if (typeof localStorage === 'undefined') return new Set();
+    try {
+      const raw = localStorage.getItem('obb_minimized_clocks');
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const toggleClockCompact = (id: string) => {
+    setMinimizedClockIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      try {
+        localStorage.setItem('obb_minimized_clocks', JSON.stringify(Array.from(next)));
+      } catch {}
+      return next;
+    });
+  };
+  const [isHotkeysModalOpen, setIsHotkeysModalOpen] = useState<boolean>(false);
 
   // GM Preview Map vs Player Active Map
   const [gmPreviewMapId, setGmPreviewMapId] = useState<string>('');
@@ -316,16 +386,7 @@ export const AppVtt: React.FC = () => {
           });
           setGmPreviewMapId(msg.mapId);
           if (engineRef.current) {
-            engineRef.current.setActiveMap(msg.mapId);
-            const targetMap = sessionRef.current?.maps.find((m) => m.id === msg.mapId);
-            if (targetMap) {
-              engineRef.current.viewport.centerOn(
-                targetMap.width / 2,
-                targetMap.height / 2,
-                window.innerWidth,
-                window.innerHeight
-              );
-            }
+            engineRef.current.setActiveMap(msg.mapId, true);
           }
           break;
         }
@@ -375,11 +436,24 @@ export const AppVtt: React.FC = () => {
         case 'marker-added': {
           setSession((prev) => {
             if (!prev) return prev;
+            if (prev.markers?.some((m) => m.id === msg.marker.id)) return prev;
             return {
               ...prev,
               markers: [...prev.markers, msg.marker],
             };
           });
+          if (!msg.marker.persist && msg.marker.durationMs > 0) {
+            const elapsed = Date.now() - msg.marker.createdAt;
+            const remaining = Math.max(0, msg.marker.durationMs - elapsed);
+            setTimeout(() => {
+              setSession((prev) => prev ? { ...prev, markers: prev.markers.filter((m) => m.id !== msg.marker.id) } : prev);
+              if (engineRef.current?.session) {
+                engineRef.current.session.markers = (engineRef.current.session.markers || []).filter(
+                  (m) => m.id !== msg.marker.id
+                );
+              }
+            }, remaining + 100);
+          }
           break;
         }
 
@@ -403,12 +477,22 @@ export const AppVtt: React.FC = () => {
             if (!prev) return prev;
             return {
               ...prev,
-              markers: prev.markers.map((m) =>
-                m.id === msg.id ? { ...m, ...msg.updates } : m
-              ),
+              markers: prev.markers.map((m) => {
+                if (m.id !== msg.id) return m;
+                const merged = { ...m, ...msg.updates };
+                if (msg.updates.attachedTokenId === null) delete (merged as any).attachedTokenId;
+                if (msg.updates.tetherTargetId === null) delete (merged as any).tetherTargetId;
+                return merged;
+              }),
             };
           });
-          setSelectedMarker((cur) => (cur?.id === msg.id ? { ...cur, ...msg.updates } : cur));
+          setSelectedMarker((cur) => {
+            if (cur?.id !== msg.id) return cur;
+            const merged = { ...cur, ...msg.updates };
+            if (msg.updates.attachedTokenId === null) delete (merged as any).attachedTokenId;
+            if (msg.updates.tetherTargetId === null) delete (merged as any).tetherTargetId;
+            return merged;
+          });
           break;
         }
 
@@ -456,6 +540,41 @@ export const AppVtt: React.FC = () => {
 
         case 'discord-webhook-updated': {
           setSession((prev) => (prev ? { ...prev, discordWebhookUrl: msg.webhookUrl } : prev));
+          break;
+        }
+
+        case 'clock-added': {
+          setSession((prev) => {
+            if (!prev) return prev;
+            const existing = prev.clocks || [];
+            if (existing.some((c) => c.id === msg.clock.id)) return prev;
+            return { ...prev, clocks: [...existing, msg.clock] };
+          });
+          break;
+        }
+
+        case 'clock-updated': {
+          setSession((prev) => {
+            if (!prev) return prev;
+            const existing = prev.clocks || [];
+            return {
+              ...prev,
+              clocks: existing.map((c) => (c.id === msg.id ? { ...c, ...msg.updates } : c)),
+            };
+          });
+          break;
+        }
+
+        case 'clock-deleted': {
+          setSession((prev) => {
+            if (!prev) return prev;
+            const existing = prev.clocks || [];
+            return {
+              ...prev,
+              clocks: existing.filter((c) => c.id !== msg.id),
+            };
+          });
+          setSelectedClockId((cur) => (cur === msg.id ? null : cur));
           break;
         }
 
@@ -562,7 +681,7 @@ export const AppVtt: React.FC = () => {
     };
     window.addEventListener('click', handleFirstGesture);
     const savedPlayerId = localStorage.getItem('oldbear_player_id') || undefined;
-    net.connect(roomId, savedName, savedColor, savedGmKey, savedPlayerId);
+    net.connect(roomId, savedName, savedColor, savedGmKey, savedPlayerId, 'vtt');
 
     return () => {
       unsubVoiceState();
@@ -591,6 +710,8 @@ export const AppVtt: React.FC = () => {
       prevInitTurnRef.current.index !== init.currentTurnIndex ||
       prevInitTurnRef.current.id !== currentItem.id
     ) {
+      const prevCombatantId = prevInitTurnRef.current.id;
+      const prevCombatant = init.items.find((i) => i.id === prevCombatantId);
       prevInitTurnRef.current = { round: init.round, index: init.currentTurnIndex, id: currentItem.id };
       setActiveTurnAnnouncement({ combatant: currentItem, round: init.round });
 
@@ -605,9 +726,55 @@ export const AppVtt: React.FC = () => {
         };
         networkRef.current?.send({ type: 'chat-send', message: turnMsg });
         setChatMessages((prev) => [...prev, turnMsg]);
+
+        // Evaluate status lifecycle transitions (OB-131)
+        if (session.tokens) {
+          const currentMap = session.maps.find((m) => m.id === session.activeMapId) || session.maps[0];
+          const definitions = resolveStatusDefinitions(currentMap);
+          const { updatedTokens, auditMessages } = processTurnTransition(
+            session.tokens,
+            prevCombatant?.tokenId,
+            currentItem.tokenId,
+            definitions
+          );
+
+          for (const [tId, updatedToken] of Object.entries(updatedTokens)) {
+            networkRef.current?.send({
+              type: 'token-update',
+              id: tId,
+              updates: {
+                conditions: updatedToken.conditions,
+                statusCounters: updatedToken.statusCounters,
+              },
+            });
+            setSession((s) => {
+              if (!s) return s;
+              return {
+                ...s,
+                tokens: {
+                  ...s.tokens,
+                  [tId]: updatedToken,
+                },
+              };
+            });
+          }
+
+          for (const audit of auditMessages) {
+            const auditMsg: ChatMessage = {
+              id: crypto.randomUUID(),
+              senderId: 'system',
+              senderName: 'Status Lifecycle',
+              senderColor: '#ec4899',
+              text: audit,
+              timestamp: Date.now(),
+            };
+            networkRef.current?.send({ type: 'chat-send', message: auditMsg });
+            setChatMessages((prev) => [...prev, auditMsg]);
+          }
+        }
       }
     }
-  }, [session?.initiative, isGm]);
+  }, [session?.initiative, session?.tokens, session?.maps, session?.activeMapId, isGm]);
 
   const handleToggleMute = () => {
     voiceManagerRef.current?.toggleMute();
@@ -662,6 +829,29 @@ export const AppVtt: React.FC = () => {
         setActiveTool(tool);
       },
       onMarkerAdd: (marker) => {
+        setSession((prev) => {
+          if (!prev) return prev;
+          if (prev.markers?.some((m) => m.id === marker.id)) return prev;
+          return {
+            ...prev,
+            markers: [...(prev.markers || []), marker],
+          };
+        });
+        if (marker.persist) {
+          setSelectedMarker(marker);
+          if (engineRef.current) {
+            engineRef.current.selectedMarkerId = marker.id;
+          }
+        } else if (marker.durationMs > 0) {
+          setTimeout(() => {
+            setSession((prev) => prev ? { ...prev, markers: prev.markers.filter((m) => m.id !== marker.id) } : prev);
+            if (engineRef.current?.session) {
+              engineRef.current.session.markers = (engineRef.current.session.markers || []).filter(
+                (m) => m.id !== marker.id
+              );
+            }
+          }, marker.durationMs + 100);
+        }
         networkRef.current?.send({
           type: 'marker-add',
           marker,
@@ -721,16 +911,25 @@ export const AppVtt: React.FC = () => {
     if (localPlayer) {
       engineRef.current.setLocalPlayer(localPlayer);
     }
-    const mapIdToView = isGm && gmPreviewMapId ? gmPreviewMapId : session?.activeMapId;
+    const mapIdToView = gmPreviewMapId || session?.activeMapId;
     if (mapIdToView) {
-      engineRef.current.setActiveMap(mapIdToView);
+      const changed = engineRef.current.currentMapId !== mapIdToView;
+      engineRef.current.setActiveMap(mapIdToView, changed);
     }
     engineRef.current.activeTool = activeTool;
     if (activeTool !== 'measure') {
       engineRef.current.measuringTape = null;
     }
+    // Cancel drawing preview when switching tools
+    if (engineRef.current.isDrawing) {
+      engineRef.current.isDrawing = false;
+      engineRef.current.drawStart = null;
+      engineRef.current.drawCurrent = null;
+      engineRef.current.laserPoints = [];
+    }
+    engineRef.current.persistMarkersMode = persistMarkersMode;
     engineRef.current.snapEnabled = snapEnabled;
-  }, [session, localPlayer, isGm, gmPreviewMapId, activeTool, snapEnabled]);
+  }, [session, localPlayer, isGm, gmPreviewMapId, activeTool, snapEnabled, persistMarkersMode]);
 
   // Token Actions with Optimistic Local Updates
   const handleUpdateToken = (id: string, updates: Partial<Token>) => {
@@ -756,10 +955,38 @@ export const AppVtt: React.FC = () => {
     setSession((prev) => {
       if (!prev) return prev;
       const copy = { ...prev.tokens };
+      const deletedToken = copy[id];
       delete copy[id];
-      return { ...prev, tokens: copy };
+
+      const updatedMarkers = prev.markers.map((m) => {
+        let changed = false;
+        let updates: Partial<ScreenMarker> = {};
+        if (m.attachedTokenId === id && deletedToken) {
+          const isProp = Boolean(deletedToken.isProp);
+          const w = (isProp && deletedToken.propWidth !== undefined ? deletedToken.propWidth : deletedToken.size) * (currentMap?.gridSize || 50);
+          const h = (isProp && deletedToken.propHeight !== undefined ? deletedToken.propHeight : deletedToken.size) * (currentMap?.gridSize || 50);
+          updates = { ...updates, attachedTokenId: undefined, x: deletedToken.x + w / 2, y: deletedToken.y + h / 2 };
+          changed = true;
+        }
+        if (m.tetherTargetId === id && deletedToken) {
+          const isProp = Boolean(deletedToken.isProp);
+          const w = (isProp && deletedToken.propWidth !== undefined ? deletedToken.propWidth : deletedToken.size) * (currentMap?.gridSize || 50);
+          const h = (isProp && deletedToken.propHeight !== undefined ? deletedToken.propHeight : deletedToken.size) * (currentMap?.gridSize || 50);
+          updates = { ...updates, tetherTargetId: undefined, targetX: deletedToken.x + w / 2, targetY: deletedToken.y + h / 2 };
+          changed = true;
+        }
+        return changed ? { ...m, ...updates } : m;
+      });
+
+      return { ...prev, tokens: copy, markers: updatedMarkers };
     });
     setSelectedToken((prev) => (prev?.id === id ? null : prev));
+    setSelectedTokens((prev) => prev.filter((t) => t.id !== id));
+    if (engineRef.current?.selectedTokenId === id) {
+      engineRef.current.selectToken(null);
+    } else if (engineRef.current?.selectedTokenIds.includes(id)) {
+      engineRef.current.selectTokens(engineRef.current.selectedTokenIds.filter((tId) => tId !== id));
+    }
     networkRef.current?.send({
       type: 'token-delete',
       id,
@@ -796,14 +1023,214 @@ export const AppVtt: React.FC = () => {
       if (!prev) return prev;
       return {
         ...prev,
-        markers: prev.markers.map((m) =>
-          m.id === id ? { ...m, ...updates } : m
-        ),
+        markers: prev.markers.map((m) => {
+          if (m.id !== id) return m;
+          const merged = { ...m, ...updates };
+          if (updates.attachedTokenId === null) delete (merged as any).attachedTokenId;
+          if (updates.tetherTargetId === null) delete (merged as any).tetherTargetId;
+          return merged;
+        }),
       };
     });
     if (selectedMarker?.id === id) {
-      setSelectedMarker((prev) => (prev ? { ...prev, ...updates } : null));
+      setSelectedMarker((prev) => {
+        if (!prev) return null;
+        const merged = { ...prev, ...updates };
+        if (updates.attachedTokenId === null) delete (merged as any).attachedTokenId;
+        if (updates.tetherTargetId === null) delete (merged as any).tetherTargetId;
+        return merged;
+      });
     }
+  };
+
+  const handleStartTimer = (durationSeconds: number, label?: string) => {
+    setTimerDuration(durationSeconds);
+    if (label) setTimerLabel(label);
+    setIsTimerOpen(true);
+  };
+
+  const handleOpenClocks = () => {
+    setIsClocksModalOpen(true);
+  };
+
+  const handleAddClock = (clock: ProgressClock) => {
+    setSession((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        clocks: [...(prev.clocks || []), clock],
+      };
+    });
+    networkRef.current?.send({ type: 'clock-add', clock });
+  };
+
+  const handleUpdateClock = (id: string, updates: Partial<ProgressClock>) => {
+    setSession((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        clocks: (prev.clocks || []).map((c) => (c.id === id ? { ...c, ...updates } : c)),
+      };
+    });
+    networkRef.current?.send({ type: 'clock-update', id, updates });
+  };
+
+  const handleDeleteClock = (id: string) => {
+    setSession((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        clocks: (prev.clocks || []).filter((c) => c.id !== id),
+      };
+    });
+    if (selectedClockId === id) setSelectedClockId(null);
+    networkRef.current?.send({ type: 'clock-delete', id });
+  };
+
+  const handlePlaceClockOnCanvas = (clock: ProgressClock) => {
+    if (!session || !localPlayer) return;
+    const currentMapId = session.activeMapId;
+    const centerPos = engineRef.current
+      ? engineRef.current.screenToWorld(window.innerWidth / 2, window.innerHeight / 2)
+      : { x: 400, y: 400 };
+
+    const clockMarker: ScreenMarker = {
+      id: crypto.randomUUID(),
+      type: 'clock',
+      userId: localPlayer.id,
+      userName: localPlayer.name,
+      color: clock.color,
+      x: centerPos.x,
+      y: centerPos.y,
+      radius: 60,
+      segments: clock.segments,
+      filled: clock.filled,
+      label: clock.name,
+      persist: true,
+      durationMs: 0,
+      mapId: currentMapId,
+      createdAt: Date.now(),
+    };
+
+    setSession((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        markers: [...(prev.markers || []), clockMarker],
+      };
+    });
+    networkRef.current?.send({ type: 'marker-add', marker: clockMarker });
+    showToast(`Placed clock "${clock.name}" on canvas map.`);
+  };
+
+  const handleRollAction = (action: DnDAction) => {
+    if (!localPlayer) return;
+
+    // 1. If action has custom dice macro (OB-133)
+    if (action.diceMacro) {
+      if (isAdvancedDiceExpression(action.diceMacro)) {
+        const advResult = parseAndRollAdvanced(action.diceMacro);
+        if (advResult) {
+          const detailsPreview = formatRollDetails(advResult);
+          const rollResult: DiceRollResult = {
+            id: crypto.randomUUID(),
+            userId: localPlayer.id,
+            userName: localPlayer.name,
+            userColor: localPlayer.color,
+            diceType: 'd6',
+            count: advResult.count,
+            modifier: advResult.modifier,
+            rolls: advResult.details.map((d) => d.rawTotal),
+            total: advResult.totalModified,
+            timestamp: Date.now(),
+          };
+          handleRecordRoll(rollResult);
+          networkRef.current?.send({ type: 'dice-roll', roll: rollResult });
+          setActiveRollAnnouncement(rollResult);
+
+          const chatMsg: ChatMessage = {
+            id: crypto.randomUUID(),
+            senderId: localPlayer.id,
+            senderName: localPlayer.name,
+            senderColor: localPlayer.color,
+            text: `triggered **${action.name}** [${action.diceMacro}]\n${advResult.summaryText}\n${detailsPreview}`,
+            timestamp: Date.now(),
+            roll: rollResult,
+          };
+          networkRef.current?.send({ type: 'chat-send', message: chatMsg });
+          setChatMessages((prev) => [...prev, chatMsg]);
+          return;
+        }
+      }
+
+      const parsed = parseDiceExpression(action.diceMacro);
+      if (parsed) {
+        const rollResult: DiceRollResult = {
+          id: crypto.randomUUID(),
+          userId: localPlayer.id,
+          userName: localPlayer.name,
+          userColor: localPlayer.color,
+          diceType: parsed.diceType,
+          count: parsed.count,
+          modifier: parsed.modifier,
+          rolls: parsed.rolls,
+          total: parsed.total,
+          timestamp: Date.now(),
+        };
+        handleRecordRoll(rollResult);
+        networkRef.current?.send({ type: 'dice-roll', roll: rollResult });
+        setActiveRollAnnouncement(rollResult);
+
+        const chatMsg: ChatMessage = {
+          id: crypto.randomUUID(),
+          senderId: localPlayer.id,
+          senderName: localPlayer.name,
+          senderColor: localPlayer.color,
+          text: `triggered **${action.name}** [${action.diceMacro}] = **${parsed.total}** [${parsed.rolls.join(', ')}]`,
+          timestamp: Date.now(),
+          roll: rollResult,
+        };
+        networkRef.current?.send({ type: 'chat-send', message: chatMsg });
+        setChatMessages((prev) => [...prev, chatMsg]);
+        return;
+      }
+    }
+
+    // 2. Standard Attack & Damage Roll
+    const hitMod = action.toHitModifier ?? 0;
+    const hitRoll = Math.floor(Math.random() * 20) + 1;
+    const hitTotal = hitRoll + hitMod;
+
+    const dmgExpr = action.damageDice || action.damage || '1d6';
+    const dmgParsed = parseDiceExpression(dmgExpr) || { total: 5, rolls: [5] };
+
+    const rollResult: DiceRollResult = {
+      id: crypto.randomUUID(),
+      userId: localPlayer.id,
+      userName: localPlayer.name,
+      userColor: localPlayer.color,
+      diceType: 'd20',
+      count: 1,
+      modifier: hitMod,
+      rolls: [hitRoll],
+      total: hitTotal,
+      timestamp: Date.now(),
+    };
+    handleRecordRoll(rollResult);
+    networkRef.current?.send({ type: 'dice-roll', roll: rollResult });
+    setActiveRollAnnouncement(rollResult);
+
+    const chatMsg: ChatMessage = {
+      id: crypto.randomUUID(),
+      senderId: localPlayer.id,
+      senderName: localPlayer.name,
+      senderColor: localPlayer.color,
+      text: `⚔️ **${action.name}** Attack Roll: **${hitTotal}** (${hitRoll} ${hitMod >= 0 ? `+ ${hitMod}` : `- ${Math.abs(hitMod)}`}) | Damage: **${dmgParsed.total}** [${dmgParsed.rolls.join(', ')}]`,
+      timestamp: Date.now(),
+      roll: rollResult,
+    };
+    networkRef.current?.send({ type: 'chat-send', message: chatMsg });
+    setChatMessages((prev) => [...prev, chatMsg]);
   };
 
   const handleTogglePersistMarkers = (persist: boolean) => {
@@ -833,30 +1260,40 @@ export const AppVtt: React.FC = () => {
     });
   };
 
-  const findUnoccupiedPosition = (mapId: string, startX = 400, startY = 400, gridSize = 50) => {
+  const findUnoccupiedPosition = (
+    mapId: string,
+    startX = 400,
+    startY = 400,
+    gridSize = 50,
+    stepX = gridSize,
+    stepY = gridSize,
+    additionalTokens: Token[] = []
+  ) => {
     if (!session) return { x: startX, y: startY };
-    const existing = Object.values(session.tokens).filter((t) => t.mapId === mapId);
+    const existing = Object.values(session.tokens)
+      .concat(additionalTokens)
+      .filter((t) => t.mapId === mapId);
     let x = startX;
     let y = startY;
     let step = 0;
-    while (existing.some((t) => Math.hypot(t.x - x, t.y - y) < gridSize * 0.8)) {
+    while (existing.some((t) => Math.hypot(t.x - x, t.y - y) < Math.min(stepX, gridSize) * 0.8)) {
       step++;
       const row = Math.floor(step / 6);
       const col = step % 6;
-      x = startX + col * gridSize;
-      y = startY + row * gridSize;
+      x = startX + col * stepX;
+      y = startY + row * stepY;
     }
     return { x, y };
   };
 
   const handleCreateNewToken = () => {
     if (!session || !localPlayer) return;
-    const currentMapId = isGm && gmPreviewMapId ? gmPreviewMapId : session.activeMapId;
+    const currentMapId = gmPreviewMapId || session.activeMapId;
     const gridSize = currentMap?.gridSize || 50;
     const pos = findUnoccupiedPosition(currentMapId, 400, 400, gridSize);
 
     const newToken: Token = {
-      id: `token-${crypto.randomUUID()}`,
+      id: `token-${generateUUID()}`,
       mapId: currentMapId,
       name: 'New Token',
       imageUrl: '',
@@ -872,6 +1309,7 @@ export const AppVtt: React.FC = () => {
       tempHp: 0,
       speed: 30,
       ownerId: isGm ? undefined : localPlayer.id,
+      isPlayerToken: !isGm,
       conditions: [],
       isProp: false,
       layer: 'token',
@@ -886,12 +1324,16 @@ export const AppVtt: React.FC = () => {
     });
     setSelectedToken(newToken);
     engineRef.current?.selectToken(newToken.id);
+    networkRef.current?.send({
+      type: 'token-add',
+      token: newToken,
+    });
 
   };
 
   const handleCreateNewTokenFromPicker = (data: TokenSpawnData) => {
     if (!session || !localPlayer) return;
-    const currentMapId = isGm && gmPreviewMapId ? gmPreviewMapId : session.activeMapId;
+    const currentMapId = gmPreviewMapId || session.activeMapId;
     const activeMap = session.maps.find((m) => m.id === currentMapId) || session.maps[0];
     const gridSize = activeMap?.gridSize || 50;
     const isProp = Boolean(data.isProp);
@@ -909,7 +1351,7 @@ export const AppVtt: React.FC = () => {
     const pos = findUnoccupiedPosition(currentMapId, startX, startY, gridSize);
 
     const newToken: Token = {
-      id: `token-${crypto.randomUUID()}`,
+      id: `token-${generateUUID()}`,
       mapId: currentMapId,
       name: data.name,
       imageUrl: data.imageUrl || '',
@@ -917,7 +1359,7 @@ export const AppVtt: React.FC = () => {
       y: pos.y,
       size: data.size || 1,
       rotation: 0,
-      ringColor: data.ringColor || (isProp ? '#94a3b8' : (localPlayer.color || '#3b82f6')),
+      ringColor: data.ringColor || (isProp ? 'transparent' : (localPlayer.color || '#3b82f6')),
       fillColor: data.fillColor || (isProp ? '#1e293b' : '#1e3a8a'),
       clipCircle: data.clipCircle ?? !isProp,
       clipShape: data.clipShape || (isProp ? 'square' : 'circle'),
@@ -933,6 +1375,9 @@ export const AppVtt: React.FC = () => {
       character: data.character,
       propWidth: data.propWidth,
       propHeight: data.propHeight,
+      clipZoom: data.clipZoom,
+      clipPanX: data.clipPanX,
+      clipPanY: data.clipPanY,
     };
 
     setSession((prev) => {
@@ -953,13 +1398,13 @@ export const AppVtt: React.FC = () => {
 
   const handleCreateTokenForCharacter = (char: DnDCharacter) => {
     if (!session || !localPlayer) return;
-    const currentMapId = isGm && gmPreviewMapId ? gmPreviewMapId : session.activeMapId;
+    const currentMapId = gmPreviewMapId || session.activeMapId;
     const activeMap = session.maps.find((m) => m.id === currentMapId) || session.maps[0];
     const mapW = activeMap?.width || 2000;
     const mapH = activeMap?.height || 1500;
 
     const newToken: Token = {
-      id: `token-${crypto.randomUUID()}`,
+      id: `token-${generateUUID()}`,
       mapId: currentMapId,
       name: char.name,
       imageUrl: char.avatarUrl || '',
@@ -975,11 +1420,15 @@ export const AppVtt: React.FC = () => {
       maxHp: char.maxHp,
       tempHp: 0,
       speed: char.speed,
+      initiativeBonus: char.initiativeBonus,
       ownerId: localPlayer.id,
       isPlayerToken: true,
       conditions: [],
       isProp: false,
       layer: 'token',
+      character: char,
+      actions: char.actions && char.actions.length > 0 ? char.actions : [],
+      spells: char.spells && char.spells.length > 0 ? char.spells : [],
     };
 
     setSession((prev) => {
@@ -1044,8 +1493,22 @@ export const AppVtt: React.FC = () => {
     setSession((prev) => (prev ? { ...prev, activeMapId: mapId } : prev));
     setGmPreviewMapId(mapId);
     networkRef.current?.send({ type: 'map-switch', mapId });
+    if (engineRef.current) {
+      engineRef.current.setActiveMap(mapId, true);
+    }
     const targetMap = session?.maps.find((m) => m.id === mapId);
     showToast(`Sent all players to ${targetMap?.name || 'map'}`);
+  };
+
+  const handleSelectGmPreviewMap = (mapId: string) => {
+    setGmPreviewMapId(mapId);
+    if (engineRef.current) {
+      engineRef.current.setActiveMap(mapId, true);
+    }
+    const targetMap = sessionRef.current?.maps.find((m) => m.id === mapId) || session?.maps.find((m) => m.id === mapId);
+    if (targetMap) {
+      showToast(`Viewing scene: ${targetMap.name}`);
+    }
   };
 
   const handleSendPlayersWithTokens = (targetMapId: string) => {
@@ -1061,9 +1524,16 @@ export const AppVtt: React.FC = () => {
 
   const handleDuplicateToken = (token: Token) => {
     if (!session || !localPlayer) return;
+    if (!canPlayerDuplicateToken(token, localPlayer, isGm)) {
+      showToast('You can only duplicate your own tokens or unowned tokens.');
+      return;
+    }
     const currentMapId = token.mapId;
     const gridSize = currentMap?.gridSize || 50;
-    const pos = findUnoccupiedPosition(currentMapId, token.x + gridSize, token.y, gridSize);
+    const aabb = getTokenAABB(token, gridSize);
+    const stepX = aabb.width || gridSize;
+    const stepY = aabb.height || gridSize;
+    const pos = findUnoccupiedPosition(currentMapId, token.x + stepX, token.y, gridSize, stepX, stepY);
 
     const nameMatch = token.name.match(/^(.*?)(?:\s+(\d+))?$/);
     const baseName = nameMatch && nameMatch[1] ? nameMatch[1].trim() : token.name;
@@ -1076,35 +1546,65 @@ export const AppVtt: React.FC = () => {
       name: newName,
       x: pos.x,
       y: pos.y,
+      ownerId: isGm ? token.ownerId : (localPlayer.id || token.ownerId),
+      isPlayerToken: isGm ? token.isPlayerToken : (!token.isProp ? true : token.isPlayerToken),
     };
+
+    // Duplicate any persistent indicators attached to this token (OB-129)
+    const dupMarkers = duplicateAttachedMarkers(token.id, duplicated, session.markers || []);
 
     setSession((prev) => {
       if (!prev) return prev;
       return {
         ...prev,
         tokens: { ...prev.tokens, [duplicated.id]: duplicated },
+        markers: dupMarkers.length > 0 ? [...(prev.markers || []), ...dupMarkers] : prev.markers,
       };
     });
     setSelectedToken(duplicated);
+    setSelectedTokens([duplicated]);
     engineRef.current?.selectToken(duplicated.id);
 
     networkRef.current?.send({
       type: 'token-add',
       token: duplicated,
     });
+    dupMarkers.forEach((m) => {
+      networkRef.current?.send({
+        type: 'marker-add',
+        marker: m,
+      });
+    });
   };
 
   const handleDuplicateTokens = (tokensToDup: Token[]) => {
     if (!session || !localPlayer || tokensToDup.length === 0) return;
-    const currentMapId = tokensToDup[0].mapId;
+    const allowed = tokensToDup.filter((t) => canPlayerDuplicateToken(t, localPlayer, isGm));
+    if (allowed.length === 0) {
+      showToast('You can only duplicate your own tokens or unowned tokens.');
+      return;
+    }
+    const currentMapId = allowed[0].mapId;
     const gridSize = currentMap?.gridSize || 50;
 
     const duplicatedTokens: Token[] = [];
     const updatedTokens = { ...session.tokens };
+    const allDupMarkers: ScreenMarker[] = [];
 
-    for (let i = 0; i < tokensToDup.length; i++) {
-      const tok = tokensToDup[i];
-      const pos = findUnoccupiedPosition(currentMapId, tok.x + gridSize, tok.y, gridSize);
+    for (let i = 0; i < allowed.length; i++) {
+      const tok = allowed[i];
+      const aabb = getTokenAABB(tok, gridSize);
+      const stepX = aabb.width || gridSize;
+      const stepY = aabb.height || gridSize;
+      const pos = findUnoccupiedPosition(
+        currentMapId,
+        tok.x + stepX,
+        tok.y,
+        gridSize,
+        stepX,
+        stepY,
+        duplicatedTokens
+      );
       const nameMatch = tok.name.match(/^(.*?)(?:\s+(\d+))?$/);
       const baseName = nameMatch && nameMatch[1] ? nameMatch[1].trim() : tok.name;
       const nextNum = nameMatch && nameMatch[2] ? parseInt(nameMatch[2], 10) + 1 : 2;
@@ -1116,10 +1616,18 @@ export const AppVtt: React.FC = () => {
         name: newName,
         x: pos.x,
         y: pos.y,
+        ownerId: isGm ? tok.ownerId : (localPlayer.id || tok.ownerId),
+        isPlayerToken: isGm ? tok.isPlayerToken : (!tok.isProp ? true : tok.isPlayerToken),
       };
 
       updatedTokens[duplicated.id] = duplicated;
       duplicatedTokens.push(duplicated);
+
+      // Duplicate attached indicators (OB-129)
+      const dupMarkers = duplicateAttachedMarkers(tok.id, duplicated, session.markers || []);
+      if (dupMarkers.length > 0) {
+        allDupMarkers.push(...dupMarkers);
+      }
 
       networkRef.current?.send({
         type: 'token-add',
@@ -1127,10 +1635,69 @@ export const AppVtt: React.FC = () => {
       });
     }
 
-    setSession((prev) => (prev ? { ...prev, tokens: updatedTokens } : prev));
+    allDupMarkers.forEach((m) => {
+      networkRef.current?.send({
+        type: 'marker-add',
+        marker: m,
+      });
+    });
+
+    setSession((prev) =>
+      prev
+        ? {
+            ...prev,
+            tokens: updatedTokens,
+            markers: allDupMarkers.length > 0 ? [...(prev.markers || []), ...allDupMarkers] : prev.markers,
+          }
+        : prev
+    );
     setSelectedTokens(duplicatedTokens);
     setSelectedToken(duplicatedTokens[0] || null);
     engineRef.current?.selectTokens(duplicatedTokens.map((t) => t.id));
+  };
+
+  const handleAddAura = (token: Token) => {
+    if (!session || !localPlayer) return;
+    const currentMapId = token.mapId;
+    const gridSize = currentMap?.gridSize || 50;
+    const isProp = Boolean(token.isProp);
+    const tw = (isProp && token.propWidth !== undefined ? token.propWidth : token.size) * gridSize;
+    const th = (isProp && token.propHeight !== undefined ? token.propHeight : token.size) * gridSize;
+
+    const newMarker: ScreenMarker = {
+      id: crypto.randomUUID(),
+      type: 'circle',
+      userId: localPlayer.id,
+      userName: localPlayer.name,
+      color: token.ringColor || localPlayer.color || '#38bdf8',
+      x: token.x + tw / 2,
+      y: token.y + th / 2,
+      radius: gridSize * 2,
+      label: `${token.name} Aura`,
+      attachedTokenId: token.id,
+      anchor: 'center',
+      opacity: 0.22,
+      persist: true,
+      durationMs: 0,
+      mapId: currentMapId,
+      createdAt: Date.now(),
+    };
+
+    setSession((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        markers: [...(prev.markers || []), newMarker],
+      };
+    });
+    setSelectedMarker(newMarker);
+    if (engineRef.current) {
+      engineRef.current.selectedMarkerId = newMarker.id;
+    }
+    networkRef.current?.send({
+      type: 'marker-add',
+      marker: newMarker,
+    });
   };
 
   // Profile Update
@@ -1228,7 +1795,7 @@ export const AppVtt: React.FC = () => {
   };
 
   const currentMap =
-    session?.maps.find((m) => m.id === (isGm && gmPreviewMapId ? gmPreviewMapId : session.activeMapId)) ||
+    session?.maps.find((m) => m.id === (gmPreviewMapId || session.activeMapId)) ||
     session?.maps[0];
 
   const handleToggleGrid = () => {
@@ -1238,7 +1805,7 @@ export const AppVtt: React.FC = () => {
   };
 
   const handleCoverAllFog = () => {
-    const mapId = isGm && gmPreviewMapId ? gmPreviewMapId : session?.activeMapId;
+    const mapId = gmPreviewMapId || session?.activeMapId;
     if (!mapId) return;
     setSession((prev) => {
       if (!prev) return prev;
@@ -1264,7 +1831,7 @@ export const AppVtt: React.FC = () => {
   };
 
   const handleClearAllFog = () => {
-    const mapId = isGm && gmPreviewMapId ? gmPreviewMapId : session?.activeMapId;
+    const mapId = gmPreviewMapId || session?.activeMapId;
     if (!mapId) return;
     setSession((prev) => {
       if (!prev) return prev;
@@ -1304,7 +1871,24 @@ export const AppVtt: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
-      if (tag === 'input' || tag === 'textarea' || (e.target as HTMLElement)?.isContentEditable) {
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || (e.target as HTMLElement)?.isContentEditable) {
+        return;
+      }
+
+      // Toggle Chat (` or ~) (OB-221)
+      if ((e.key === '`' || e.key === '~' || e.code === 'Backquote') && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setIsChatOpen((v) => {
+          if (!v) setUnreadChatCount(0);
+          return !v;
+        });
+        return;
+      }
+
+      // Help & Hotkeys Cheat Sheet (?)
+      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+        e.preventDefault();
+        setIsHotkeysModalOpen((v) => !v);
         return;
       }
 
@@ -1339,6 +1923,16 @@ export const AppVtt: React.FC = () => {
         setActiveTool('cone');
         return;
       }
+      if (e.key === '7') {
+        e.preventDefault();
+        setActiveTool('tether');
+        return;
+      }
+      if (e.key === '8') {
+        e.preventDefault();
+        setActiveTool('spray');
+        return;
+      }
 
       const key = e.key.toLowerCase();
       if (key === 'g') {
@@ -1361,54 +1955,141 @@ export const AppVtt: React.FC = () => {
         setActiveTool('measure');
         return;
       }
+      if (key === 'c' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setShowCharacterFlyout((v) => !v);
+        return;
+      }
       if (key === 'f') {
         if (isGm) {
           e.preventDefault();
-          setActiveTool('fog-hide');
-        }
-        return;
-      }
-      if (key === 'r') {
-        if (isGm) {
-          e.preventDefault();
-          setActiveTool('fog-reveal');
+          if (e.shiftKey) {
+            setActiveTool('fog-reveal');
+          } else {
+            setActiveTool('fog-hide');
+          }
         }
         return;
       }
 
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedMarker) {
+      if (key === '[' || key === '-' || key === ',') {
+        const target = e.target as HTMLElement | null;
+        if (!target || (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable)) {
+          e.preventDefault();
+          setFogBrushRadius((r) => {
+            const next = Math.max(10, r - 5);
+            engineRef.current?.setFogBrushRadius(next);
+            return next;
+          });
+          return;
+        }
+      }
+
+      if (key === ']' || key === '=' || key === '.') {
+        const target = e.target as HTMLElement | null;
+        if (!target || (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable)) {
+          e.preventDefault();
+          setFogBrushRadius((r) => {
+            const next = Math.min(250, r + 5);
+            engineRef.current?.setFogBrushRadius(next);
+            return next;
+          });
+          return;
+        }
+      }
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
         const target = e.target as HTMLElement | null;
         if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
           return;
         }
-        e.preventDefault();
-        handleDeleteMarker(selectedMarker.id);
-        return;
+
+        if (selectedMarker) {
+          e.preventDefault();
+          handleDeleteMarker(selectedMarker.id);
+          setSelectedMarker(null);
+          if (engineRef.current) {
+            engineRef.current.selectedMarkerId = null;
+          }
+          return;
+        }
+
+        let tokensToDelete: Token[] = [];
+        if (selectedTokens.length > 0) {
+          tokensToDelete = selectedTokens;
+        } else if (selectedToken) {
+          tokensToDelete = [selectedToken];
+        } else if (engineRef.current?.selectedTokenIds && engineRef.current.selectedTokenIds.length > 0 && session) {
+          tokensToDelete = engineRef.current.selectedTokenIds
+            .map((id) => session.tokens[id])
+            .filter((t): t is Token => Boolean(t));
+        } else if (engineRef.current?.selectedTokenId && session?.tokens[engineRef.current.selectedTokenId]) {
+          tokensToDelete = [session.tokens[engineRef.current.selectedTokenId]];
+        }
+
+        if (tokensToDelete.length > 0) {
+          const canDelete = (tok: Token) => {
+            if (isGm) return true;
+            if (tok.locked) return false;
+            return tok.ownerId === localPlayer?.id || Boolean(localPlayer?.assignedTokenIds?.includes(tok.id));
+          };
+          const controllable = tokensToDelete.filter(canDelete);
+          if (controllable.length > 0) {
+            e.preventDefault();
+            controllable.forEach((tok) => handleDeleteToken(tok.id));
+            setSelectedToken(null);
+            setSelectedTokens([]);
+            if (engineRef.current) {
+              engineRef.current.selectToken(null);
+            }
+            return;
+          }
+        }
       }
 
       if (e.key === 'Escape') {
+        if (isChatOpen) {
+          setIsChatOpen(false);
+          return;
+        }
         setSelectedToken(null);
         setSelectedTokens([]);
         setSelectedMarker(null);
         if (engineRef.current) {
           engineRef.current.measuringTape = null;
           engineRef.current.selectedMarkerId = null;
+          engineRef.current.selectToken(null);
         }
       }
 
       if (key === 'd' || ((e.ctrlKey || e.metaKey) && key === 'd')) {
+        let tokensToDup: Token[] = [];
         if (selectedTokens.length > 1) {
-          e.preventDefault();
-          handleDuplicateTokens(selectedTokens);
+          tokensToDup = selectedTokens;
         } else if (selectedToken) {
+          tokensToDup = [selectedToken];
+        } else if (engineRef.current?.selectedTokenIds && engineRef.current.selectedTokenIds.length > 1 && session) {
+          tokensToDup = engineRef.current.selectedTokenIds
+            .map((id) => session.tokens[id])
+            .filter((t): t is Token => Boolean(t));
+        } else if (engineRef.current?.selectedTokenId && session?.tokens[engineRef.current.selectedTokenId]) {
+          tokensToDup = [session.tokens[engineRef.current.selectedTokenId]];
+        }
+
+        const controllable = tokensToDup.filter((t) => canPlayerDuplicateToken(t, localPlayer, isGm));
+
+        if (controllable.length > 1) {
           e.preventDefault();
-          handleDuplicateToken(selectedToken);
+          handleDuplicateTokens(controllable);
+        } else if (controllable.length === 1) {
+          e.preventDefault();
+          handleDuplicateToken(controllable[0]);
         }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedToken, selectedTokens, selectedMarker, session, localPlayer, currentMap, isGm]);
+  }, [selectedToken, selectedTokens, selectedMarker, session, localPlayer, currentMap, isGm, isChatOpen]);
 
   const handleRecordRoll = (roll: DiceRollResult) => {
     setSession((prev) => {
@@ -1467,6 +2148,7 @@ export const AppVtt: React.FC = () => {
           onOpenInitiative={() => setShowInitiative((v) => !v)}
           onOpenCharacter={() => setShowCharacterFlyout((v) => !v)}
           onOpenMaps={() => setShowMapManager(true)}
+          onOpenSceneSettings={() => setShowSceneSettings(true)}
           onOpenSoundboard={() => setShowSoundboard(true)}
           onOpenBackup={() => setShowBackupModal(true)}
           onAddNewToken={() => setShowTokenPickerModal(true)}
@@ -1500,6 +2182,7 @@ export const AppVtt: React.FC = () => {
               return [...list].sort((a, b) => a.name.localeCompare(b.name));
             })()
           }
+          selectedToken={selectedToken}
           onSyncToken={(tokenId, updates) => {
             handleUpdateToken(tokenId, updates);
           }}
@@ -1526,11 +2209,99 @@ export const AppVtt: React.FC = () => {
               networkRef.current?.send({ type: 'chat-send', message: m });
             }
           }}
+          onSpawnMonsterToken={(statBlock) => {
+            if (!session?.activeMapId) return;
+            const hpParsed = typeof statBlock.hp === 'number'
+              ? statBlock.hp
+              : parseInt(String(statBlock.hp || '10'), 10) || 10;
+            const acParsed = typeof statBlock.armorClass === 'number'
+              ? statBlock.armorClass
+              : parseInt(String(statBlock.armorClass || '10'), 10) || 10;
+
+            const char: DnDCharacter = {
+              id: statBlock.id || crypto.randomUUID(),
+              name: statBlock.name,
+              level: 1,
+              classes: statBlock.subtitle || 'Monster',
+              race: 'Monster',
+              currentHp: hpParsed,
+              maxHp: hpParsed,
+              tempHp: 0,
+              speed: parseInt(String(statBlock.speed || '30'), 10) || 30,
+              armorClass: acParsed,
+              passivePerception: 10 + Math.floor(((statBlock.stats?.wis || 10) - 10) / 2),
+              stats: statBlock.stats || { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+              spells: [],
+              actions: (statBlock.actions || []).map((a) => ({
+                name: a.name,
+                type: a.type,
+                activationType: a.cost,
+                damageDice: a.damageFormula,
+                description: a.description,
+              })),
+            };
+
+            const sizeStr = (statBlock.subtitle || '').toLowerCase();
+            let tokenSize = 1;
+            if (sizeStr.includes('gargantuan')) tokenSize = 4;
+            else if (sizeStr.includes('huge')) tokenSize = 3;
+            else if (sizeStr.includes('large')) tokenSize = 2;
+            else if (sizeStr.includes('tiny')) tokenSize = 0.8;
+
+            const existingTokens = Object.values(session.tokens || {});
+            let spawnX = 300;
+            let spawnY = 300;
+            while (existingTokens.some((t) => Math.abs(t.x - spawnX) < 15 && Math.abs(t.y - spawnY) < 15)) {
+              spawnX += 45;
+              spawnY += 45;
+            }
+
+            const isLocalPlayerNonGm = !isGm && Boolean(localPlayer);
+            const newToken: Token = {
+              id: `token-${crypto.randomUUID()}`,
+              name: statBlock.name,
+              x: spawnX,
+              y: spawnY,
+              size: tokenSize,
+              imageUrl: statBlock.imageUrl,
+              mapId: session.activeMapId,
+              rotation: 0,
+              ringColor: isLocalPlayerNonGm && localPlayer?.color ? localPlayer.color : '#10b981',
+              fillColor: '#1e293b',
+              clipCircle: true,
+              clipShape: 'circle',
+              currentHp: hpParsed,
+              maxHp: hpParsed,
+              tempHp: 0,
+              speed: 30,
+              ownerId: isGm ? undefined : localPlayer?.id,
+              isPlayerToken: isLocalPlayerNonGm,
+              locked: false,
+              conditions: [],
+              isProp: false,
+              layer: 'token',
+              character: char,
+            };
+
+            setSession((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                tokens: { ...prev.tokens, [newToken.id]: newToken },
+              };
+            });
+            setSelectedToken(newToken);
+            engineRef.current?.selectToken(newToken.id);
+            networkRef.current?.send({ type: 'token-add', token: newToken });
+            showToast(`Spawned "${statBlock.name}" token on the battlemap!`);
+          }}
           onBroadcastRoll={(r) => {
             handleRecordRoll(r);
             networkRef.current?.send({ type: 'dice-roll', roll: r });
             setActiveRollAnnouncement(r);
           }}
+          onStartTimer={handleStartTimer}
+          onOpenClocks={handleOpenClocks}
           isOpen={isChatOpen}
           onToggleOpen={() => {
             setIsChatOpen((v) => {
@@ -1540,6 +2311,82 @@ export const AppVtt: React.FC = () => {
           }}
         />
       )}
+
+      {/* Round Timer HUD (OB-132) */}
+      <TimerHUD
+        initialDuration={timerDuration}
+        label={timerLabel}
+        isOpen={isTimerOpen}
+        onClose={() => setIsTimerOpen(false)}
+        onComplete={() => {
+          const text = formatTimerCompletionText(timerLabel);
+          showToast(text);
+          const timerMsg: ChatMessage = {
+            id: crypto.randomUUID(),
+            senderId: 'system',
+            senderName: 'Timer',
+            senderColor: '#f59e0b',
+            text: text,
+            timestamp: Date.now(),
+          };
+          networkRef.current?.send({ type: 'chat-send', message: timerMsg });
+          setChatMessages((prev) => [...prev, timerMsg]);
+          if (!isChatOpen) {
+            setUnreadChatCount((c) => c + 1);
+          }
+        }}
+      />
+
+      {/* Floating Screen Clock Widgets (OB-173) */}
+      {(session?.clocks || []).map((clock, index) => (
+        <ClockWidget
+          key={clock.id}
+          clock={clock}
+          index={index}
+          isSelected={selectedClockId === clock.id}
+          isCompact={minimizedClockIds.has(clock.id)}
+          onSelect={(id) => {
+            setSelectedClockId(id);
+            setSelectedToken(null);
+            setSelectedTokens([]);
+            setSelectedMarker(null);
+          }}
+          onUpdate={handleUpdateClock}
+          isGm={isGm}
+        />
+      ))}
+
+      {/* Contextual Clock Widget Bar (OB-173) */}
+      {(() => {
+        const selectedClock = (session?.clocks || []).find((c) => c.id === selectedClockId);
+        if (!selectedClock) return null;
+        return (
+          <ClockWidgetBar
+            clock={selectedClock}
+            isGm={isGm}
+            isCompact={minimizedClockIds.has(selectedClock.id)}
+            onToggleCompact={() => toggleClockCompact(selectedClock.id)}
+            onUpdate={handleUpdateClock}
+            onDelete={handleDeleteClock}
+            onClose={() => setSelectedClockId(null)}
+          />
+        );
+      })()}
+
+      {/* Progress Clocks Modal (OB-132, OB-173) */}
+      <ProgressClockModal
+        isOpen={isClocksModalOpen}
+        onClose={() => setIsClocksModalOpen(false)}
+        clocks={session?.clocks || []}
+        onAddClock={handleAddClock}
+        onUpdateClock={handleUpdateClock}
+        onDeleteClock={handleDeleteClock}
+        isGm={isGm}
+        onPlaceOnCanvas={handlePlaceClockOnCanvas}
+        canvasMarkers={session?.markers}
+        onUpdateMarker={handleUpdateMarker}
+        onDeleteMarker={handleDeleteMarker}
+      />
 
       {/* Left Floating Tools */}
       <ToolBar
@@ -1556,6 +2403,19 @@ export const AppVtt: React.FC = () => {
         onChangeColor={(c) => handleUpdateProfile(localPlayer?.name || 'Player', c)}
         persistMarkersMode={persistMarkersMode}
         onTogglePersistMarkers={handleTogglePersistMarkers}
+        onToggleChat={() => {
+          setIsChatOpen((v) => {
+            if (!v) setUnreadChatCount(0);
+            return !v;
+          });
+        }}
+        isChatOpen={isChatOpen}
+        unreadChatCount={unreadChatCount}
+        fogBrushRadius={fogBrushRadius}
+        onChangeFogBrushRadius={(r) => {
+          setFogBrushRadius(r);
+          engineRef.current?.setFogBrushRadius(r);
+        }}
       />
 
       {/* Selected Persistent Shape Controls */}
@@ -1572,6 +2432,10 @@ export const AppVtt: React.FC = () => {
             }
           }}
           canControl={isGm || selectedMarker.userId === localPlayer?.id}
+          tokens={session.tokens}
+          selectedTokenId={selectedToken?.id}
+          gridSize={currentMap?.gridSize}
+          scaleFtPerCell={currentMap?.scaleFtPerCell}
         />
       )}
 
@@ -1582,10 +2446,12 @@ export const AppVtt: React.FC = () => {
           selectedTokens={selectedTokens}
           onUpdateToken={handleUpdateToken}
           onDeleteToken={handleDeleteToken}
-          onDuplicateToken={handleDuplicateToken}
+          onDuplicateToken={canPlayerDuplicateToken(selectedToken, localPlayer, isGm) ? handleDuplicateToken : undefined}
           onDuplicateTokens={handleDuplicateTokens}
           onTransferToken={handleTransferToken}
           onSetInitiative={handleSetTokenInitiative}
+          onAddAura={handleAddAura}
+          onRollAction={handleRollAction}
           onOpenFullEditor={() => {
             setTokenToEdit(selectedToken);
             setShowTokenEditor(true);
@@ -1598,11 +2464,12 @@ export const AppVtt: React.FC = () => {
           isGm={isGm}
           maps={session.maps}
           players={Object.values(session.players)}
+          onUpdateMap={handleUpdateMap}
         />
       )}
 
       {/* Floating Draggable Dice Roller Window (Task #120) */}
-      {showDiceRoller && session && localPlayer && (
+      {isDiceRollerEnabled && showDiceRoller && session && localPlayer && (
         <DiceRoller
           userName={localPlayer.name}
           userColor={localPlayer.color}
@@ -1692,7 +2559,9 @@ export const AppVtt: React.FC = () => {
               type: 'player-update',
               updates: { dndBeyondCharacter },
             });
+            saveCharacterToStorage(dndBeyondCharacter, isGm);
           }}
+          onRollAction={handleRollAction}
           onClose={() => setShowCharacterFlyout(false)}
           isGm={isGm}
         />
@@ -1706,6 +2575,8 @@ export const AppVtt: React.FC = () => {
           onSave={(updates) => handleUpdateToken(tokenToEdit.id, updates)}
           players={Object.values(session.players)}
           isGm={isGm}
+          activeMap={session.maps.find((m) => m.id === tokenToEdit.mapId) || session.maps[0]}
+          onUpdateMap={handleUpdateMap}
         />
       )}
 
@@ -1714,19 +2585,37 @@ export const AppVtt: React.FC = () => {
         <MapManagerModal
           maps={session.maps}
           activeMapId={session.activeMapId}
-          currentGmPreviewMapId={gmPreviewMapId}
-          onSelectGmPreviewMap={(id) => setGmPreviewMapId(id)}
+          currentGmPreviewMapId={gmPreviewMapId || session.activeMapId}
+          onSelectGmPreviewMap={handleSelectGmPreviewMap}
           onSetActiveMapForPlayers={handleSetActiveMapForPlayers}
           onSendPlayersWithTokens={handleSendPlayersWithTokens}
           onOpenBatchTokenTransfer={() => setShowBatchTransferModal(true)}
           onAddMap={(newMap) => {
             setSession((prev) => (prev ? { ...prev, maps: [...prev.maps, newMap] } : prev));
-            setGmPreviewMapId(newMap.id);
+            handleSelectGmPreviewMap(newMap.id);
             networkRef.current?.send({ type: 'map-add', map: newMap });
           }}
           onUpdateMap={handleUpdateMap}
           onDeleteMap={handleDeleteMap}
           onClose={() => setShowMapManager(false)}
+        />
+      )}
+
+      {/* Active Scene Settings Modal (OB-209) */}
+      {showSceneSettings && currentMap && session && (
+        <MapSettingsModal
+          key={currentMap.id}
+          map={currentMap}
+          canDelete={session.maps.length > 1}
+          onSave={(updates) => {
+            handleUpdateMap(currentMap.id, updates);
+            setShowSceneSettings(false);
+          }}
+          onDelete={(mapId) => {
+            handleDeleteMap(mapId);
+            setShowSceneSettings(false);
+          }}
+          onClose={() => setShowSceneSettings(false)}
         />
       )}
 
@@ -1764,7 +2653,7 @@ export const AppVtt: React.FC = () => {
       )}
 
       {/* Soundboard Modal */}
-      {showSoundboard && (
+      {isSoundboardEnabled && showSoundboard && (
         <SoundboardModal
           isGm={isGm}
           onClose={() => setShowSoundboard(false)}
@@ -1780,7 +2669,7 @@ export const AppVtt: React.FC = () => {
       )}
 
       {/* Voice Settings Modal */}
-      {showVoiceSettings && voiceManagerRef.current && session && (
+      {isVoiceChatEnabled && showVoiceSettings && voiceManagerRef.current && session && (
         <VoiceSettingsModal
           voiceManager={voiceManagerRef.current}
           voiceState={voiceState}
@@ -1801,8 +2690,8 @@ export const AppVtt: React.FC = () => {
           activeMapId={currentMap?.id || session?.activeMapId || ''}
           initialTab={backupModalTab}
           maps={session?.maps || []}
-          currentGmPreviewMapId={gmPreviewMapId}
-          onSelectGmPreviewMap={(id) => setGmPreviewMapId(id)}
+          currentGmPreviewMapId={gmPreviewMapId || session?.activeMapId}
+          onSelectGmPreviewMap={handleSelectGmPreviewMap}
           onSetActiveMapForPlayers={handleSetActiveMapForPlayers}
           onSendPlayersWithTokens={handleSendPlayersWithTokens}
           onOpenBatchTokenTransfer={() => setShowBatchTransferModal(true)}
@@ -1824,7 +2713,15 @@ export const AppVtt: React.FC = () => {
             const currentMapId = currentMap?.id || session?.activeMapId || '';
             const gridSize = currentMap?.gridSize || 50;
             const pos = findUnoccupiedPosition(currentMapId, newToken.x || 400, newToken.y || 400, gridSize);
-            const tokenWithPos = { ...newToken, x: pos.x, y: pos.y };
+            const isPropOrTile = Boolean(newToken.isProp || newToken.layer === 'map' || newToken.layer === 'prop');
+            const tokenWithPos: Token = {
+              ...newToken,
+              x: pos.x,
+              y: pos.y,
+              ownerId: !isGm && !isPropOrTile && !newToken.ownerId ? localPlayer?.id : newToken.ownerId,
+              isPlayerToken: !isGm && !isPropOrTile ? true : newToken.isPlayerToken,
+              ringColor: isPropOrTile ? (newToken.ringColor || 'transparent') : (!isGm && localPlayer?.color && (!newToken.ringColor || newToken.ringColor === '#ef4444' || newToken.ringColor === '#3b82f6') ? localPlayer.color : (newToken.ringColor || '#3b82f6')),
+            };
             setSession((prev) => {
               if (!prev) return prev;
               return {
@@ -1833,8 +2730,10 @@ export const AppVtt: React.FC = () => {
               };
             });
             networkRef.current?.send({ type: 'token-add', token: tokenWithPos });
+            setSelectedToken(tokenWithPos);
             engineRef.current?.selectToken(tokenWithPos.id);
           }}
+          onCenterOnPosition={(x, y) => engineRef.current?.centerOnPosition(x, y)}
           onAddMap={handleAddMap}
           onRestoreSession={(restoredSession) => {
             setSession(restoredSession);
@@ -1872,13 +2771,19 @@ export const AppVtt: React.FC = () => {
             const { asset } = parseTetraCubeMonster(text);
             const { saveAsset } = await import('../common/storage/db.js');
             await saveAsset(asset);
-            const newToken = createMonsterToken(
+            const createdToken = createMonsterToken(
               asset,
               currentMap?.id || session?.activeMapId || '',
               worldPos.x,
               worldPos.y,
               existingList
             );
+            const newToken: Token = {
+              ...createdToken,
+              ownerId: isGm ? undefined : localPlayer?.id,
+              isPlayerToken: !isGm,
+              ringColor: !isGm && localPlayer?.color ? localPlayer.color : createdToken.ringColor,
+            };
             setSession((prev) => {
               if (!prev) return prev;
               return {
@@ -1887,29 +2792,126 @@ export const AppVtt: React.FC = () => {
               };
             });
             networkRef.current?.send({ type: 'token-add', token: newToken });
+            setSelectedToken(newToken);
             engineRef.current?.selectToken(newToken.id);
             existingList.push(newToken);
             showToast(`Spawned "${newToken.name}" on battlemap & saved to Asset Manager!`);
             return true;
           }
+          if (isPathbuilderExport(text)) {
+            const char = parsePathbuilderExport(text);
+            saveCharacterToStorage(char, isGm);
+            const createdToken = createPathbuilderToken(
+              char,
+              currentMap?.id || session?.activeMapId || '',
+              worldPos.x,
+              worldPos.y
+            );
+            const newToken: Token = {
+              ...createdToken,
+              ownerId: isGm ? undefined : localPlayer?.id,
+              isPlayerToken: !isGm,
+              ringColor: !isGm && localPlayer?.color ? localPlayer.color : createdToken.ringColor,
+            };
+            setSession((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                tokens: { ...prev.tokens, [newToken.id]: newToken },
+              };
+            });
+            networkRef.current?.send({ type: 'token-add', token: newToken });
+            setSelectedToken(newToken);
+            engineRef.current?.selectToken(newToken.id);
+            existingList.push(newToken);
+            showToast(`Spawned "${newToken.name}" (PF2e) on battlemap & saved character!`);
+            return true;
+          }
+          if (isDnDBeyondExport(text)) {
+            const char = parseDnDBeyondCharacter(text);
+            saveCharacterToStorage(char, isGm);
+            const createdToken = createDnDBeyondToken(
+              char,
+              currentMap?.id || session?.activeMapId || '',
+              worldPos.x,
+              worldPos.y
+            );
+            const newToken: Token = {
+              ...createdToken,
+              ownerId: isGm ? undefined : localPlayer?.id,
+              isPlayerToken: !isGm,
+              ringColor: !isGm && localPlayer?.color ? localPlayer.color : createdToken.ringColor,
+            };
+            setSession((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                tokens: { ...prev.tokens, [newToken.id]: newToken },
+              };
+            });
+            networkRef.current?.send({ type: 'token-add', token: newToken });
+            setSelectedToken(newToken);
+            engineRef.current?.selectToken(newToken.id);
+            existingList.push(newToken);
+            showToast(`Spawned "${newToken.name}" (D&D Beyond) on battlemap & saved character!`);
+            return true;
+          }
+          try {
+            const parsed = JSON.parse(text);
+            if (isMonsterCard(parsed)) {
+              const createdToken = createTokenFromMonsterCard(
+                parsed,
+                currentMap?.id || session?.activeMapId || '',
+                worldPos.x,
+                worldPos.y
+              );
+              const newToken: Token = {
+                ...createdToken,
+                ownerId: isGm ? undefined : localPlayer?.id,
+                isPlayerToken: !isGm,
+                ringColor: !isGm && localPlayer?.color ? localPlayer.color : createdToken.ringColor,
+              };
+              setSession((prev) => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  tokens: { ...prev.tokens, [newToken.id]: newToken },
+                };
+              });
+              networkRef.current?.send({ type: 'token-add', token: newToken });
+              setSelectedToken(newToken);
+              engineRef.current?.selectToken(newToken.id);
+              existingList.push(newToken);
+              showToast(`Spawned "${newToken.name}" card on battlemap!`);
+              return true;
+            }
+          } catch {}
           return false;
         }}
         onAddMap={handleAddMap}
         onAddToken={(newToken) => {
+          const isPropOrTile = Boolean(newToken.isProp || newToken.layer === 'map' || newToken.layer === 'prop');
+          const tokenToAdd: Token = {
+            ...newToken,
+            ownerId: !isGm && !isPropOrTile && !newToken.ownerId ? localPlayer?.id : newToken.ownerId,
+            isPlayerToken: !isGm && !isPropOrTile ? true : newToken.isPlayerToken,
+            ringColor: isPropOrTile ? (newToken.ringColor || 'transparent') : (!isGm && localPlayer?.color ? localPlayer.color : (newToken.ringColor || '#3b82f6')),
+          };
           setSession((prev) => {
             if (!prev) return prev;
             return {
               ...prev,
-              tokens: { ...prev.tokens, [newToken.id]: newToken },
+              tokens: { ...prev.tokens, [tokenToAdd.id]: tokenToAdd },
             };
           });
-          networkRef.current?.send({ type: 'token-add', token: newToken });
-          engineRef.current?.selectToken(newToken.id);
+          networkRef.current?.send({ type: 'token-add', token: tokenToAdd });
+          setSelectedToken(tokenToAdd);
+          engineRef.current?.selectToken(tokenToAdd.id);
         }}
       />
 
       {/* On-Screen Push-to-Talk touch button for mobile / touch screens */}
-      {voiceState.transmissionMode === 'ptt' && (
+      {isVoiceChatEnabled && voiceState.transmissionMode === 'ptt' && (
         <div
           className="floating-hud"
           style={{
@@ -1983,6 +2985,7 @@ export const AppVtt: React.FC = () => {
           setShowBackupModal(true);
         }}
         onOpenSoundboard={() => setShowSoundboard(true)}
+        onOpenClocks={handleOpenClocks}
         onOpenBackup={() => {
           setBackupModalTab('tokens');
           setShowBackupModal(true);
@@ -1999,7 +3002,17 @@ export const AppVtt: React.FC = () => {
         onToggleMute={handleToggleMute}
         onToggleDeafen={handleToggleDeafen}
         onOpenVoiceSettings={() => setShowVoiceSettings(true)}
+        onOpenHotkeys={() => {
+          setShowMobileDrawer(false);
+          setIsHotkeysModalOpen(true);
+        }}
         isGm={isGm}
+      />
+
+      {/* Keyboard Shortcuts Cheat Sheet Modal (OB-139) */}
+      <HotkeyCheatSheetModal
+        isOpen={isHotkeysModalOpen}
+        onClose={() => setIsHotkeysModalOpen(false)}
       />
 
       {/* Toast Notification */}
@@ -2111,7 +3124,7 @@ export const AppVtt: React.FC = () => {
                       const savedName = localStorage.getItem('oldbear_player_name') || generateRandomName();
                       const savedColor = localStorage.getItem('oldbear_player_color') || '#6366f1';
                       const savedGmKey = localStorage.getItem(`oldbear_gmkey_${roomId}`) || undefined;
-                      net.connect(roomId, savedName, savedColor, savedGmKey);
+                      net.connect(roomId, savedName, savedColor, savedGmKey, undefined, 'vtt');
                     } else {
                       window.location.reload();
                     }

@@ -7,9 +7,7 @@
 ## 1. Architectural Strategy & Deployment Model
 
 ### Unified Application with Deployment Game Modes
-
 Instead of maintaining a disconnected, permanently diverging fork, **Old Bear Battles will operate as a single unified codebase supporting selectable Game Modes** via environment configuration:
-
 - `GAME_MODE=vtt`: Traditional TTRPG mode (D&D 5e, Pathfinder 2e, character sheets, spellbooks).
 - `GAME_MODE=brawl`: Tabletop wargaming mode (Warhammer 40k, Kill Team, BattleTech, armies, units, chess clocks, VP boards).
 - `GAME_MODES=vtt,brawl`: Multi-mode enabled (allows choosing mode per room/session).
@@ -182,9 +180,9 @@ Custom dice rolls are tied directly to action buttons on models, units, and toke
 - **Standard Flat Roll**: `/roll 40d6+3`  
   _Rolls 40 dice, displays raw values, adds 3 to the total._
 - **Grouped Modified Roll**: `/roll 40(d6+3)`  
-  *Rolls 40 individual d6s, applies +3 to every single die, displays all 40 values, and calculates grand total (`sum(raw rolls) + 3*40`).\*
+  *Rolls 40 individual d6s, applies +3 to every single die, displays all 40 values, and calculates grand total (`sum(raw rolls) + 3*40`).*
 - **Threshold Success / Failure Counting**: `/roll 10(d6+2 >= 5)` or `/roll 10(d6+2)/5`  
-  _Evaluates the boolean condition per die and reports total successes and failures._
+  *Evaluates the boolean condition per die and reports total successes and failures.*
 - **Botch / Glitch Support (Shadowrun / Vampire)**:  
   _Flags 1s as botches/glitches and outputs net successes, total successes, and glitch warnings._
 

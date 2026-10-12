@@ -33,3 +33,5 @@ Old Bear Battles is a lightweight, mobile-friendly virtual tabletop (VTT) for ho
 - ID: `oldbearbattles`
 - Document ID: `Old Bear Battles`
 - Tags: `featured`, `open-source`
+- Last Verified UTC: `2026-10-11T07:00:26Z`
+

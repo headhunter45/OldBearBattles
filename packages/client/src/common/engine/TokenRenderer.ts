@@ -1,4 +1,5 @@
 import { Token } from '@oldbear/shared';
+import { getTokenPivot } from './GridRenderer.js';
 
 const imageCache = new Map<string, HTMLImageElement>();
 
@@ -67,15 +68,14 @@ export function renderToken(
   isGm: boolean
 ) {
   const isProp = Boolean(token.isProp);
-  const propW = (isProp && token.propWidth !== undefined ? token.propWidth : token.size) * gridSize;
-  const propH = (isProp && token.propHeight !== undefined ? token.propHeight : token.size) * gridSize;
+  const { pivotOffsetX, pivotOffsetY, pivotX, pivotY, propW, propH } = getTokenPivot(token, gridSize);
   const cx = token.x + propW / 2;
   const cy = token.y + propH / 2;
 
   // Custom rendering for props (walls, furniture, carpets, decorative items)
   if (isProp) {
     ctx.save();
-    ctx.translate(cx, cy);
+    ctx.translate(pivotX, pivotY);
     if (token.rotation) {
       ctx.rotate((token.rotation * Math.PI) / 180);
     }
@@ -89,10 +89,10 @@ export function renderToken(
       ctx.shadowBlur = 12;
       if (typeof ctx.roundRect === 'function') {
         ctx.beginPath();
-        ctx.roundRect(-propW / 2 - 3, -propH / 2 - 3, propW + 6, propH + 6, 4);
+        ctx.roundRect(-pivotOffsetX - 3, -pivotOffsetY - 3, propW + 6, propH + 6, 4);
         ctx.stroke();
       } else {
-        ctx.strokeRect(-propW / 2 - 3, -propH / 2 - 3, propW + 6, propH + 6);
+        ctx.strokeRect(-pivotOffsetX - 3, -pivotOffsetY - 3, propW + 6, propH + 6);
       }
       ctx.restore();
     }
@@ -100,26 +100,28 @@ export function renderToken(
     // Draw prop image or fallback block
     const img = getCachedImage(token.imageUrl);
     if (img) {
-      ctx.drawImage(img, -propW / 2, -propH / 2, propW, propH);
+      ctx.drawImage(img, -pivotOffsetX, -pivotOffsetY, propW, propH);
     } else {
       ctx.fillStyle = token.fillColor || 'rgba(30, 41, 59, 0.85)';
-      ctx.fillRect(-propW / 2, -propH / 2, propW, propH);
-      ctx.strokeStyle = token.ringColor || '#eab308';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(-propW / 2, -propH / 2, propW, propH);
+      ctx.fillRect(-pivotOffsetX, -pivotOffsetY, propW, propH);
+      if (token.ringColor && token.ringColor !== 'transparent') {
+        ctx.strokeStyle = token.ringColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-pivotOffsetX, -pivotOffsetY, propW, propH);
+      }
 
       ctx.fillStyle = '#f8fafc';
       ctx.font = `600 ${Math.max(11, Math.min(propW, propH) * 0.2)}px Outfit, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(token.name || 'Prop', 0, 0);
+      ctx.fillText(token.name || 'Prop', -pivotOffsetX + propW / 2, -pivotOffsetY + propH / 2);
     }
 
     // Optional border if ringColor is explicitly set
     if (token.ringColor && token.ringColor !== 'transparent') {
       ctx.strokeStyle = token.ringColor;
       ctx.lineWidth = Math.max(1, token.borderWidth || 2);
-      ctx.strokeRect(-propW / 2, -propH / 2, propW, propH);
+      ctx.strokeRect(-pivotOffsetX, -pivotOffsetY, propW, propH);
     }
 
     ctx.restore();
@@ -127,7 +129,7 @@ export function renderToken(
     // Render name label for props when selected or GM
     if (isSelected && token.name) {
       const displayName = token.locked ? `🔒 ${token.name}` : token.name;
-      renderTokenLabel(ctx, displayName, cx, cy + propH / 2 + 12);
+      renderTokenLabel(ctx, displayName, pivotX, pivotY + propH - pivotOffsetY + 12);
     }
     return;
   }
@@ -152,6 +154,29 @@ export function renderToken(
     ctx.shadowBlur = 12;
     ctx.stroke();
     ctx.shadowBlur = 0;
+  }
+
+  // Coherency Warning Halo (OB-156)
+  if (token.isOutOfCoherency) {
+    ctx.save();
+    traceTokenShape(ctx, shape, radius + 7);
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 3;
+    ctx.shadowColor = '#ef4444';
+    ctx.shadowBlur = 10;
+    ctx.setLineDash([5, 3]);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Unit Squad Halo (OB-156)
+  if (token.unitHaloColor) {
+    ctx.save();
+    traceTokenShape(ctx, shape, radius + 2);
+    ctx.strokeStyle = token.unitHaloColor;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
   }
 
   // 2. Token Base Background Fill
@@ -193,10 +218,12 @@ export function renderToken(
   ctx.restore();
 
   // 4. Outer Ring
-  traceTokenShape(ctx, shape, radius - bWidth / 2);
-  ctx.strokeStyle = token.ringColor || '#64748b';
-  ctx.lineWidth = bWidth;
-  ctx.stroke();
+  if (token.ringColor !== 'transparent') {
+    traceTokenShape(ctx, shape, radius - bWidth / 2);
+    ctx.strokeStyle = token.ringColor || '#64748b';
+    ctx.lineWidth = bWidth;
+    ctx.stroke();
+  }
 
   // 5. Conditions / Statuses
   if (token.conditions && token.conditions.length > 0) {
@@ -326,11 +353,13 @@ function renderConditionBadges(ctx: CanvasRenderingContext2D, conditions: string
   const angleStep = Math.PI / 6;
 
   conditions.forEach((cond, i) => {
-    const style = CONDITION_STYLES[cond] || {
+    const [label, countStr] = cond.split(':');
+    const style = CONDITION_STYLES[label] || {
       bg: '#6366f1',
       text: '#ffffff',
-      code: cond.slice(0, 2).toUpperCase(),
+      code: label.slice(0, 2).toUpperCase(),
     };
+    const displayCode = countStr !== undefined ? `${style.code.slice(0, 1)}${countStr}` : style.code;
 
     const angle = startAngle + i * angleStep;
     const bx = Math.cos(angle) * (radius - 2);
@@ -349,7 +378,78 @@ function renderConditionBadges(ctx: CanvasRenderingContext2D, conditions: string
     ctx.font = `bold ${Math.max(9, badgeRadius * 0.95)}px Inter, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(style.code, bx, by);
+    ctx.fillText(displayCode, bx, by);
     ctx.restore();
   });
 }
+
+/**
+ * Determines whether a given world coordinate falls inside a token's visual hitbox (OB-194).
+ *
+ * Requirements:
+ * - Circular tokens: anywhere within its circular ring border (radius = size * gridSize / 2).
+ * - Square / rounded tokens: anywhere within its rectangular border (|localX| <= radius && |localY| <= radius).
+ * - Polygonal tokens (hexagon, octagon): anywhere within its circumscribed polygon border.
+ * - Props and modular tiles: anywhere within its full rectangular bounds taking pivot and rotation into account.
+ * - Multi-tile tokens (e.g. size 2, 3, etc.) are properly centered at (x + propW / 2, y + propH / 2).
+ */
+export function isPointInToken(
+  worldPos: { x: number; y: number },
+  tok: Token,
+  gridSize: number
+): boolean {
+  const isProp = Boolean(tok.isProp);
+  const { pivotOffsetX, pivotOffsetY, pivotX, pivotY, propW, propH } = getTokenPivot(tok, gridSize);
+
+  // Props and modular dungeon tiles
+  if (isProp) {
+    const dx = worldPos.x - pivotX;
+    const dy = worldPos.y - pivotY;
+    const rotRad = ((tok.rotation || 0) * Math.PI) / 180;
+    const localX = dx * Math.cos(-rotRad) - dy * Math.sin(-rotRad);
+    const localY = dx * Math.sin(-rotRad) + dy * Math.cos(-rotRad);
+
+    return (
+      localX >= -pivotOffsetX &&
+      localX <= -pivotOffsetX + propW &&
+      localY >= -pivotOffsetY &&
+      localY <= -pivotOffsetY + propH
+    );
+  }
+
+  // Non-prop tokens are centered at (cx, cy) and rotated around (cx, cy)
+  const cx = tok.x + propW / 2;
+  const cy = tok.y + propH / 2;
+  const dx = worldPos.x - cx;
+  const dy = worldPos.y - cy;
+  const rotRad = ((tok.rotation || 0) * Math.PI) / 180;
+  const localX = dx * Math.cos(-rotRad) - dy * Math.sin(-rotRad);
+  const localY = dx * Math.sin(-rotRad) + dy * Math.cos(-rotRad);
+
+  const radius = ((tok.size ?? 1) * gridSize) / 2;
+  const shape = tok.clipShape || (tok.clipCircle === false ? 'square' : 'circle');
+
+  switch (shape) {
+    case 'square':
+    case 'rounded':
+      return Math.abs(localX) <= radius && Math.abs(localY) <= radius;
+    case 'hexagon': {
+      const apothem = (radius * Math.sqrt(3)) / 2;
+      return (
+        Math.abs(localY) <= apothem &&
+        Math.abs(localX * (Math.sqrt(3) / 2) + localY * 0.5) <= apothem &&
+        Math.abs(localX * (Math.sqrt(3) / 2) - localY * 0.5) <= apothem
+      );
+    }
+    case 'octagon': {
+      const apothem = radius * Math.cos(Math.PI / 8);
+      const d1 = Math.abs(localX * Math.SQRT1_2 + localY * Math.SQRT1_2);
+      const d2 = Math.abs(localX * Math.SQRT1_2 - localY * Math.SQRT1_2);
+      return Math.abs(localX) <= apothem && Math.abs(localY) <= apothem && d1 <= apothem && d2 <= apothem;
+    }
+    case 'circle':
+    default:
+      return Math.hypot(localX, localY) <= radius;
+  }
+}
+

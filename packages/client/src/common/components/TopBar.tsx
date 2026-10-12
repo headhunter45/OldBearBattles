@@ -1,8 +1,17 @@
+import { Player } from '@oldbear/shared';
+import {
+  Check,
+  Menu,
+  MessageSquareHeart,
+  Settings,
+  Share2,
+  Swords,
+} from 'lucide-react';
 import React, { useState } from 'react';
-import { Share2, Menu, Check, MessageSquareHeart } from 'lucide-react';
-import { Player, GameMap } from '@oldbear/shared';
-import { VoiceState } from '../network/VoiceManager.js';
+import { isSingleGameModeEnforced, switchGameMode } from '../../App.js';
+import { useFeatureFlag } from '../config/featureFlags.js';
 import { FULL_VERSION_STRING } from '../config/version.js';
+import { VoiceState } from '../network/VoiceManager.js';
 
 interface TopBarProps {
   roomName: string;
@@ -21,6 +30,7 @@ interface TopBarProps {
   onOpenInitiative: () => void;
   onOpenCharacter: () => void;
   onOpenMaps: () => void;
+  onOpenSceneSettings?: () => void;
   onOpenSoundboard: () => void;
   onOpenBackup?: () => void;
   onAddNewToken: () => void;
@@ -44,12 +54,14 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenInitiative,
   onOpenCharacter,
   onOpenMaps,
+  onOpenSceneSettings,
   onOpenSoundboard,
   onOpenBackup,
   onAddNewToken,
   onToggleMobileDrawer,
 }) => {
   const [copied, setCopied] = useState(false);
+  const isBrawlEnabled = useFeatureFlag('brawl_mode');
 
   const copyInviteLink = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -87,24 +99,18 @@ export const TopBar: React.FC<TopBarProps> = ({
           <Menu size={18} />
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <div
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <img
+            src="/logo-transparent/icon-192x192.png"
+            alt="Old Bear Battles"
             style={{
               width: '28px',
               height: '28px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--accent-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 800,
-              fontSize: '14px',
-              color: 'white',
-              boxShadow: '0 0 10px var(--accent-glow)',
+              objectFit: 'contain',
+              filter: 'drop-shadow(0 0 6px var(--accent-glow))',
+              flexShrink: 0,
             }}
-          >
-            🐻
-          </div>
+          />
           <div
             style={{
               display: 'flex',
@@ -165,11 +171,56 @@ export const TopBar: React.FC<TopBarProps> = ({
             fontSize: '0.85rem',
           }}
         >
-          <span style={{ color: 'var(--text-muted)' }}>Map:</span>
+          <span style={{ color: 'var(--text-muted)' }}>Scene:</span>
           <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
             {activeMapName}
           </span>
+          {isGm && onOpenSceneSettings && (
+            <button
+              className="btn-icon"
+              onClick={onOpenSceneSettings}
+              title="Scene Settings"
+              aria-label="Scene Settings"
+              style={{
+                width: '24px',
+                height: '24px',
+                padding: 0,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--text-secondary)',
+                borderRadius: 'var(--radius-sm)',
+                cursor: 'pointer',
+              }}
+            >
+              <Settings size={14} />
+            </button>
+          )}
         </div>
+
+        {!isSingleGameModeEnforced() && isBrawlEnabled && (
+          <button
+            className="btn btn-glass"
+            onClick={() => switchGameMode('brawl')}
+            title="Switch to Wargaming Mode (Brawl)"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              color: '#f59e0b',
+              border: '1px solid rgba(245, 158, 11, 0.35)',
+              background: 'rgba(245, 158, 11, 0.12)',
+              padding: '3px 8px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+            }}
+          >
+            <Swords size={12} />
+            <span>Brawl</span>
+          </button>
+        )}
 
         {voiceState?.isAudioStreaming && (
           <div

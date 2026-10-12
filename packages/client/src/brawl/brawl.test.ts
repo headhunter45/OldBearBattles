@@ -115,4 +115,66 @@ describe('Brawl Tabletop Wargaming Module (OB-136)', () => {
     assert.strictEqual(phases[currentPhaseIndex], 'Command');
     assert.strictEqual(currentRound, 2);
   });
+
+  it('persists and loads brawl army to and from localStorage (OB-161)', async () => {
+    const {
+      loadSavedBrawlArmy,
+      saveBrawlArmy,
+      DEFAULT_SAMPLE_ARMY,
+      BRAWL_ARMY_STORAGE_KEY,
+    } = await import('./components/ArmyRosterFlyout.js');
+
+    // Setup global window mock
+    const storage: Record<string, string> = {};
+    (globalThis as any).window = {
+      localStorage: {
+        getItem: (k: string) => storage[k] || null,
+        setItem: (k: string, v: string) => {
+          storage[k] = v;
+        },
+        removeItem: (k: string) => {
+          delete storage[k];
+        },
+      },
+    };
+
+    try {
+      // 1. Initial load with empty storage returns default sample army
+      const initial = loadSavedBrawlArmy();
+      assert.strictEqual(initial.id, DEFAULT_SAMPLE_ARMY.id);
+      assert.strictEqual(initial.name, DEFAULT_SAMPLE_ARMY.name);
+
+      // 2. Saving custom imported army
+      const customArmy: WargameArmy = {
+        id: 'imported_army_123',
+        name: 'Thousand Sons 1000pt',
+        faction: 'Chaos',
+        detachment: 'Cult of Magic',
+        pointsLimit: 1000,
+        units: [
+          {
+            id: 'u_ahriman',
+            name: 'Ahriman on Disc',
+            armyId: 'imported_army_123',
+            points: 140,
+            coherencyDistanceInches: 2,
+            models: [],
+            baseActions: [],
+          },
+        ],
+      };
+
+      saveBrawlArmy(customArmy);
+      assert.ok(storage[BRAWL_ARMY_STORAGE_KEY]);
+
+      // 3. Loading retrieves the saved custom army
+      const loaded = loadSavedBrawlArmy();
+      assert.strictEqual(loaded.id, 'imported_army_123');
+      assert.strictEqual(loaded.name, 'Thousand Sons 1000pt');
+      assert.strictEqual(loaded.units.length, 1);
+    } finally {
+      delete (globalThis as any).window;
+    }
+  });
 });
+

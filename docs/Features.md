@@ -5,24 +5,29 @@ Welcome to the comprehensive feature guide for **Old Bear Battles**, a modern, l
 ---
 
 ## Table of Contents
-
-1. [Canvas Engine & Tactical Battlemap](#1-canvas-engine--tactical-battlemap)
-2. [Fog of War & Vision](#2-fog-of-war--vision)
-3. [Drawing Tools, Spell Templates & Markers](#3-drawing-tools-spell-templates--markers)
-4. [Tokens & Props Management](#4-tokens--props-management)
-5. [Floating Asset Manager & Library](#5-floating-asset-manager--library)
-6. [D&D Beyond Character Integration](#6-dd-beyond-character-integration)
-7. [TetraCube Monster & NPC Import](#7-tetracube-monster--npc-import)
-8. [Chat System & Slash Commands](#8-chat-system--slash-commands)
-9. [Initiative Tracker](#9-initiative-tracker)
-10. [Dice Roller & Roll History](#10-dice-roller--roll-history)
-11. [WebRTC Voice Chat & Communications](#11-webrtc-voice-chat--communications)
-12. [Soundboard & Custom Audio](#12-soundboard--custom-audio)
-13. [Discord Webhook Sync](#13-discord-webhook-sync)
-14. [Terminal / CLI Client (`oldbearchat`)](#14-terminal--cli-client-oldbearchat)
-15. [Data Backup, Export & Migration](#15-data-backup-export--migration)
-16. [User Interface, Navigation & Hotkeys](#16-user-interface-navigation--hotkeys)
-17. [DevOps, Docker & Deployment](#17-devops-docker--deployment)
+- [🐻 Old Bear Battles - Features Documentation](#-old-bear-battles---features-documentation)
+  - [Table of Contents](#table-of-contents)
+  - [1. Canvas Engine \& Tactical Battlemap](#1-canvas-engine--tactical-battlemap)
+  - [2. Fog of War \& Vision](#2-fog-of-war--vision)
+  - [3. Drawing Tools, Spell Templates \& Markers](#3-drawing-tools-spell-templates--markers)
+    - [Dual Cone / Triangle Visualization (Task #118)](#dual-cone--triangle-visualization-task-118)
+    - [Persistence System (`📌 Persist` vs. `⚡ Quick Ping`)](#persistence-system--persist-vs--quick-ping)
+  - [4. Tokens \& Props Management](#4-tokens--props-management)
+    - [Token Management](#token-management)
+    - [Props System (Tasks #107, #113, #114, #115)](#props-system-tasks-107-113-114-115)
+  - [5. Floating Asset Manager \& Library](#5-floating-asset-manager--library)
+  - [6. D\&D Beyond Character Integration](#6-dd-beyond-character-integration)
+  - [7. TetraCube Monster \& NPC Import](#7-tetracube-monster--npc-import)
+  - [8. Chat System \& Slash Commands](#8-chat-system--slash-commands)
+  - [9. Initiative Tracker](#9-initiative-tracker)
+  - [10. Dice Roller \& Roll History](#10-dice-roller--roll-history)
+  - [11. WebRTC Voice Chat \& Communications](#11-webrtc-voice-chat--communications)
+  - [12. Soundboard \& Custom Audio](#12-soundboard--custom-audio)
+  - [13. Discord Webhook Sync (Task #105)](#13-discord-webhook-sync-task-105)
+  - [14. Terminal / CLI Client (`oldbearchat`) (Task #106)](#14-terminal--cli-client-oldbearchat-task-106)
+  - [15. Data Backup, Export \& Migration (Task #11)](#15-data-backup-export--migration-task-11)
+  - [16. User Interface, Navigation \& Hotkeys](#16-user-interface-navigation--hotkeys)
+  - [17. DevOps, Docker \& Deployment](#17-devops-docker--deployment)
 
 ---
 
@@ -102,6 +107,7 @@ Accessible via the Drawing Tools sub-menu in the left HUD or number keys (`1` - 
 - **Movement Lock (`🔒`)**: Lock tokens or props to prevent accidental dragging during gameplay.
 - **Multi-Token Assignment**: GMs can assign control of any token to specific players or assign multiple tokens to one player.
 - **Combat Stats**: Inline tracking for Current HP, Max HP, Temporary HP, Armor Class (AC), Speed, and standard 5e Condition Badges (Blinded, Charmed, Concentrating, etc.).
+- **Standalone Attacks & Actions (OB-200)**: Add, edit, and roll attacks directly on any token without requiring a synced D&D Beyond or Pathbuilder character sheet. Attacks can be managed in Full Token Settings, viewed and rolled via the `Swords` button on the floating HUD, added in the Character Flyout for unsynced tokens, or appended directly from chat statblock cards.
 
 ### Props System (Tasks #107, #113, #114, #115)
 

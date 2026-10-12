@@ -1,4 +1,5 @@
-import { ScreenMarker } from '@oldbear/shared';
+import { ScreenMarker, Token } from '@oldbear/shared';
+export { isPointInToken } from './TokenRenderer.js';
 
 export function renderMarkers(
   ctx: CanvasRenderingContext2D,
@@ -6,7 +7,8 @@ export function renderMarkers(
   now: number,
   gridSize: number = 50,
   scaleFtPerCell: number = 5,
-  selectedMarkerId: string | null = null
+  selectedMarkerId: string | null = null,
+  tokens: Record<string, Token> = {}
 ): ScreenMarker[] {
   // Return non-expired or persistent markers
   const activeMarkers: ScreenMarker[] = [];
@@ -35,16 +37,25 @@ export function renderMarkers(
         renderArrow(ctx, marker, isSelected);
         break;
       case 'crosshair':
-        renderCrosshair(ctx, marker, elapsed, gridSize, scaleFtPerCell, isSelected);
+        renderCrosshair(ctx, marker, elapsed, gridSize, scaleFtPerCell, isSelected, tokens);
         break;
       case 'circle':
-        renderCircle(ctx, marker, gridSize, scaleFtPerCell, isSelected);
+        renderCircle(ctx, marker, gridSize, scaleFtPerCell, isSelected, tokens);
         break;
       case 'rectangle':
-        renderRectangle(ctx, marker, gridSize, scaleFtPerCell, isSelected);
+        renderRectangle(ctx, marker, gridSize, scaleFtPerCell, isSelected, tokens);
         break;
       case 'cone':
-        renderCone(ctx, marker, gridSize, scaleFtPerCell, isSelected);
+        renderCone(ctx, marker, gridSize, scaleFtPerCell, isSelected, tokens);
+        break;
+      case 'tether':
+        renderTether(ctx, marker, tokens, gridSize, scaleFtPerCell, isSelected);
+        break;
+      case 'clock':
+        renderClock(ctx, marker, isSelected);
+        break;
+      case 'spray':
+        renderSpray(ctx, marker, isSelected, tokens, gridSize, scaleFtPerCell);
         break;
     }
 
@@ -139,15 +150,361 @@ function renderArrow(ctx: CanvasRenderingContext2D, marker: ScreenMarker, isSele
   renderUserLabel(ctx, `${labelPrefix}${marker.userName}`, fromX, fromY - 10, marker.color);
 }
 
+export function getMarkerAnchorPosition(
+  marker: ScreenMarker,
+  tokens: Record<string, Token> = {},
+  gridSize: number = 50
+): { x: number; y: number; baseRadius: number; isAttached: boolean } {
+  if (marker.attachedTokenId && tokens[marker.attachedTokenId]) {
+    const t = tokens[marker.attachedTokenId];
+    const isProp = Boolean(t.isProp);
+    const w = (isProp && t.propWidth !== undefined ? t.propWidth : t.size) * gridSize;
+    const h = (isProp && t.propHeight !== undefined ? t.propHeight : t.size) * gridSize;
+    return {
+      x: t.x + w / 2,
+      y: t.y + h / 2,
+      baseRadius: Math.min(w, h) / 2,
+      isAttached: true,
+    };
+  }
+  return {
+    x: marker.x,
+    y: marker.y,
+    baseRadius: 0,
+    isAttached: false,
+  };
+}
+
+export function duplicateAttachedMarkers(
+  sourceTokenId: string,
+  targetToken: Token,
+  existingMarkers: ScreenMarker[]
+): ScreenMarker[] {
+  const attached = existingMarkers.filter((m) => m.attachedTokenId === sourceTokenId);
+  return attached.map((m) => ({
+    ...m,
+    id: `marker-${crypto.randomUUID()}`,
+    attachedTokenId: targetToken.id,
+    x: targetToken.x,
+    y: targetToken.y,
+    createdAt: Date.now(),
+  }));
+}
+
+/**
+ * Sorts tokens by visual z-index elevation (OB-126/OB-127):
+ * 1. Base layer order: map layer (0) < props (1) < character tokens (2).
+ * 2. Within each layer, elevated by interaction: unselected (0) < selected (1) < dragging (2).
+ * 3. Preserves stable relative ordering among peers at the same elevation rank.
+ */
+export function sortTokensByZIndex(
+  tokens: Token[],
+  selectedTokenIds: string[] = [],
+  draggingTokenId?: string | null
+): Token[] {
+  const selectedSet = new Set(selectedTokenIds);
+  return tokens
+    .map((token, index) => ({ token, index }))
+    .sort((a, b) => {
+      // Layer rank
+      const getLayerRank = (t: Token) => (t.layer === 'map' ? 0 : t.isProp || t.layer === 'prop' ? 1 : 2);
+      const layerDiff = getLayerRank(a.token) - getLayerRank(b.token);
+      if (layerDiff !== 0) return layerDiff;
+
+      // Status rank within layer: dragging (2) > selected (1) > normal (0)
+      const getStatusRank = (t: Token) => {
+        if (draggingTokenId && t.id === draggingTokenId) return 2;
+        if (selectedSet.has(t.id)) return 1;
+        return 0;
+      };
+      const statusDiff = getStatusRank(a.token) - getStatusRank(b.token);
+      if (statusDiff !== 0) return statusDiff;
+
+      return a.index - b.index;
+    })
+    .map((item) => item.token);
+}
+
+/**
+ * Sorts persistent indicators by visual z-index elevation (OB-126/OB-127):
+ * - Rank 0: Unselected indicators (and indicators attached to unselected tokens).
+ * - Rank 1: Indicators attached to a selected or dragged token (comes forward above other indicators).
+ * - Rank 2: The actively selected indicator (comes forward above attached and unselected indicators).
+ * - Rank 3: The actively dragged indicator (comes forward on top of all indicators).
+ * - Preserves stable relative ordering among peers at the same elevation rank.
+ */
+export function sortMarkersByZIndex(
+  markers: ScreenMarker[],
+  options: {
+    selectedMarkerId?: string | null;
+    draggingMarkerId?: string | null;
+    selectedTokenIds?: string[];
+    draggingTokenId?: string | null;
+  } = {}
+): ScreenMarker[] {
+  const {
+    selectedMarkerId,
+    draggingMarkerId,
+    selectedTokenIds = [],
+    draggingTokenId,
+  } = options;
+
+  const relevantTokenIds = new Set<string>();
+  for (const id of selectedTokenIds) {
+    if (id) relevantTokenIds.add(id);
+  }
+  if (draggingTokenId) relevantTokenIds.add(draggingTokenId);
+
+  const getMarkerRank = (m: ScreenMarker): number => {
+    // Rank 3: Actively dragged marker
+    if (draggingMarkerId && m.id === draggingMarkerId) return 3;
+    // Rank 2: Actively selected marker
+    if (selectedMarkerId && m.id === selectedMarkerId) return 2;
+    // Rank 1: Attached to a selected or dragged token (start token or tether target)
+    if (
+      (m.attachedTokenId && relevantTokenIds.has(m.attachedTokenId)) ||
+      (m.tetherTargetId && relevantTokenIds.has(m.tetherTargetId))
+    ) {
+      return 1;
+    }
+    // Rank 0: Unselected / unattached marker
+    return 0;
+  };
+
+  return markers
+    .map((marker, index) => ({ marker, index }))
+    .sort((a, b) => {
+      const rankDiff = getMarkerRank(a.marker) - getMarkerRank(b.marker);
+      if (rankDiff !== 0) return rankDiff;
+      return a.index - b.index;
+    })
+    .map((item) => item.marker);
+}
+
+/**
+ * Reorders a Record<string, Token> so the specified token ID is at the end (highest insertion order).
+ */
+export function bringTokenToFront(
+  tokens: Record<string, Token>,
+  tokenId: string
+): Record<string, Token> {
+  if (!tokens[tokenId]) return tokens;
+  const token = tokens[tokenId];
+  const next = { ...tokens };
+  delete next[tokenId];
+  next[tokenId] = token;
+  return next;
+}
+
+/**
+ * Reorders a ScreenMarker array so the specified marker ID is moved towards the end (top of draw order).
+ */
+export function bringMarkerToFront(
+  markers: ScreenMarker[],
+  markerId: string
+): ScreenMarker[] {
+  const index = markers.findIndex((m) => m.id === markerId);
+  if (index === -1 || index === markers.length - 1) return markers;
+  const target = markers[index];
+  return [...markers.slice(0, index), ...markers.slice(index + 1), target];
+}
+
+function distToSegment(p: { x: number; y: number }, v: { x: number; y: number }, w: { x: number; y: number }): number {
+  const l2 = Math.hypot(v.x - w.x, v.y - w.y) ** 2;
+  if (l2 === 0) return Math.hypot(p.x - v.x, p.y - v.y);
+  let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p.x - (v.x + t * (w.x - v.x)), p.y - (v.y + t * (w.y - v.y)));
+}
+
+/**
+ * Hit-testing helper for screen markers.
+ */
+export function isPointInMarker(
+  point: { x: number; y: number },
+  marker: ScreenMarker,
+  tokens: Record<string, Token> = {},
+  gridSize: number = 50
+): boolean {
+  const { x: mx, y: my, baseRadius, isAttached } = getMarkerAnchorPosition(marker, tokens, gridSize);
+
+  if (marker.type === 'circle') {
+    const rad = (marker.radius || 50) + (marker.anchor === 'edge' && isAttached ? baseRadius : 0);
+    return Math.hypot(point.x - mx, point.y - my) <= rad;
+  } else if (marker.type === 'rectangle') {
+    const w = marker.width || 100;
+    const h = marker.height || 100;
+    const minX = Math.min(mx, mx + w);
+    const maxX = Math.max(mx, mx + w);
+    const minY = Math.min(my, my + h);
+    const maxY = Math.max(my, my + h);
+    return point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY;
+  } else if (marker.type === 'arrow') {
+    const tx = marker.targetX ?? marker.x;
+    const ty = marker.targetY ?? marker.y;
+    return distToSegment(point, { x: mx, y: my }, { x: tx, y: ty }) <= 20;
+  } else if (marker.type === 'tether') {
+    let tx = marker.targetX ?? marker.x;
+    let ty = marker.targetY ?? marker.y;
+    if (marker.tetherTargetId && tokens[marker.tetherTargetId]) {
+      const t2 = tokens[marker.tetherTargetId];
+      const w2 = ((t2.isProp && t2.propWidth !== undefined ? t2.propWidth : t2.size) * gridSize) / 2;
+      const h2 = ((t2.isProp && t2.propHeight !== undefined ? t2.propHeight : t2.size) * gridSize) / 2;
+      tx = t2.x + w2;
+      ty = t2.y + h2;
+    }
+    return distToSegment(point, { x: mx, y: my }, { x: tx, y: ty }) <= 16;
+  } else if (marker.type === 'cone') {
+    const rad = (marker.radius || 100) + (marker.anchor === 'edge' && isAttached ? baseRadius : 0);
+    const dist = Math.hypot(point.x - mx, point.y - my);
+    if (dist <= 25) return true; // Caster origin
+    const thetaDeg = (Math.atan2(point.y - my, point.x - mx) * 180) / Math.PI;
+    const centerDeg = marker.angle ?? 0;
+    const diff = Math.abs(((thetaDeg - centerDeg + 540) % 360) - 180);
+    const halfSpread = (marker.spreadAngle ?? 60) / 2;
+    if (diff <= halfSpread) {
+      const diffRad = (diff * Math.PI) / 180;
+      if (dist <= rad || (dist * Math.cos(diffRad) <= rad && dist <= rad * 1.5)) {
+        return true;
+      }
+    }
+    return false;
+  } else if (marker.type === 'crosshair') {
+    const rad = Math.max(30, marker.radius || 18);
+    return Math.hypot(point.x - mx, point.y - my) <= rad;
+  } else if (marker.type === 'clock') {
+    const rad = marker.radius || 60;
+    return Math.hypot(point.x - mx, point.y - my) <= rad;
+  } else if (marker.type === 'spray') {
+    const rad = marker.radius || 50;
+    if (marker.sprayShape === 'square') {
+      const rotRad = ((marker.rotation ?? marker.angle ?? 0) * Math.PI) / 180;
+      const dx = point.x - mx;
+      const dy = point.y - my;
+      const localX = Math.cos(-rotRad) * dx - Math.sin(-rotRad) * dy;
+      const localY = Math.sin(-rotRad) * dx + Math.cos(-rotRad) * dy;
+      return Math.abs(localX) <= rad && Math.abs(localY) <= rad;
+    } else {
+      return Math.hypot(point.x - mx, point.y - my) <= rad;
+    }
+  }
+  return false;
+}
+
+export function renderTether(
+  ctx: CanvasRenderingContext2D,
+  marker: ScreenMarker,
+  tokens: Record<string, Token> = {},
+  gridSize: number = 50,
+  scaleFtPerCell: number = 5,
+  isSelected?: boolean
+) {
+  let x1 = marker.x;
+  let y1 = marker.y;
+  if (marker.attachedTokenId && tokens[marker.attachedTokenId]) {
+    const t = tokens[marker.attachedTokenId];
+    const isProp = Boolean(t.isProp);
+    const w = (isProp && t.propWidth !== undefined ? t.propWidth : t.size) * gridSize;
+    const h = (isProp && t.propHeight !== undefined ? t.propHeight : t.size) * gridSize;
+    x1 = t.x + w / 2;
+    y1 = t.y + h / 2;
+  }
+
+  let x2 = marker.targetX ?? marker.x;
+  let y2 = marker.targetY ?? marker.y;
+  if (marker.tetherTargetId && tokens[marker.tetherTargetId]) {
+    const t2 = tokens[marker.tetherTargetId];
+    const isProp2 = Boolean(t2.isProp);
+    const w2 = (isProp2 && t2.propWidth !== undefined ? t2.propWidth : t2.size) * gridSize;
+    const h2 = (isProp2 && t2.propHeight !== undefined ? t2.propHeight : t2.size) * gridSize;
+    x2 = t2.x + w2 / 2;
+    y2 = t2.y + h2 / 2;
+  }
+
+  const dist = Math.hypot(x2 - x1, y2 - y1);
+  const color = marker.color || '#38bdf8';
+  const strokeWidth = marker.strokeWidth ?? 2.5;
+
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = isSelected ? strokeWidth + 2 : strokeWidth;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = isSelected ? 12 : 6;
+
+  if (marker.tetherStyle === 'wiggly') {
+    const freq = marker.tetherFrequency ?? 24;
+    const amp = marker.tetherAmplitude ?? 10;
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    const cosA = Math.cos(angle);
+    const sinA = Math.sin(angle);
+
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    const steps = Math.max(10, Math.floor(dist / 4));
+    for (let i = 1; i <= steps; i++) {
+      const s = (i / steps) * dist;
+      const envelope = Math.sin((Math.PI * s) / Math.max(1, dist));
+      const wave = Math.sin((s * 2 * Math.PI) / freq) * amp * envelope;
+      const px = x1 + s * cosA - wave * sinA;
+      const py = y1 + s * sinA + wave * cosA;
+      ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+
+  // Endpoints dots / selection handles
+  if (isSelected) {
+    // Start handle
+    ctx.beginPath();
+    ctx.arc(x1, y1, 8, 0, Math.PI * 2);
+    ctx.fillStyle = marker.attachedTokenId ? '#10b981' : color;
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // End handle
+    ctx.beginPath();
+    ctx.arc(x2, y2, 8, 0, Math.PI * 2);
+    ctx.fillStyle = marker.tetherTargetId ? '#10b981' : color;
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.arc(x1, y1, 4.5, 0, Math.PI * 2);
+    ctx.arc(x2, y2, 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+
+  const distFt = Math.round((dist / gridSize) * scaleFtPerCell);
+  const midX = (x1 + x2) / 2;
+  const midY = (y1 + y2) / 2;
+  const labelPrefix = marker.locked ? '🔒 ' : '';
+  const label = marker.label ? `${marker.label}: ${distFt} ft` : `${distFt} ft tether`;
+  renderUserLabel(ctx, `${labelPrefix}${label}`, midX, midY - 12, color);
+
+  ctx.restore();
+}
+
 function renderCrosshair(
   ctx: CanvasRenderingContext2D,
   marker: ScreenMarker,
   elapsed: number,
   gridSize: number = 50,
   scaleFtPerCell: number = 5,
-  isSelected?: boolean
+  isSelected?: boolean,
+  tokens: Record<string, Token> = {}
 ) {
-  const { x, y, color } = marker;
+  const { x, y } = getMarkerAnchorPosition(marker, tokens, gridSize);
+  const color = marker.color;
   const minSize = 18;
   const size = Math.max(minSize, marker.radius ?? minSize);
   const pulse = Math.sin(elapsed / 150) * 3;
@@ -164,12 +521,11 @@ function renderCrosshair(
     ctx.restore();
   }
 
-  // Semi-transparent target area fill when expanded beyond minimum size
   if (size > minSize) {
     ctx.save();
     ctx.beginPath();
     ctx.arc(x, y, size, 0, Math.PI * 2);
-    ctx.fillStyle = hexToRgba(color, 0.15);
+    ctx.fillStyle = hexToRgba(color, marker.opacity ?? 0.15);
     ctx.fill();
     ctx.restore();
   }
@@ -187,7 +543,6 @@ function renderCrosshair(
   ctx.lineTo(x, y + size);
   ctx.stroke();
 
-  // If expanded beyond 36px, draw inner concentric target ring
   if (size >= 36) {
     ctx.save();
     ctx.beginPath();
@@ -199,14 +554,13 @@ function renderCrosshair(
     ctx.restore();
   }
 
-  // Outer pulsating circle
   ctx.beginPath();
   ctx.arc(x, y, size + 4 + pulse, 0, Math.PI * 2);
   ctx.stroke();
 
   const labelPrefix = marker.locked ? '🔒 ' : marker.persist ? '📌 ' : '';
-  const label = size > minSize ? `${labelPrefix}${marker.userName}: ${radiusFt} ft target` : `${labelPrefix}${marker.userName}`;
-  renderUserLabel(ctx, label, x, y - size - 12, color);
+  const labelText = marker.label ? `${marker.label}` : size > minSize ? `${marker.userName}: ${radiusFt} ft target` : `${marker.userName}`;
+  renderUserLabel(ctx, `${labelPrefix}${labelText}`, x, y - size - 12, color);
 }
 
 function renderCircle(
@@ -214,10 +568,15 @@ function renderCircle(
   marker: ScreenMarker,
   gridSize: number,
   scaleFtPerCell: number,
-  isSelected?: boolean
+  isSelected?: boolean,
+  tokens: Record<string, Token> = {}
 ) {
-  const { x, y, radius = 50, color } = marker;
-  const radiusFt = Math.round((radius / gridSize) * scaleFtPerCell);
+  const { x, y, baseRadius, isAttached } = getMarkerAnchorPosition(marker, tokens, gridSize);
+  const rawRadius = marker.radius || 50;
+  const effectiveRadius = marker.anchor === 'edge' && isAttached ? rawRadius + baseRadius : rawRadius;
+  const radiusFt = Math.round((rawRadius / gridSize) * scaleFtPerCell);
+  const color = marker.color;
+  const fillAlpha = marker.opacity ?? 0.2;
 
   if (isSelected) {
     ctx.save();
@@ -225,14 +584,26 @@ function renderCircle(
     ctx.lineWidth = 3.5;
     ctx.setLineDash([6, 6]);
     ctx.beginPath();
-    ctx.arc(x, y, radius + 5, 0, Math.PI * 2);
+    ctx.arc(x, y, effectiveRadius + 5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Base edge guide ring when anchored to token edge
+  if (marker.anchor === 'edge' && isAttached && baseRadius > 0) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, baseRadius, 0, Math.PI * 2);
+    ctx.strokeStyle = hexToRgba(color, 0.45);
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 3]);
     ctx.stroke();
     ctx.restore();
   }
 
   ctx.beginPath();
-  ctx.arc(x, y, radius, 0, Math.PI * 2);
-  ctx.fillStyle = hexToRgba(color, 0.2);
+  ctx.arc(x, y, effectiveRadius, 0, Math.PI * 2);
+  ctx.fillStyle = hexToRgba(color, fillAlpha);
   ctx.fill();
 
   ctx.strokeStyle = color;
@@ -250,8 +621,8 @@ function renderCircle(
 
   // Radius label
   const labelPrefix = marker.locked ? '🔒 ' : marker.persist ? '📌 ' : '';
-  const label = `${radiusFt} ft radius`;
-  renderUserLabel(ctx, `${labelPrefix}${marker.userName}: ${label}`, x, y - radius - 10, color);
+  const labelText = marker.label ? `${marker.label} (${radiusFt} ft)` : `${marker.userName}: ${radiusFt} ft radius`;
+  renderUserLabel(ctx, `${labelPrefix}${labelText}`, x, y - effectiveRadius - 10, color);
 }
 
 function renderRectangle(
@@ -259,11 +630,22 @@ function renderRectangle(
   marker: ScreenMarker,
   gridSize: number,
   scaleFtPerCell: number,
-  isSelected?: boolean
+  isSelected?: boolean,
+  tokens: Record<string, Token> = {}
 ) {
-  const { x, y, width = 100, height = 100, color } = marker;
+  let { x, y } = marker;
+  if (marker.attachedTokenId && tokens[marker.attachedTokenId]) {
+    const t = tokens[marker.attachedTokenId];
+    const isProp = Boolean(t.isProp);
+    const tw = (isProp && t.propWidth !== undefined ? t.propWidth : t.size) * gridSize;
+    const th = (isProp && t.propHeight !== undefined ? t.propHeight : t.size) * gridSize;
+    x = t.x + tw / 2 - (marker.width || 100) / 2;
+    y = t.y + th / 2 - (marker.height || 100) / 2;
+  }
+  const { width = 100, height = 100, color } = marker;
   const widthFt = Math.round((Math.abs(width) / gridSize) * scaleFtPerCell);
   const heightFt = Math.round((Math.abs(height) / gridSize) * scaleFtPerCell);
+  const fillAlpha = marker.opacity ?? 0.2;
 
   if (isSelected) {
     ctx.save();
@@ -274,7 +656,7 @@ function renderRectangle(
     ctx.restore();
   }
 
-  ctx.fillStyle = hexToRgba(color, 0.2);
+  ctx.fillStyle = hexToRgba(color, fillAlpha);
   ctx.fillRect(x, y, width, height);
 
   ctx.strokeStyle = color;
@@ -285,8 +667,8 @@ function renderRectangle(
   ctx.strokeRect(x, y, width, height);
 
   const labelPrefix = marker.locked ? '🔒 ' : marker.persist ? '📌 ' : '';
-  const label = `${widthFt}ft × ${heightFt}ft`;
-  renderUserLabel(ctx, `${labelPrefix}${marker.userName}: ${label}`, x + width / 2, y - 10, color);
+  const labelText = marker.label ? `${marker.label} (${widthFt}ft × ${heightFt}ft)` : `${marker.userName}: ${widthFt}ft × ${heightFt}ft`;
+  renderUserLabel(ctx, `${labelPrefix}${labelText}`, x + width / 2, y - 10, color);
 }
 
 function renderUserLabel(
@@ -344,14 +726,20 @@ export function renderCone(
   marker: ScreenMarker,
   gridSize: number,
   scaleFtPerCell: number,
-  isSelected?: boolean
+  isSelected?: boolean,
+  tokens: Record<string, Token> = {}
 ) {
-  const { x, y, radius = 100, color } = marker;
+  const { x, y, baseRadius, isAttached } = getMarkerAnchorPosition(marker, tokens, gridSize);
+  const rawRadius = marker.radius || 100;
+  const effectiveRadius = marker.anchor === 'edge' && isAttached ? rawRadius + baseRadius : rawRadius;
+  const radius = effectiveRadius;
+  const color = marker.color;
+  const fillAlpha = marker.opacity ?? 0.22;
   const angleDeg = marker.angle ?? 0;
   const spreadAngle = marker.spreadAngle ?? 60;
   const thetaRad = (angleDeg * Math.PI) / 180;
   const alphaRad = ((spreadAngle / 2) * Math.PI) / 180;
-  const radiusFt = Math.round((radius / gridSize) * scaleFtPerCell);
+  const radiusFt = Math.round((rawRadius / gridSize) * scaleFtPerCell);
 
   const a1x = x + radius * Math.cos(thetaRad - alphaRad);
   const a1y = y + radius * Math.sin(thetaRad - alphaRad);
@@ -380,7 +768,7 @@ export function renderCone(
     ctx.arc(x, y, radius, thetaRad + alphaRad, thetaRad - alphaRad, true);
     ctx.closePath();
 
-    ctx.fillStyle = hexToRgba(accentColor, 0.22);
+    ctx.fillStyle = hexToRgba(accentColor, fillAlpha);
     ctx.fill();
 
     ctx.strokeStyle = accentColor;
@@ -410,7 +798,7 @@ export function renderCone(
   ctx.lineTo(a1x, a1y);
   ctx.arc(x, y, radius, thetaRad - alphaRad, thetaRad + alphaRad, false);
   ctx.closePath();
-  ctx.fillStyle = hexToRgba(color, 0.22);
+  ctx.fillStyle = hexToRgba(color, fillAlpha);
   ctx.fill();
 
   ctx.strokeStyle = color;
@@ -470,9 +858,635 @@ export function renderCone(
 
   // Label
   const labelPrefix = marker.locked ? '🔒 ' : marker.persist ? '📌 ' : '';
-  const label = `${radiusFt} ft cone (${Math.round(spreadAngle)}°)`;
+  const labelText = marker.label ? `${marker.label} (${radiusFt} ft cone)` : `${marker.userName}: ${radiusFt} ft cone (${Math.round(spreadAngle)}°)`;
   const midLabelX = x + (radius * 0.5) * Math.cos(thetaRad);
   const midLabelY = y + (radius * 0.5) * Math.sin(thetaRad) - 12;
-  renderUserLabel(ctx, `${labelPrefix}${marker.userName}: ${label}`, midLabelX, midLabelY, color);
+  renderUserLabel(ctx, `${labelPrefix}${labelText}`, midLabelX, midLabelY, color);
+}
+
+export function renderClock(
+  ctx: CanvasRenderingContext2D,
+  marker: ScreenMarker,
+  isSelected?: boolean
+) {
+  const x = marker.x;
+  const y = marker.y;
+  const radius = marker.radius || 60;
+  const segments = marker.segments && marker.segments > 1 ? marker.segments : 8;
+  const filled = Math.max(0, Math.min(segments, marker.filled ?? 0));
+  const color = marker.color || '#3b82f6';
+  const startAngle = -Math.PI / 2; // 12 o'clock
+  const step = (Math.PI * 2) / segments;
+
+  ctx.save();
+
+  // Shadow
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+  ctx.shadowBlur = 12;
+
+  // Background disk
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+
+  // Draw slices
+  for (let i = 0; i < segments; i++) {
+    const a1 = startAngle + i * step;
+    const a2 = startAngle + (i + 1) * step;
+    const isWedgeFilled = i < filled;
+
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.arc(x, y, radius, a1, a2);
+    ctx.closePath();
+
+    if (isWedgeFilled) {
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.85;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    } else {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.fill();
+    }
+
+    // Radial divider line
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + radius * Math.cos(a1), y + radius * Math.sin(a1));
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // Outer border
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.strokeStyle = isSelected ? '#38bdf8' : 'rgba(255, 255, 255, 0.7)';
+  ctx.lineWidth = isSelected ? 3 : 2;
+  if (isSelected) {
+    ctx.setLineDash([4, 4]);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Center hub circle
+  const hubRadius = radius * 0.28;
+  ctx.beginPath();
+  ctx.arc(x, y, hubRadius, 0, Math.PI * 2);
+  ctx.fillStyle = '#0f172a';
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Fraction text in hub
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `bold ${Math.max(10, Math.round(hubRadius * 0.85))}px Inter, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`${filled}/${segments}`, x, y);
+
+  // Label pill
+  if (marker.label) {
+    ctx.font = 'bold 12px Inter, sans-serif';
+    const textWidth = ctx.measureText(marker.label).width;
+    const paddingX = 10;
+    const paddingY = 4;
+    const pillY = y + radius + 14;
+
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+    ctx.beginPath();
+    if (typeof (ctx as any).roundRect === 'function') {
+      (ctx as any).roundRect(
+        x - textWidth / 2 - paddingX,
+        pillY - 8 - paddingY,
+        textWidth + paddingX * 2,
+        16 + paddingY * 2,
+        6
+      );
+    } else {
+      ctx.rect(
+        x - textWidth / 2 - paddingX,
+        pillY - 8 - paddingY,
+        textWidth + paddingX * 2,
+        16 + paddingY * 2
+      );
+    }
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = '#f8fafc';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(marker.label, x, pillY);
+  }
+
+  ctx.restore();
+}
+
+const sprayImageCache = new Map<string, HTMLImageElement>();
+
+export function getSprayImage(url: string): HTMLImageElement | null {
+  if (!url) return null;
+  let img = sprayImageCache.get(url);
+  if (!img) {
+    if (typeof Image !== 'undefined') {
+      img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = url;
+      sprayImageCache.set(url, img);
+    } else {
+      return null;
+    }
+  }
+  return img.complete && img.naturalWidth > 0 ? img : null;
+}
+
+function drawStar(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  spikes: number,
+  outerRadius: number,
+  innerRadius: number,
+  color: string
+) {
+  let rot = (Math.PI / 2) * 3;
+  let x = cx;
+  let y = cy;
+  const step = Math.PI / spikes;
+
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - outerRadius);
+  for (let i = 0; i < spikes; i++) {
+    x = cx + Math.cos(rot) * outerRadius;
+    y = cy + Math.sin(rot) * outerRadius;
+    ctx.lineTo(x, y);
+    rot += step;
+
+    x = cx + Math.cos(rot) * innerRadius;
+    y = cy + Math.sin(rot) * innerRadius;
+    ctx.lineTo(x, y);
+    rot += step;
+  }
+  ctx.lineTo(cx, cy - outerRadius);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
+function renderHazardStripesDecal(ctx: CanvasRenderingContext2D, radius: number, color: string, isSquare = false) {
+  ctx.save();
+  ctx.beginPath();
+  if (isSquare) {
+    ctx.rect(-radius, -radius, radius * 2, radius * 2);
+  } else {
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  }
+  ctx.clip();
+
+  // Dark caution base
+  ctx.fillStyle = '#111827';
+  ctx.fill();
+
+  // Diagonal warning stripes
+  const stripeWidth = Math.max(12, radius * 0.22);
+  ctx.fillStyle = color || '#f59e0b';
+  for (let d = -radius * 2.5; d <= radius * 2.5; d += stripeWidth * 2) {
+    ctx.beginPath();
+    ctx.moveTo(d, -radius);
+    ctx.lineTo(d + stripeWidth, -radius);
+    ctx.lineTo(d + stripeWidth + radius * 2, radius);
+    ctx.lineTo(d + radius * 2, radius);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // Outer warning border
+  ctx.beginPath();
+  if (isSquare) {
+    ctx.rect(-radius, -radius, radius * 2, radius * 2);
+  } else {
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  }
+  ctx.strokeStyle = color || '#f59e0b';
+  ctx.lineWidth = Math.max(3, radius * 0.05);
+  ctx.stroke();
+}
+
+function renderRadiationDecal(ctx: CanvasRenderingContext2D, radius: number, color: string, isSquare = false) {
+  // Background disk / square
+  ctx.beginPath();
+  if (isSquare) {
+    ctx.rect(-radius, -radius, radius * 2, radius * 2);
+  } else {
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  }
+  ctx.fillStyle = '#1e293b';
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(2.5, radius * 0.04);
+  ctx.stroke();
+
+  // Trefoil 3 blades: 60 degrees each at -90°, 30°, 150°
+  const rInner = radius * 0.28;
+  const rOuter = radius * 0.82;
+  const spanRad = (60 * Math.PI) / 180;
+  const halfSpan = spanRad / 2;
+
+  ctx.fillStyle = color;
+  const bladeAngles = [-Math.PI / 2, Math.PI / 6, (5 * Math.PI) / 6];
+  for (const centerA of bladeAngles) {
+    ctx.beginPath();
+    ctx.arc(0, 0, rOuter, centerA - halfSpan, centerA + halfSpan, false);
+    ctx.arc(0, 0, rInner, centerA + halfSpan, centerA - halfSpan, true);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Center hub
+  ctx.beginPath();
+  ctx.arc(0, 0, radius * 0.18, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.strokeStyle = '#1e293b';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+function renderBiohazardDecal(ctx: CanvasRenderingContext2D, radius: number, color: string, isSquare = false) {
+  // Background disk / square
+  ctx.beginPath();
+  if (isSquare) {
+    ctx.rect(-radius, -radius, radius * 2, radius * 2);
+  } else {
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  }
+  ctx.fillStyle = '#111827';
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(2.5, radius * 0.04);
+  ctx.stroke();
+
+  // 3 Biohazard crescent lobes at -90°, 30°, 150°
+  const lobeDist = radius * 0.36;
+  const lobeOuter = radius * 0.44;
+  const lobeInner = radius * 0.32;
+  const angles = [-Math.PI / 2, Math.PI / 6, (5 * Math.PI) / 6];
+
+  ctx.fillStyle = color;
+  for (const a of angles) {
+    const lx = lobeDist * Math.cos(a);
+    const ly = lobeDist * Math.sin(a);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(lx, ly, lobeOuter, 0, Math.PI * 2);
+    ctx.arc(lx, ly, lobeInner, 0, Math.PI * 2, true);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Center cutout & dot
+  ctx.beginPath();
+  ctx.arc(0, 0, radius * 0.22, 0, Math.PI * 2);
+  ctx.fillStyle = '#111827';
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(0, 0, radius * 0.09, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+function renderObjectiveDecal(ctx: CanvasRenderingContext2D, radius: number, color: string, isSquare = false) {
+  // Background base with glass effect
+  ctx.beginPath();
+  if (isSquare) {
+    ctx.rect(-radius, -radius, radius * 2, radius * 2);
+  } else {
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  }
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+  ctx.fill();
+
+  // Outer reticle border
+  ctx.beginPath();
+  if (isSquare) {
+    ctx.rect(-radius * 0.9, -radius * 0.9, radius * 1.8, radius * 1.8);
+  } else {
+    ctx.arc(0, 0, radius * 0.9, 0, Math.PI * 2);
+  }
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // Inner dashed targeting shape
+  ctx.save();
+  ctx.beginPath();
+  if (isSquare) {
+    ctx.rect(-radius * 0.65, -radius * 0.65, radius * 1.3, radius * 1.3);
+  } else {
+    ctx.arc(0, 0, radius * 0.65, 0, Math.PI * 2);
+  }
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 4]);
+  ctx.stroke();
+  ctx.restore();
+
+  // Crosshair ticks
+  const tickIn = radius * 0.55;
+  const tickOut = radius * 0.98;
+  ctx.beginPath();
+  ctx.moveTo(0, -tickIn); ctx.lineTo(0, -tickOut);
+  ctx.moveTo(0, tickIn); ctx.lineTo(0, tickOut);
+  ctx.moveTo(-tickIn, 0); ctx.lineTo(-tickOut, 0);
+  ctx.moveTo(tickIn, 0); ctx.lineTo(tickOut, 0);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // 5-point tactical star in center
+  drawStar(ctx, 0, 0, 5, radius * 0.38, radius * 0.18, color);
+}
+
+function renderFireBlastDecal(ctx: CanvasRenderingContext2D, radius: number, color: string, isSquare = false) {
+  const points = 16;
+  ctx.save();
+  if (isSquare) {
+    ctx.beginPath();
+    ctx.rect(-radius, -radius, radius * 2, radius * 2);
+    ctx.clip();
+  }
+  ctx.beginPath();
+  for (let i = 0; i < points * 2; i++) {
+    const r = i % 2 === 0 ? radius * (isSquare ? 1.25 : 1) : radius * 0.62;
+    const a = (i * Math.PI) / points;
+    const px = Math.cos(a) * r;
+    const py = Math.sin(a) * r;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+
+  const grad = ctx.createRadialGradient(0, 0, radius * 0.1, 0, 0, radius);
+  grad.addColorStop(0, '#fef08a');
+  grad.addColorStop(0.4, '#f97316');
+  grad.addColorStop(0.85, color || '#dc2626');
+  grad.addColorStop(1, 'rgba(153, 27, 27, 0.4)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.strokeStyle = '#ea580c';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
+
+  if (isSquare) {
+    ctx.strokeStyle = color || '#dc2626';
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(-radius, -radius, radius * 2, radius * 2);
+  }
+}
+
+function renderMagicCircleDecal(ctx: CanvasRenderingContext2D, radius: number, color: string, isSquare = false) {
+  ctx.save();
+  // Outer perimeter
+  ctx.beginPath();
+  if (isSquare) {
+    ctx.rect(-radius, -radius, radius * 2, radius * 2);
+  } else {
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  }
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // Secondary ring / border
+  ctx.beginPath();
+  if (isSquare) {
+    ctx.rect(-radius * 0.88, -radius * 0.88, radius * 1.76, radius * 1.76);
+  } else {
+    ctx.arc(0, 0, radius * 0.88, 0, Math.PI * 2);
+  }
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Inner ring
+  ctx.beginPath();
+  ctx.arc(0, 0, radius * 0.55, 0, Math.PI * 2);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Octagram squares
+  const rSq = radius * (isSquare ? 0.75 : 0.88);
+  for (let offset = 0; offset < 2; offset++) {
+    const ang = (offset * Math.PI) / 4;
+    ctx.beginPath();
+    for (let j = 0; j < 4; j++) {
+      const a = ang + (j * Math.PI) / 2;
+      const x = rSq * Math.cos(a);
+      const y = rSq * Math.sin(a);
+      if (j === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // Center glowing arcane orb
+  ctx.beginPath();
+  ctx.arc(0, 0, radius * 0.22, 0, Math.PI * 2);
+  ctx.fillStyle = hexToRgba(color, 0.35);
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
+}
+
+export function renderSpray(
+  ctx: CanvasRenderingContext2D,
+  marker: ScreenMarker,
+  isSelected: boolean = false,
+  tokens: Record<string, Token> = {},
+  gridSize: number = 50,
+  scaleFtPerCell: number = 5
+) {
+  const { x, y } = getMarkerAnchorPosition(marker, tokens, gridSize);
+  const radius = marker.radius || 50;
+  const isSquare = marker.sprayShape === 'square';
+  const rotationDeg = marker.rotation ?? marker.angle ?? 0;
+  const color = marker.color || '#f59e0b';
+  const opacity = marker.opacity ?? 0.85;
+  const diameterFt = Math.round(((radius * 2) / gridSize) * scaleFtPerCell);
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate((rotationDeg * Math.PI) / 180);
+
+  // If selected, draw outline selection ring/box and rotation handle dot
+  if (isSelected) {
+    ctx.save();
+    ctx.beginPath();
+    if (isSquare) {
+      const s = radius + 6;
+      ctx.rect(-s, -s, s * 2, s * 2);
+    } else {
+      ctx.arc(0, 0, radius + 6, 0, Math.PI * 2);
+    }
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([6, 6]);
+    ctx.stroke();
+
+    // Rotation handle dot on the perimeter
+    ctx.beginPath();
+    ctx.arc(radius, 0, 7, 0, Math.PI * 2);
+    ctx.fillStyle = '#38bdf8';
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([]);
+    ctx.stroke();
+
+    // Line from center to handle
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(radius, 0);
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Draw Decal Content
+  const imgUrl = (marker.imageUrl?.trim()) || 'hazard';
+  const isPreset = ['hazard', 'hazard-stripes', 'biohazard', 'radiation', 'objective', 'fire', 'magic'].includes(imgUrl.toLowerCase());
+  const customImg = !isPreset ? getSprayImage(imgUrl) : null;
+
+  ctx.save();
+  ctx.globalAlpha = (ctx.globalAlpha || 1) * opacity;
+
+  if (customImg) {
+    // Custom user image: draw clipped to circle or square
+    ctx.beginPath();
+    if (isSquare) {
+      ctx.rect(-radius, -radius, radius * 2, radius * 2);
+    } else {
+      ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    }
+    ctx.clip();
+    try {
+      ctx.drawImage(customImg, -radius, -radius, radius * 2, radius * 2);
+    } catch {
+      // Fallback if drawImage fails
+    }
+    // Perimeter ring or square border
+    ctx.beginPath();
+    if (isSquare) {
+      ctx.rect(-radius, -radius, radius * 2, radius * 2);
+    } else {
+      ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+  } else if (!isPreset) {
+    // Custom image URL is still loading or invalid
+    ctx.beginPath();
+    if (isSquare) {
+      ctx.rect(-radius, -radius, radius * 2, radius * 2);
+    } else {
+      ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    }
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = `bold ${Math.max(10, Math.round(radius * 0.2))}px Inter, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🖼️ Decal Loading...', 0, 0);
+  } else {
+    // Built-in presets
+    const preset = imgUrl.toLowerCase();
+    if (preset === 'hazard' || preset === 'hazard-stripes') {
+      renderHazardStripesDecal(ctx, radius, color, isSquare);
+    } else if (preset === 'biohazard') {
+      renderBiohazardDecal(ctx, radius, color, isSquare);
+    } else if (preset === 'radiation') {
+      renderRadiationDecal(ctx, radius, color, isSquare);
+    } else if (preset === 'objective') {
+      renderObjectiveDecal(ctx, radius, color, isSquare);
+    } else if (preset === 'fire') {
+      renderFireBlastDecal(ctx, radius, color, isSquare);
+    } else if (preset === 'magic') {
+      renderMagicCircleDecal(ctx, radius, color, isSquare);
+    }
+  }
+
+  ctx.restore(); // restore opacity
+  ctx.restore(); // restore rotation & translation
+
+  // Label pill at bottom
+  if (marker.label || marker.persist || isSelected) {
+    const labelPrefix = marker.locked ? '🔒 ' : marker.persist ? '📌 ' : '';
+    const shapeSymbol = isSquare ? '□ ' : '⌀ ';
+    const labelText = marker.label
+      ? `${labelPrefix}${marker.label} (${shapeSymbol}${diameterFt} ft)`
+      : `${labelPrefix}Spray Decal (${shapeSymbol}${diameterFt} ft, ${Math.round((rotationDeg + 360) % 360)}°)`;
+
+    ctx.save();
+    ctx.font = 'bold 12px Inter, sans-serif';
+    const textWidth = ctx.measureText(labelText).width;
+    const paddingX = 10;
+    const paddingY = 4;
+    const pillY = y + radius + 16;
+
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+    ctx.beginPath();
+    if (typeof (ctx as any).roundRect === 'function') {
+      (ctx as any).roundRect(
+        x - textWidth / 2 - paddingX,
+        pillY - 8 - paddingY,
+        textWidth + paddingX * 2,
+        16 + paddingY * 2,
+        6
+      );
+    } else {
+      ctx.rect(
+        x - textWidth / 2 - paddingX,
+        pillY - 8 - paddingY,
+        textWidth + paddingX * 2,
+        16 + paddingY * 2
+      );
+    }
+    ctx.fill();
+    ctx.strokeStyle = isSelected ? '#38bdf8' : 'rgba(255, 255, 255, 0.25)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = '#f8fafc';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(labelText, x, pillY);
+    ctx.restore();
+  }
 }
 

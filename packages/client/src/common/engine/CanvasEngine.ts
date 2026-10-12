@@ -7,11 +7,23 @@ import {
   FogShape,
 } from '@oldbear/shared';
 import { Viewport, Point } from './Viewport.js';
-import { renderGrid, snapToGrid } from './GridRenderer.js';
-import { renderToken, getCachedImage } from './TokenRenderer.js';
+import { renderGrid, snapToGrid, getTokenPivot, getTokenAABB } from './GridRenderer.js';
+import { renderToken, getCachedImage, isPointInToken } from './TokenRenderer.js';
 import { FogRenderer } from './FogRenderer.js';
-import { renderMarkers, hexToRgba, getContrastingAccentColor } from './PointerSystem.js';
+import {
+  renderMarkers,
+  hexToRgba,
+  getContrastingAccentColor,
+  getMarkerAnchorPosition,
+  sortTokensByZIndex,
+  sortMarkersByZIndex,
+  bringTokenToFront,
+  bringMarkerToFront,
+  isPointInMarker,
+} from './PointerSystem.js';
 import { drawRuler, measureDistance, RulerMeasurement } from './Ruler.js';
+import { renderSubmap } from './SubmapManager.js';
+import { snapTileEdgeToEdge, TileRect } from './ModularTileManager.js';
 
 /**
  * -----------------------------------------------------------------------------------------
@@ -36,9 +48,27 @@ export type ActiveTool =
   | 'circle'
   | 'rectangle'
   | 'cone'
+  | 'tether'
+  | 'spray'
   | 'measure'
   | 'fog-reveal'
-  | 'fog-hide';
+  | 'fog-hide'
+  | 'fog-brush-reveal'
+  | 'fog-brush-hide';
+
+export interface CanvasObjectiveMarker {
+  id: string;
+  label: string;
+  x: number;
+  y: number;
+  baseMm?: number;
+  controlRadiusInches?: number;
+  vpValue?: number;
+  status?: 1 | 2 | 'contested' | 'uncontested';
+  controllingPlayerName?: string;
+  p1OcTotal?: number;
+  p2OcTotal?: number;
+}
 
 export interface CanvasEngineCallbacks {
   onTokenMove?: (id: string, x: number, y: number) => void;
@@ -50,6 +80,7 @@ export interface CanvasEngineCallbacks {
   onMarkerSelect?: (marker: ScreenMarker | null) => void;
   onFogUpdate?: (shape: FogShape) => void;
   onToolChange?: (tool: ActiveTool) => void;
+  onObjectiveMove?: (id: string, x: number, y: number) => void;
 }
 
 export class CanvasEngine {
@@ -73,6 +104,7 @@ export class CanvasEngine {
   draggingToken: Token | null = null;
   dragStartPos: Point | null = null;
   dragCurrentPos: Point | null = null;
+  dragGrabOffset: Point | null = null;
   activeRuler: RulerMeasurement | null = null;
   measuringTape: RulerMeasurement | null = null;
 
@@ -80,13 +112,25 @@ export class CanvasEngine {
   persistMarkersMode: boolean = false;
   selectedMarkerId: string | null = null;
   draggingMarker: ScreenMarker | null = null;
-  draggingMarkerHandle: { marker: ScreenMarker; handle: 'spread' } | null = null;
+  draggingMarkerHandle: { marker: ScreenMarker; handle: 'spread' | 'rotate' | 'start' | 'end' } | null = null;
+  activeSprayImage?: string;
+  activeSprayShape: 'circle' | 'square' = 'circle';
+
+  // Fog brush state
+  fogBrushRadius: number = 40;
+  fogBrushPoints: Point[] = [];
+  hoverWorldPos: Point | null = null;
 
   // Shape drawing state (for markers & fog)
   isDrawing: boolean = false;
   drawStart: Point | null = null;
   drawCurrent: Point | null = null;
   laserPoints: Point[] = [];
+
+  // Objective markers state (Brawl mode)
+  objectiveMarkers: CanvasObjectiveMarker[] = [];
+  draggingObjectiveId: string | null = null;
+  dragObjectiveGrabOffset: Point | null = null;
 
   // Multi-touch gestures
   private activePointers = new Map<number, Point>();
@@ -97,6 +141,10 @@ export class CanvasEngine {
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
+    if (this.canvas.tabIndex === undefined || this.canvas.tabIndex < 0) {
+      this.canvas.tabIndex = 0;
+      this.canvas.style.outline = 'none';
+    }
     this.ctx = canvas.getContext('2d', { alpha: false })!;
     this.viewport = new Viewport(100, 100, 1.0);
     this.fogRenderer = new FogRenderer();
@@ -106,9 +154,16 @@ export class CanvasEngine {
   }
 
   setSession(session: GameSession) {
+    const isFirstInit = !this.session;
     this.session = session;
     if (!this.currentMapId) {
       this.currentMapId = session.activeMapId;
+    }
+    if (isFirstInit && this.currentMapId) {
+      const initialMap = session.maps.find((m) => m.id === this.currentMapId) || session.maps[0];
+      if (initialMap) {
+        this.centerOnMap(initialMap);
+      }
     }
   }
 
@@ -116,8 +171,44 @@ export class CanvasEngine {
     this.localPlayer = player;
   }
 
-  setActiveMap(mapId: string) {
+  centerOnMap(map: GameMap) {
+    const screenW = this.canvas.width || window.innerWidth;
+    const screenH = this.canvas.height || window.innerHeight;
+    const mapW = map.width || 2000;
+    const mapH = map.height || 2000;
+    const scale = Math.min(1.5, Math.max(0.15, Math.min((screenW * 0.85) / mapW, (screenH * 0.85) / mapH)));
+    this.viewport.scale = scale;
+    this.viewport.centerOn(mapW / 2, mapH / 2, screenW, screenH);
+  }
+
+  centerOnPosition(worldX: number, worldY: number) {
+    const screenW = this.canvas.width || window.innerWidth;
+    const screenH = this.canvas.height || window.innerHeight;
+    this.viewport.centerOn(worldX, worldY, screenW, screenH);
+  }
+
+  centerOnToken(tokenId: string) {
+    if (!this.session) return;
+    const token = this.session.tokens[tokenId];
+    if (token) {
+      const currentMap = this.session.maps.find((m) => m.id === this.currentMapId) || this.session.maps[0];
+      const gridSize = currentMap?.gridSize || 50;
+      const isProp = Boolean(token.isProp || token.layer === 'map');
+      const w = (isProp && token.propWidth !== undefined ? token.propWidth : token.size) * gridSize;
+      const h = (isProp && token.propHeight !== undefined ? token.propHeight : token.size) * gridSize;
+      this.centerOnPosition(token.x + w / 2, token.y + h / 2);
+    }
+  }
+
+  setActiveMap(mapId: string, centerOnSwitch: boolean = false) {
+    const changed = this.currentMapId !== mapId;
     this.currentMapId = mapId;
+    if ((changed || centerOnSwitch) && this.session) {
+      const map = this.session.maps.find((m) => m.id === mapId);
+      if (map) {
+        this.centerOnMap(map);
+      }
+    }
   }
 
   selectToken(id: string | null) {
@@ -128,6 +219,11 @@ export class CanvasEngine {
   selectTokens(ids: string[]) {
     this.selectedTokenIds = ids;
     this.selectedTokenId = ids[0] || null;
+  }
+
+  setObjectives(objectives: CanvasObjectiveMarker[]) {
+    this.objectiveMarkers = objectives || [];
+    this.render();
   }
 
   destroy() {
@@ -178,24 +274,43 @@ export class CanvasEngine {
       (m) => m.persist && (!m.mapId || m.mapId === currentMap.id)
     );
     if (persistentMarkers.length > 0) {
+      const activeDraggingMarkerId = this.draggingMarker?.id || this.draggingMarkerHandle?.marker.id;
+      const sortedMarkers = sortMarkersByZIndex(persistentMarkers, {
+        selectedMarkerId: this.selectedMarkerId,
+        draggingMarkerId: activeDraggingMarkerId,
+        selectedTokenIds: this.selectedTokenIds,
+        draggingTokenId: this.draggingToken?.id,
+      });
       renderMarkers(
         ctx,
-        persistentMarkers,
+        sortedMarkers,
         now,
         currentMap.gridSize,
         currentMap.scaleFtPerCell,
-        this.selectedMarkerId
+        this.selectedMarkerId,
+        this.session.tokens
       );
     }
 
+    // 3.7. Render Wargaming Objective Markers (40mm bases + 3" control auras)
+    if (this.objectiveMarkers.length > 0) {
+      this.renderObjectives(ctx, currentMap);
+    }
+
     // 4. Render Tokens and Props
-    const tokens = Object.values(this.session.tokens).filter(
+    const rawTokens = Object.values(this.session.tokens).filter(
       (t) => t.mapId === currentMap.id
     );
 
+    const sortedTokens = sortTokensByZIndex(
+      rawTokens,
+      this.selectedTokenIds,
+      this.draggingToken?.id
+    );
+
     // Render props first, then tokens
-    const props = tokens.filter((t) => t.isProp);
-    const characters = tokens.filter((t) => !t.isProp);
+    const props = sortedTokens.filter((t) => t.isProp);
+    const characters = sortedTokens.filter((t) => !t.isProp);
 
     for (const prop of props) {
       const isSelected = this.selectedTokenIds.includes(prop.id) || prop.id === this.selectedTokenId;
@@ -237,7 +352,9 @@ export class CanvasEngine {
         ephemeralMarkers,
         now,
         currentMap.gridSize,
-        currentMap.scaleFtPerCell
+        currentMap.scaleFtPerCell,
+        this.selectedMarkerId,
+        this.session.tokens
       );
       this.session.markers = [
         ...this.session.markers.filter((m) => m.persist),
@@ -247,6 +364,23 @@ export class CanvasEngine {
 
     // 8. Render Current Drawing In-Progress (markers/fog preview)
     this.renderDrawingPreview(ctx, currentMap);
+
+    // 8b. Render Hover Fog Brush Ring if hovering
+    if (
+      !this.isDrawing &&
+      (this.activeTool === 'fog-brush-reveal' || this.activeTool === 'fog-brush-hide') &&
+      this.hoverWorldPos
+    ) {
+      const isReveal = this.activeTool === 'fog-brush-reveal';
+      ctx.save();
+      ctx.beginPath();
+      ctx.strokeStyle = isReveal ? '#10b981' : '#f43f5e';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.arc(this.hoverWorldPos.x, this.hoverWorldPos.y, this.fogBrushRadius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
 
     ctx.restore();
   }
@@ -264,6 +398,13 @@ export class CanvasEngine {
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
       ctx.lineWidth = 2;
       ctx.strokeRect(0, 0, map.width, map.height);
+    }
+
+    // Render Secondary Submaps, Multi-floors, Staging Areas & Casualty Trays (OB-130)
+    if (Array.isArray(map.submaps) && map.submaps.length > 0) {
+      for (const submap of map.submaps) {
+        renderSubmap(ctx, submap, map, this.viewport.scale, getCachedImage);
+      }
     }
   }
 
@@ -370,6 +511,64 @@ export class CanvasEngine {
       // Show live radius badge
       const radiusFt = Math.round((radius / gridSize) * scaleFtPerCell);
       this.drawMeasurementBadge(ctx, `${radiusFt} ft radius`, (x1 + x2) / 2, (y1 + y2) / 2 - 14, color);
+    } else if (this.activeTool === 'spray') {
+      const radius = Math.hypot(x2 - x1, y2 - y1);
+      const diameterFt = Math.round(((radius * 2) / gridSize) * scaleFtPerCell);
+      const angle = (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI;
+
+      ctx.save();
+      // Outer guide (circle or square)
+      ctx.beginPath();
+      if (this.activeSprayShape === 'square') {
+        ctx.save();
+        ctx.translate(x1, y1);
+        ctx.rotate((angle * Math.PI) / 180);
+        ctx.rect(-radius, -radius, radius * 2, radius * 2);
+        ctx.fillStyle = hexToRgba(color, 0.2);
+        ctx.fill();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 6]);
+        ctx.stroke();
+        ctx.restore();
+      } else {
+        ctx.arc(x1, y1, radius, 0, Math.PI * 2);
+        ctx.fillStyle = hexToRgba(color, 0.2);
+        ctx.fill();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 6]);
+        ctx.stroke();
+      }
+
+      // Drag line indicating angle and radius
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 3]);
+      ctx.stroke();
+
+      // Center point
+      ctx.beginPath();
+      ctx.arc(x1, y1, 4, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      // Arrow head at cursor
+      const headLen = 10;
+      const headAngle = Math.atan2(y2 - y1, x2 - x1);
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - headLen * Math.cos(headAngle - Math.PI / 6), y2 - headLen * Math.sin(headAngle - Math.PI / 6));
+      ctx.lineTo(x2 - headLen * Math.cos(headAngle + Math.PI / 6), y2 - headLen * Math.sin(headAngle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.restore();
+
+      // Live distance & diameter preview badge
+      this.drawMeasurementBadge(ctx, `⌀ ${diameterFt} ft (${Math.round((angle + 360) % 360)}°)`, (x1 + x2) / 2, (y1 + y2) / 2 - 16, color);
     } else if (this.activeTool === 'cone') {
       const radius = Math.hypot(x2 - x1, y2 - y1);
       const angleDeg = (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI;
@@ -482,6 +681,43 @@ export class CanvasEngine {
 
         this.drawMeasurementBadge(ctx, `${radiusFt} ft target`, (x1 + x2) / 2, (y1 + y2) / 2 - 14, color);
       }
+    } else if (this.activeTool === 'tether') {
+      const dist = Math.hypot(x2 - x1, y2 - y1);
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(x1, y1, 4, 0, Math.PI * 2);
+      ctx.arc(x2, y2, 4, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      const distFt = Math.round((dist / gridSize) * scaleFtPerCell);
+      this.drawMeasurementBadge(ctx, `${distFt} ft tether`, (x1 + x2) / 2, (y1 + y2) / 2 - 14, color);
+    } else if (this.activeTool === 'fog-brush-reveal' || this.activeTool === 'fog-brush-hide') {
+      const isReveal = this.activeTool === 'fog-brush-reveal';
+      const radius = this.fogBrushRadius;
+      ctx.fillStyle = isReveal ? 'rgba(16, 185, 129, 0.25)' : 'rgba(244, 63, 94, 0.25)';
+      ctx.strokeStyle = isReveal ? '#10b981' : '#f43f5e';
+      ctx.lineWidth = 2;
+      if (this.fogBrushPoints.length > 1) {
+        ctx.beginPath();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = radius * 2;
+        ctx.moveTo(this.fogBrushPoints[0].x, this.fogBrushPoints[0].y);
+        for (let i = 1; i < this.fogBrushPoints.length; i++) {
+          ctx.lineTo(this.fogBrushPoints[i].x, this.fogBrushPoints[i].y);
+        }
+        ctx.stroke();
+      }
+      // Render circle at current cursor
+      ctx.beginPath();
+      ctx.lineWidth = 1.5;
+      ctx.arc(x2, y2, radius, 0, Math.PI * 2);
+      ctx.stroke();
     } else if (this.activeTool === 'rectangle' || this.activeTool.startsWith('fog') || this.activeTool === 'box-select') {
       ctx.fillStyle = this.activeTool === 'fog-reveal'
         ? 'rgba(255, 255, 255, 0.2)'
@@ -518,6 +754,23 @@ export class CanvasEngine {
   // --- Pointer & Touch Interaction ---
 
   private onPointerDown = (e: PointerEvent) => {
+    // Blur any active input/textarea when clicking the canvas so hotkeys work immediately (OB-218)
+    if (
+      typeof document !== 'undefined' &&
+      document.activeElement &&
+      document.activeElement !== (this.canvas as any)
+    ) {
+      const el = document.activeElement as any;
+      if (
+        el.tagName === 'INPUT' ||
+        el.tagName === 'TEXTAREA' ||
+        el.isContentEditable
+      ) {
+        el.blur?.();
+      }
+    }
+    this.canvas.focus?.({ preventScroll: true });
+
     e.preventDefault();
     this.canvas.setPointerCapture(e.pointerId);
 
@@ -565,8 +818,10 @@ export class CanvasEngine {
         const matching = this.findMatchingTokens(worldPos, currentMap);
         if (matching.length > 0) {
           const tok = matching[0];
-          const radius = (tok.size * currentMap.gridSize) / 2;
-          startPoint = { x: tok.x + radius, y: tok.y + radius };
+          const isProp = Boolean(tok.isProp);
+          const w = (isProp && tok.propWidth !== undefined ? tok.propWidth : tok.size) * currentMap.gridSize;
+          const h = (isProp && tok.propHeight !== undefined ? tok.propHeight : tok.size) * currentMap.gridSize;
+          startPoint = { x: tok.x + w / 2, y: tok.y + h / 2 };
         } else if (this.snapEnabled && !e.shiftKey) {
           const offX = currentMap.gridOffsetX || 0;
           const offY = currentMap.gridOffsetY || 0;
@@ -597,40 +852,27 @@ export class CanvasEngine {
       this.drawCurrent = worldPos;
       if (this.activeTool === 'laser') {
         this.laserPoints = [worldPos];
+      } else if (this.activeTool === 'fog-brush-reveal' || this.activeTool === 'fog-brush-hide') {
+        this.fogBrushPoints = [worldPos];
       }
     }
   };
 
   private findMatchingTokens(worldPos: Point, currentMap: GameMap): Token[] {
     if (!this.session) return [];
-    const tokens = Object.values(this.session.tokens).filter(
+    const rawTokens = Object.values(this.session.tokens).filter(
       (t) => t.mapId === currentMap.id
+    );
+    const tokens = sortTokensByZIndex(
+      rawTokens,
+      this.selectedTokenIds,
+      this.draggingToken?.id
     );
     const matchingTokens: Token[] = [];
     for (let i = tokens.length - 1; i >= 0; i--) {
       const tok = tokens[i];
-      const isProp = Boolean(tok.isProp);
-      const propW = (isProp && tok.propWidth !== undefined ? tok.propWidth : tok.size) * currentMap.gridSize;
-      const propH = (isProp && tok.propHeight !== undefined ? tok.propHeight : tok.size) * currentMap.gridSize;
-      const cx = tok.x + propW / 2;
-      const cy = tok.y + propH / 2;
-
-      // Transform worldPos to token's local coordinate system taking rotation into account
-      const dx = worldPos.x - cx;
-      const dy = worldPos.y - cy;
-      const rotRad = ((tok.rotation || 0) * Math.PI) / 180;
-      const localX = dx * Math.cos(-rotRad) - dy * Math.sin(-rotRad);
-      const localY = dx * Math.sin(-rotRad) + dy * Math.cos(-rotRad);
-
-      if (isProp) {
-        if (Math.abs(localX) <= propW / 2 && Math.abs(localY) <= propH / 2) {
-          matchingTokens.push(tok);
-        }
-      } else {
-        const radius = (tok.size * currentMap.gridSize) / 2;
-        if (Math.hypot(localX, localY) <= radius) {
-          matchingTokens.push(tok);
-        }
+      if (isPointInToken(worldPos, tok, currentMap.gridSize)) {
+        matchingTokens.push(tok);
       }
     }
     return matchingTokens;
@@ -675,6 +917,9 @@ export class CanvasEngine {
       this.selectedMarkerId = null;
       this.callbacks.onMarkerSelect?.(null);
 
+      // Bring clicked token to front in data
+      this.session.tokens = bringTokenToFront(this.session.tokens, clickedToken.id);
+
       if (!this.selectedTokenIds.includes(clickedToken.id)) {
         this.selectedTokenId = clickedToken.id;
         this.selectedTokenIds = [clickedToken.id];
@@ -691,6 +936,7 @@ export class CanvasEngine {
       if (isControllable && !clickedToken.locked) {
         this.draggingToken = clickedToken;
         this.dragStartPos = { x: clickedToken.x, y: clickedToken.y };
+        this.dragGrabOffset = { x: worldPos.x - clickedToken.x, y: worldPos.y - clickedToken.y };
         this.dragCurrentPos = worldPos;
         this.dragGroupInitialPositions.clear();
         for (const id of this.selectedTokenIds) {
@@ -729,6 +975,59 @@ export class CanvasEngine {
             this.draggingMarkerHandle = { marker: selMarker, handle: 'spread' };
             return;
           }
+        } else if (
+          selMarker &&
+          selMarker.type === 'spray' &&
+          selMarker.persist &&
+          (isGm || selMarker.userId === localId) &&
+          !selMarker.locked
+        ) {
+          const rad = selMarker.radius || 50;
+          const theta = ((selMarker.rotation ?? selMarker.angle ?? 0) * Math.PI) / 180;
+          const h = {
+            x: selMarker.x + rad * Math.cos(theta),
+            y: selMarker.y + rad * Math.sin(theta),
+          };
+          if (Math.hypot(worldPos.x - h.x, worldPos.y - h.y) <= 18) {
+            this.draggingMarkerHandle = { marker: selMarker, handle: 'rotate' };
+            return;
+          }
+        } else if (
+          selMarker &&
+          selMarker.type === 'tether' &&
+          selMarker.persist &&
+          (isGm || selMarker.userId === localId) &&
+          !selMarker.locked &&
+          currentMap
+        ) {
+          let x1 = selMarker.x;
+          let y1 = selMarker.y;
+          if (selMarker.attachedTokenId && this.session.tokens[selMarker.attachedTokenId]) {
+            const t1 = this.session.tokens[selMarker.attachedTokenId];
+            const isProp = Boolean(t1.isProp);
+            const w = (isProp && t1.propWidth !== undefined ? t1.propWidth : t1.size) * currentMap.gridSize;
+            const h = (isProp && t1.propHeight !== undefined ? t1.propHeight : t1.size) * currentMap.gridSize;
+            x1 = t1.x + w / 2;
+            y1 = t1.y + h / 2;
+          }
+          let x2 = selMarker.targetX ?? selMarker.x;
+          let y2 = selMarker.targetY ?? selMarker.y;
+          if (selMarker.tetherTargetId && this.session.tokens[selMarker.tetherTargetId]) {
+            const t2 = this.session.tokens[selMarker.tetherTargetId];
+            const isProp = Boolean(t2.isProp);
+            const w = (isProp && t2.propWidth !== undefined ? t2.propWidth : t2.size) * currentMap.gridSize;
+            const h = (isProp && t2.propHeight !== undefined ? t2.propHeight : t2.size) * currentMap.gridSize;
+            x2 = t2.x + w / 2;
+            y2 = t2.y + h / 2;
+          }
+          if (Math.hypot(worldPos.x - x1, worldPos.y - y1) <= 20) {
+            this.draggingMarkerHandle = { marker: selMarker, handle: 'start' };
+            return;
+          }
+          if (Math.hypot(worldPos.x - x2, worldPos.y - y2) <= 20) {
+            this.draggingMarkerHandle = { marker: selMarker, handle: 'end' };
+            return;
+          }
         }
       }
 
@@ -743,6 +1042,9 @@ export class CanvasEngine {
         this.selectedMarkerId = clickedMarker.id;
         this.callbacks.onMarkerSelect?.(clickedMarker);
 
+        // Bring clicked marker to front in data
+        this.session.markers = bringMarkerToFront(this.session.markers, clickedMarker.id);
+
         if (!clickedMarker.locked) {
           this.draggingMarker = clickedMarker;
           this.dragStartPos = { x: clickedMarker.x, y: clickedMarker.y };
@@ -751,6 +1053,26 @@ export class CanvasEngine {
       } else {
         this.selectedMarkerId = null;
         this.callbacks.onMarkerSelect?.(null);
+
+        // Hit-test objective markers (40mm base radius)
+        if (this.objectiveMarkers.length > 0) {
+          const ppi = 50;
+          const clickedObjective = this.objectiveMarkers.find((obj) => {
+            const baseRadiusPx = (((obj.baseMm ?? 40) / 25.4) / 2) * ppi;
+            const dx = worldPos.x - obj.x;
+            const dy = worldPos.y - obj.y;
+            return Math.sqrt(dx * dx + dy * dy) <= baseRadiusPx + 10;
+          });
+
+          if (clickedObjective) {
+            this.draggingObjectiveId = clickedObjective.id;
+            this.dragObjectiveGrabOffset = {
+              x: worldPos.x - clickedObjective.x,
+              y: worldPos.y - clickedObjective.y,
+            };
+            return;
+          }
+        }
       }
     }
   }
@@ -786,19 +1108,43 @@ export class CanvasEngine {
     }
 
     const worldPos = this.viewport.screenToWorld(e.clientX, e.clientY);
+    this.hoverWorldPos = worldPos;
 
-    // Cone spread angle handle dragging (Task #118)
+    // Cone spread angle or Spray rotation handle dragging
     if (this.draggingMarkerHandle) {
       const m = this.draggingMarkerHandle.marker;
-      const currAngleDeg = (Math.atan2(worldPos.y - m.y, worldPos.x - m.x) * 180) / Math.PI;
-      const centerAngleDeg = m.angle ?? 0;
-      const diff = Math.abs(((currAngleDeg - centerAngleDeg + 540) % 360) - 180);
-      let newSpread = Math.round(diff * 2);
-      newSpread = Math.max(15, Math.min(180, newSpread));
-      m.spreadAngle = newSpread;
-      this.callbacks.onMarkerUpdate?.(m.id, { spreadAngle: newSpread });
-      this.callbacks.onMarkerSelect?.({ ...m });
-      return;
+      if (this.draggingMarkerHandle.handle === 'rotate') {
+        const currAngleDeg = (Math.atan2(worldPos.y - m.y, worldPos.x - m.x) * 180) / Math.PI;
+        const newRot = Math.round((currAngleDeg + 360) % 360);
+        m.rotation = newRot;
+        m.angle = newRot;
+        this.callbacks.onMarkerUpdate?.(m.id, { rotation: newRot, angle: newRot });
+        this.callbacks.onMarkerSelect?.({ ...m });
+        return;
+      }
+      if (this.draggingMarkerHandle.handle === 'spread') {
+        const currAngleDeg = (Math.atan2(worldPos.y - m.y, worldPos.x - m.x) * 180) / Math.PI;
+        const centerAngleDeg = m.angle ?? 0;
+        const diff = Math.abs(((currAngleDeg - centerAngleDeg + 540) % 360) - 180);
+        let newSpread = Math.round(diff * 2);
+        newSpread = Math.max(15, Math.min(180, newSpread));
+        m.spreadAngle = newSpread;
+        this.callbacks.onMarkerUpdate?.(m.id, { spreadAngle: newSpread });
+        this.callbacks.onMarkerSelect?.({ ...m });
+        return;
+      }
+      if (this.draggingMarkerHandle.handle === 'start') {
+        m.x = worldPos.x;
+        m.y = worldPos.y;
+        this.callbacks.onMarkerSelect?.({ ...m });
+        return;
+      }
+      if (this.draggingMarkerHandle.handle === 'end') {
+        m.targetX = worldPos.x;
+        m.targetY = worldPos.y;
+        this.callbacks.onMarkerSelect?.({ ...m });
+        return;
+      }
     }
 
     // Pan with mouse drag or pan tool
@@ -810,9 +1156,22 @@ export class CanvasEngine {
         !this.draggingToken &&
         !this.isDrawing &&
         !this.draggingMarker &&
-        !this.draggingMarkerHandle)
+        !this.draggingMarkerHandle &&
+        !this.draggingObjectiveId)
     ) {
       this.viewport.pan(currentScreen.x - prevScreen.x, currentScreen.y - prevScreen.y);
+      return;
+    }
+
+    // Objective Marker Dragging
+    if (this.draggingObjectiveId) {
+      const obj = this.objectiveMarkers.find((o) => o.id === this.draggingObjectiveId);
+      if (obj) {
+        const offset = this.dragObjectiveGrabOffset || { x: 0, y: 0 };
+        obj.x = worldPos.x - offset.x;
+        obj.y = worldPos.y - offset.y;
+        this.render();
+      }
       return;
     }
 
@@ -820,10 +1179,14 @@ export class CanvasEngine {
     if (this.draggingMarker && this.dragCurrentPos && !this.draggingMarker.locked) {
       const dx = worldPos.x - this.dragCurrentPos.x;
       const dy = worldPos.y - this.dragCurrentPos.y;
-      this.draggingMarker.x += dx;
-      this.draggingMarker.y += dy;
-      if (this.draggingMarker.targetX !== undefined) this.draggingMarker.targetX += dx;
-      if (this.draggingMarker.targetY !== undefined) this.draggingMarker.targetY += dy;
+      if (!this.draggingMarker.attachedTokenId) {
+        this.draggingMarker.x += dx;
+        this.draggingMarker.y += dy;
+      }
+      if (!this.draggingMarker.tetherTargetId) {
+        if (this.draggingMarker.targetX !== undefined) this.draggingMarker.targetX += dx;
+        if (this.draggingMarker.targetY !== undefined) this.draggingMarker.targetY += dy;
+      }
       this.dragCurrentPos = worldPos;
       return;
     }
@@ -834,12 +1197,13 @@ export class CanvasEngine {
         this.session.maps.find((m) => m.id === this.currentMapId) ||
         this.session.maps[0];
       const isProp = Boolean(this.draggingToken.isProp);
-      const propW = (isProp && this.draggingToken.propWidth !== undefined ? this.draggingToken.propWidth : this.draggingToken.size) * currentMap.gridSize;
-      const propH = (isProp && this.draggingToken.propHeight !== undefined ? this.draggingToken.propHeight : this.draggingToken.size) * currentMap.gridSize;
+      const { pivotOffsetX, pivotOffsetY, propW, propH } = getTokenPivot(this.draggingToken, currentMap.gridSize);
 
-      // Offset token center to follow cursor
-      let newX = worldPos.x - propW / 2;
-      let newY = worldPos.y - propH / 2;
+      // Relative dragging: compute raw token position relative to initial cursor grab offset (OB-188)
+      const grabOffsetX = this.dragGrabOffset?.x ?? pivotOffsetX;
+      const grabOffsetY = this.dragGrabOffset?.y ?? pivotOffsetY;
+      let newX = worldPos.x - grabOffsetX;
+      let newY = worldPos.y - grabOffsetY;
 
       if (this.snapEnabled) {
         const snapped = snapToGrid(
@@ -853,6 +1217,29 @@ export class CanvasEngine {
         );
         newX = snapped.x;
         newY = snapped.y;
+
+        // Magnetic edge-to-edge tile snapping for map tiles and modular props (OB-128)
+        if (isProp || this.draggingToken.layer === 'map') {
+          const otherTileRects: TileRect[] = Object.values(this.session.tokens)
+            .filter((t) => t.id !== this.draggingToken!.id && (t.isProp || t.layer === 'map'))
+            .map((t) => {
+              const aabb = getTokenAABB(t, currentMap.gridSize);
+              return { id: t.id, x: aabb.x, y: aabb.y, width: aabb.width, height: aabb.height };
+            });
+
+          if (otherTileRects.length > 0) {
+            const myAabb = getTokenAABB({ ...this.draggingToken, x: newX, y: newY }, currentMap.gridSize);
+            const tileSnap = snapTileEdgeToEdge(
+              { x: myAabb.x, y: myAabb.y, width: myAabb.width, height: myAabb.height },
+              otherTileRects,
+              Math.max(currentMap.gridSize * 0.7, 30)
+            );
+            if (tileSnap.snapped) {
+              newX += (tileSnap.x - myAabb.x);
+              newY += (tileSnap.y - myAabb.y);
+            }
+          }
+        }
       }
 
       const deltaX = newX - this.dragStartPos.x;
@@ -904,8 +1291,10 @@ export class CanvasEngine {
         const matching = this.findMatchingTokens(worldPos, currentMap);
         if (matching.length > 0) {
           const tok = matching[0];
-          const radius = (tok.size * currentMap.gridSize) / 2;
-          endPoint = { x: tok.x + radius, y: tok.y + radius };
+          const isProp = Boolean(tok.isProp);
+          const w = (isProp && tok.propWidth !== undefined ? tok.propWidth : tok.size) * currentMap.gridSize;
+          const h = (isProp && tok.propHeight !== undefined ? tok.propHeight : tok.size) * currentMap.gridSize;
+          endPoint = { x: tok.x + w / 2, y: tok.y + h / 2 };
         } else if (this.snapEnabled && !e.shiftKey) {
           const offX = currentMap.gridOffsetX || 0;
           const offY = currentMap.gridOffsetY || 0;
@@ -935,11 +1324,22 @@ export class CanvasEngine {
         this.laserPoints.push(worldPos);
         // keep laser points within reasonable length
         if (this.laserPoints.length > 25) this.laserPoints.shift();
+      } else if (this.activeTool === 'fog-brush-reveal' || this.activeTool === 'fog-brush-hide') {
+        this.fogBrushPoints.push(worldPos);
       }
     }
   };
 
   private onPointerUp = (e: PointerEvent) => {
+    const rect = this.canvas.getBoundingClientRect();
+    const worldPos = this.viewport.screenToWorld(
+      e.clientX - rect.left,
+      e.clientY - rect.top
+    );
+    const currentMap =
+      this.session?.maps.find((m) => m.id === this.currentMapId) ||
+      this.session?.maps[0];
+
     this.activePointers.delete(e.pointerId);
     if (this.activePointers.size < 2) {
       this.initialPinchDist = 0;
@@ -960,6 +1360,7 @@ export class CanvasEngine {
       }
       this.draggingToken = null;
       this.dragStartPos = null;
+      this.dragGrabOffset = null;
       this.dragGroupInitialPositions.clear();
       this.activeRuler = null;
     }
@@ -976,17 +1377,71 @@ export class CanvasEngine {
       });
     }
 
-    // Finish Cone Handle Drag (Task #118)
+    // Finish Objective Marker Drag
+    if (this.draggingObjectiveId) {
+      const obj = this.objectiveMarkers.find((o) => o.id === this.draggingObjectiveId);
+      if (obj) {
+        this.callbacks.onObjectiveMove?.(obj.id, obj.x, obj.y);
+      }
+      this.draggingObjectiveId = null;
+      this.dragObjectiveGrabOffset = null;
+      this.render();
+    }
+
+    // Finish Marker Handle Drag (Cone spread / Spray rotate / Tether endpoints)
     if (this.draggingMarkerHandle) {
       const m = this.draggingMarkerHandle.marker;
+      const handleType = this.draggingMarkerHandle.handle;
       this.draggingMarkerHandle = null;
-      this.callbacks.onMarkerUpdate?.(m.id, { spreadAngle: m.spreadAngle });
+      if (handleType === 'rotate') {
+        this.callbacks.onMarkerUpdate?.(m.id, { rotation: m.rotation, angle: m.angle });
+      } else if (handleType === 'spread') {
+        this.callbacks.onMarkerUpdate?.(m.id, { spreadAngle: m.spreadAngle });
+      } else if (handleType === 'start' && currentMap) {
+        const matching = this.findMatchingTokens(worldPos, currentMap);
+        const tok = matching.find((t) => t.id !== m.tetherTargetId);
+        if (tok) {
+          const isProp = Boolean(tok.isProp);
+          const w = (isProp && tok.propWidth !== undefined ? tok.propWidth : tok.size) * currentMap.gridSize;
+          const h = (isProp && tok.propHeight !== undefined ? tok.propHeight : tok.size) * currentMap.gridSize;
+          m.attachedTokenId = tok.id;
+          m.x = tok.x + w / 2;
+          m.y = tok.y + h / 2;
+          this.callbacks.onMarkerUpdate?.(m.id, { attachedTokenId: tok.id, x: m.x, y: m.y });
+        } else {
+          m.attachedTokenId = undefined;
+          m.x = worldPos.x;
+          m.y = worldPos.y;
+          this.callbacks.onMarkerUpdate?.(m.id, { attachedTokenId: null as any, x: m.x, y: m.y });
+        }
+      } else if (handleType === 'end' && currentMap) {
+        const matching = this.findMatchingTokens(worldPos, currentMap);
+        const tok = matching.find((t) => t.id !== m.attachedTokenId);
+        if (tok) {
+          const isProp = Boolean(tok.isProp);
+          const w = (isProp && tok.propWidth !== undefined ? tok.propWidth : tok.size) * currentMap.gridSize;
+          const h = (isProp && tok.propHeight !== undefined ? tok.propHeight : tok.size) * currentMap.gridSize;
+          m.tetherTargetId = tok.id;
+          m.targetX = tok.x + w / 2;
+          m.targetY = tok.y + h / 2;
+          this.callbacks.onMarkerUpdate?.(m.id, { tetherTargetId: tok.id, targetX: m.targetX, targetY: m.targetY });
+        } else {
+          m.tetherTargetId = undefined;
+          m.targetX = worldPos.x;
+          m.targetY = worldPos.y;
+          this.callbacks.onMarkerUpdate?.(m.id, { tetherTargetId: null as any, targetX: m.targetX, targetY: m.targetY });
+        }
+      }
       this.callbacks.onMarkerSelect?.({ ...m });
     }
 
     // Finish Marker or Fog drawing
     if (this.isDrawing && this.drawStart && this.drawCurrent) {
-      this.finishDrawing(e);
+      try {
+        this.finishDrawing(e);
+      } catch (err) {
+        console.warn('[CanvasEngine] Error finishing drawing:', err);
+      }
     }
 
     this.isDrawing = false;
@@ -1071,6 +1526,8 @@ export class CanvasEngine {
         createdAt: Date.now(),
       });
     } else if (this.activeTool === 'arrow') {
+      const dist = Math.hypot(x2 - x1, y2 - y1);
+      if (dist < 5) return;
       const isPersistent = this.persistMarkersMode ? !(e && e.shiftKey) : Boolean(e && e.shiftKey);
       this.broadcastMarker({
         id: crypto.randomUUID(),
@@ -1089,6 +1546,7 @@ export class CanvasEngine {
       });
     } else if (this.activeTool === 'circle') {
       const radius = Math.hypot(x2 - x1, y2 - y1);
+      if (radius < 5) return;
       const isPersistent = this.persistMarkersMode ? !(e && e.shiftKey) : Boolean(e && e.shiftKey);
       this.broadcastMarker({
         id: crypto.randomUUID(),
@@ -1105,6 +1563,9 @@ export class CanvasEngine {
         createdAt: Date.now(),
       });
     } else if (this.activeTool === 'rectangle') {
+      const width = Math.abs(x2 - x1);
+      const height = Math.abs(y2 - y1);
+      if (width < 5 && height < 5) return;
       const isPersistent = this.persistMarkersMode ? !(e && e.shiftKey) : Boolean(e && e.shiftKey);
       this.broadcastMarker({
         id: crypto.randomUUID(),
@@ -1114,8 +1575,8 @@ export class CanvasEngine {
         color: this.localPlayer.color,
         x: Math.min(x1, x2),
         y: Math.min(y1, y2),
-        width: Math.abs(x2 - x1),
-        height: Math.abs(y2 - y1),
+        width: Math.max(10, width),
+        height: Math.max(10, height),
         mapId: currentMap?.id,
         persist: isPersistent,
         durationMs: isPersistent ? 0 : 6000,
@@ -1143,6 +1604,30 @@ export class CanvasEngine {
           createdAt: Date.now(),
         });
       }
+    } else if (this.activeTool === 'spray') {
+      const radius = Math.hypot(x2 - x1, y2 - y1);
+      if (radius > 5) {
+        const angle = (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI;
+        // Spray decals always act in persistent mode (OB-170)
+        const isPersistent = true;
+        this.broadcastMarker({
+          id: crypto.randomUUID(),
+          type: 'spray',
+          userId: this.localPlayer.id,
+          userName: this.localPlayer.name,
+          color: this.localPlayer.color,
+          x: x1,
+          y: y1,
+          radius,
+          sprayShape: this.activeSprayShape || 'circle',
+          rotation: Math.round((angle + 360) % 360),
+          imageUrl: this.activeSprayImage || undefined,
+          mapId: currentMap?.id,
+          persist: isPersistent,
+          durationMs: 0,
+          createdAt: Date.now(),
+        });
+      }
     } else if (this.activeTool === 'crosshair') {
       const dist = Math.hypot(x2 - x1, y2 - y1);
       const minSize = 18;
@@ -1162,20 +1647,73 @@ export class CanvasEngine {
         durationMs: isPersistent ? 0 : 4000,
         createdAt: Date.now(),
       });
+    } else if (this.activeTool === 'tether') {
+      const dist = Math.hypot(x2 - x1, y2 - y1);
+      if (dist >= 10 && currentMap) {
+        const startTokens = this.findMatchingTokens({ x: x1, y: y1 }, currentMap);
+        const endTokens = this.findMatchingTokens({ x: x2, y: y2 }, currentMap);
+        const startToken = startTokens[0];
+        const endToken = endTokens[0];
+
+        // Tether must only be usable between things like tokens and props (OB-165)
+        if (startToken && endToken && startToken.id !== endToken.id) {
+          const isProp1 = Boolean(startToken.isProp);
+          const w1 = (isProp1 && startToken.propWidth !== undefined ? startToken.propWidth : startToken.size) * currentMap.gridSize;
+          const h1 = (isProp1 && startToken.propHeight !== undefined ? startToken.propHeight : startToken.size) * currentMap.gridSize;
+          const isProp2 = Boolean(endToken.isProp);
+          const w2 = (isProp2 && endToken.propWidth !== undefined ? endToken.propWidth : endToken.size) * currentMap.gridSize;
+          const h2 = (isProp2 && endToken.propHeight !== undefined ? endToken.propHeight : endToken.size) * currentMap.gridSize;
+
+          this.broadcastMarker({
+            id: crypto.randomUUID(),
+            type: 'tether',
+            userId: this.localPlayer.id,
+            userName: this.localPlayer.name,
+            color: this.localPlayer.color,
+            x: startToken.x + w1 / 2,
+            y: startToken.y + h1 / 2,
+            targetX: endToken.x + w2 / 2,
+            targetY: endToken.y + h2 / 2,
+            attachedTokenId: startToken.id,
+            tetherTargetId: endToken.id,
+            tetherStyle: 'straight',
+            tetherFrequency: 24,
+            tetherAmplitude: 10,
+            strokeWidth: 2.5,
+            mapId: currentMap?.id,
+            persist: true,
+            durationMs: 0,
+            createdAt: Date.now(),
+          });
+        }
+      }
     } else if (this.activeTool.startsWith('fog')) {
-      const mode = this.activeTool === 'fog-reveal' ? 'reveal' : 'hide';
-      const shape: FogShape = {
-        id: crypto.randomUUID(),
-        mode,
-        type: 'rect',
-        points: [
-          { x: Math.min(x1, x2), y: Math.min(y1, y2) },
-          { x: Math.max(x1, x2), y: Math.min(y1, y2) },
-          { x: Math.max(x1, x2), y: Math.max(y1, y2) },
-          { x: Math.min(x1, x2), y: Math.max(y1, y2) },
-        ],
-      };
-      this.callbacks.onFogUpdate?.(shape);
+      if (this.activeTool === 'fog-brush-reveal' || this.activeTool === 'fog-brush-hide') {
+        const mode = this.activeTool === 'fog-brush-reveal' ? 'reveal' : 'hide';
+        const shape: FogShape = {
+          id: crypto.randomUUID(),
+          mode,
+          type: 'brush',
+          points: this.fogBrushPoints.length > 0 ? [...this.fogBrushPoints] : [worldPos],
+          radius: this.fogBrushRadius,
+        };
+        this.callbacks.onFogUpdate?.(shape);
+        this.fogBrushPoints = [];
+      } else {
+        const mode = this.activeTool === 'fog-reveal' ? 'reveal' : 'hide';
+        const shape: FogShape = {
+          id: crypto.randomUUID(),
+          mode,
+          type: 'rect',
+          points: [
+            { x: Math.min(x1, x2), y: Math.min(y1, y2) },
+            { x: Math.max(x1, x2), y: Math.min(y1, y2) },
+            { x: Math.max(x1, x2), y: Math.max(y1, y2) },
+            { x: Math.min(x1, x2), y: Math.max(y1, y2) },
+          ],
+        };
+        this.callbacks.onFogUpdate?.(shape);
+      }
     }
   }
 
@@ -1188,6 +1726,10 @@ export class CanvasEngine {
 
   setPersistMarkersMode(persist: boolean) {
     this.persistMarkersMode = persist;
+  }
+
+  setFogBrushRadius(radius: number) {
+    this.fogBrushRadius = Math.max(10, Math.min(250, radius));
   }
 
   deleteSelectedMarker() {
@@ -1212,47 +1754,20 @@ export class CanvasEngine {
 
   private findMatchingPersistentMarker(worldPos: Point, map: GameMap): ScreenMarker | null {
     if (!this.session?.markers) return null;
-    const candidates = this.session.markers.filter(
+    const rawCandidates = this.session.markers.filter(
       (m) => m.persist && (!m.mapId || m.mapId === map.id)
     );
+    const activeDraggingMarkerId = this.draggingMarker?.id || this.draggingMarkerHandle?.marker.id;
+    const candidates = sortMarkersByZIndex(rawCandidates, {
+      selectedMarkerId: this.selectedMarkerId,
+      draggingMarkerId: activeDraggingMarkerId,
+      selectedTokenIds: this.selectedTokenIds,
+      draggingTokenId: this.draggingToken?.id,
+    });
     for (let i = candidates.length - 1; i >= 0; i--) {
       const m = candidates[i];
-      if (m.type === 'circle') {
-        const rad = m.radius || 50;
-        if (Math.hypot(worldPos.x - m.x, worldPos.y - m.y) <= rad) return m;
-      } else if (m.type === 'rectangle') {
-        const w = m.width || 100;
-        const h = m.height || 100;
-        const minX = Math.min(m.x, m.x + w);
-        const maxX = Math.max(m.x, m.x + w);
-        const minY = Math.min(m.y, m.y + h);
-        const maxY = Math.max(m.y, m.y + h);
-        if (worldPos.x >= minX && worldPos.x <= maxX && worldPos.y >= minY && worldPos.y <= maxY) {
-          return m;
-        }
-      } else if (m.type === 'arrow') {
-        const tx = m.targetX ?? m.x;
-        const ty = m.targetY ?? m.y;
-        if (distToSegment(worldPos, { x: m.x, y: m.y }, { x: tx, y: ty }) <= 20) {
-          return m;
-        }
-      } else if (m.type === 'cone') {
-        const rad = m.radius || 100;
-        const dist = Math.hypot(worldPos.x - m.x, worldPos.y - m.y);
-        if (dist <= 25) return m; // Caster origin
-        const thetaDeg = (Math.atan2(worldPos.y - m.y, worldPos.x - m.x) * 180) / Math.PI;
-        const centerDeg = m.angle ?? 0;
-        const diff = Math.abs(((thetaDeg - centerDeg + 540) % 360) - 180);
-        const halfSpread = (m.spreadAngle ?? 60) / 2;
-        if (diff <= halfSpread) {
-          const diffRad = (diff * Math.PI) / 180;
-          if (dist <= rad || (dist * Math.cos(diffRad) <= rad && dist <= rad * 1.5)) {
-            return m;
-          }
-        }
-      } else if (m.type === 'crosshair') {
-        const rad = Math.max(30, m.radius || 18);
-        if (Math.hypot(worldPos.x - m.x, worldPos.y - m.y) <= rad) return m;
+      if (isPointInMarker(worldPos, m, this.session.tokens, map.gridSize)) {
+        return m;
       }
     }
     return null;
@@ -1273,6 +1788,142 @@ export class CanvasEngine {
       this.viewport.pan(dx, dy);
     }
   };
+
+  private renderObjectives(ctx: CanvasRenderingContext2D, _map: GameMap) {
+    const pixelsPerInch = 50;
+
+    for (const obj of this.objectiveMarkers) {
+      const x = obj.x;
+      const y = obj.y;
+      const baseRadiusPx = (((obj.baseMm ?? 40) / 25.4) / 2) * pixelsPerInch; // ~39.4px for 40mm
+      const controlRadiusPx = (obj.controlRadiusInches ?? 3.0) * pixelsPerInch; // 150px
+      const totalZoneRadiusPx = baseRadiusPx + controlRadiusPx; // ~189.4px
+
+      let auraFill = 'rgba(245, 158, 11, 0.07)';
+      let auraStroke = 'rgba(245, 158, 11, 0.45)';
+      let baseRingColor = '#f59e0b';
+      let statusSubtitle = `Uncontested • 3″ Aura (${obj.vpValue ?? 4} VP)`;
+
+      if (obj.status === 1) {
+        auraFill = 'rgba(56, 189, 248, 0.12)';
+        auraStroke = 'rgba(56, 189, 248, 0.75)';
+        baseRingColor = '#38bdf8';
+        statusSubtitle = `${obj.controllingPlayerName || 'Player 1'} Control • ${obj.p1OcTotal ?? 0} OC`;
+      } else if (obj.status === 2) {
+        auraFill = 'rgba(236, 72, 153, 0.12)';
+        auraStroke = 'rgba(236, 72, 153, 0.75)';
+        baseRingColor = '#ec4899';
+        statusSubtitle = `${obj.controllingPlayerName || 'Player 2'} Control • ${obj.p2OcTotal ?? 0} OC`;
+      } else if (obj.status === 'contested') {
+        auraFill = 'rgba(239, 68, 68, 0.15)';
+        auraStroke = 'rgba(239, 68, 68, 0.85)';
+        baseRingColor = '#ef4444';
+        statusSubtitle = `Contested (P1: ${obj.p1OcTotal ?? 0} vs P2: ${obj.p2OcTotal ?? 0} OC)`;
+      }
+
+      ctx.save();
+
+      // 1. 3" Control Zone Aura (Translucent area + dashed boundary)
+      ctx.beginPath();
+      ctx.arc(x, y, totalZoneRadiusPx, 0, Math.PI * 2);
+      ctx.fillStyle = auraFill;
+      ctx.fill();
+
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      ctx.strokeStyle = auraStroke;
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 2. 40mm Objective Base
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+      ctx.shadowBlur = 12;
+
+      // Base disc fill
+      ctx.beginPath();
+      ctx.arc(x, y, baseRadiusPx, 0, Math.PI * 2);
+      ctx.fillStyle = '#0f172a';
+      ctx.fill();
+
+      // Base outer perimeter ring
+      ctx.shadowBlur = 0;
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = baseRingColor;
+      ctx.stroke();
+
+      // Inner subtle concentric ring
+      ctx.beginPath();
+      ctx.arc(x, y, baseRadiusPx * 0.7, 0, Math.PI * 2);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.stroke();
+
+      // Center crosshairs
+      ctx.beginPath();
+      ctx.moveTo(x - baseRadiusPx * 0.45, y);
+      ctx.lineTo(x + baseRadiusPx * 0.45, y);
+      ctx.moveTo(x, y - baseRadiusPx * 0.45);
+      ctx.lineTo(x, y + baseRadiusPx * 0.45);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = baseRingColor;
+      ctx.stroke();
+
+      // Center target pip
+      ctx.beginPath();
+      ctx.arc(x, y, baseRadiusPx * 0.22, 0, Math.PI * 2);
+      ctx.fillStyle = baseRingColor;
+      ctx.fill();
+
+      // 3. Objective Label Badge (above base)
+      const labelText = obj.label;
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const labelMetrics = ctx.measureText(labelText);
+      const labelW = labelMetrics.width + 14;
+      const labelH = 20;
+      const labelY = y - baseRadiusPx - 14;
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(x - labelW / 2, labelY - labelH / 2, labelW, labelH, 4);
+      } else {
+        ctx.rect(x - labelW / 2, labelY - labelH / 2, labelW, labelH);
+      }
+      ctx.fill();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = baseRingColor;
+      ctx.stroke();
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillText(labelText, x, labelY);
+
+      // 4. Status Subtitle Badge (below base)
+      ctx.font = '600 10px sans-serif';
+      const subMetrics = ctx.measureText(statusSubtitle);
+      const subW = subMetrics.width + 12;
+      const subH = 18;
+      const subY = y + baseRadiusPx + 14;
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(x - subW / 2, subY - subH / 2, subW, subH, 4);
+      } else {
+        ctx.rect(x - subW / 2, subY - subH / 2, subW, subH);
+      }
+      ctx.fill();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.stroke();
+
+      ctx.fillStyle = baseRingColor;
+      ctx.fillText(statusSubtitle, x, subY);
+
+      ctx.restore();
+    }
+  }
 
   private bindEvents() {
     const c = this.canvas;
@@ -1300,4 +1951,36 @@ function distToSegment(p: Point, v: Point, w: Point): number {
   let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
   t = Math.max(0, Math.min(1, t));
   return Math.hypot(p.x - (v.x + t * (w.x - v.x)), p.y - (v.y + t * (w.y - v.y)));
+}
+
+/**
+ * Computes raw or grid-snapped position for tokens/props during drag,
+ * relative to the initial cursor grab point (OB-188).
+ */
+export function computeRelativeDragPosition(
+  worldPos: Point,
+  grabOffset: Point,
+  snapEnabled: boolean,
+  gridSize: number,
+  tokenSize: number,
+  gridOffsetX = 0,
+  gridOffsetY = 0,
+  gridType: 'square' | 'hex' | 'none' = 'square'
+): Point {
+  const rawX = worldPos.x - grabOffset.x;
+  const rawY = worldPos.y - grabOffset.y;
+
+  if (!snapEnabled) {
+    return { x: rawX, y: rawY };
+  }
+
+  return snapToGrid(
+    rawX,
+    rawY,
+    gridSize,
+    tokenSize,
+    gridOffsetX,
+    gridOffsetY,
+    gridType
+  );
 }
